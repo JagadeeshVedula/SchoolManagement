@@ -23,8 +23,17 @@ download_flutter() {
     echo "Downloading Flutter $FLUTTER_VERSION..."
     curl -sS -L "$FLUTTER_URL" -o "$FLUTTER_TAR"
     echo "Extracting Flutter..."
-    tar -xf "$FLUTTER_TAR"
-    mv flutter "$FLUTTER_DIR"
+    tar -xf "$FLUTTER_TAR" -C "$(mktemp -d)" --strip-components=1 -O | tar -xf - -C .
+    # Alternative simpler approach: extract and rename
+    if [ -d "flutter_extracted" ]; then rm -rf "flutter_extracted"; fi
+    mkdir "flutter_extracted"
+    tar -xf "$FLUTTER_TAR" -C "flutter_extracted"
+    if [ -d "flutter_extracted/flutter" ]; then
+        mv "flutter_extracted/flutter" "$FLUTTER_DIR"
+    else
+        mv "flutter_extracted" "$FLUTTER_DIR"
+    fi
+    rm -rf "flutter_extracted"
     rm -f "$FLUTTER_TAR"
 }
 
