@@ -9,7 +9,7 @@ echo "=== Flutter web build script ==="
 # It's intentionally self-contained so CI systems (including Vercel's builders)
 # can run it via `npm run build` (which calls this script).
 
-FLUTTER_VERSION="3.16.9"
+FLUTTER_VERSION="3.38.1"
 FLUTTER_DIR="flutter"
 FLUTTER_TAR="flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
 FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/${FLUTTER_TAR}"
