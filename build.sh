@@ -1,34 +1,48 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e  # Exit on any error
+set -euo pipefail
 
-echo "=== Installing Flutter ==="
+echo "=== Flutter web build script ==="
 
-# Install system dependencies first
-apt-get update && apt-get install -y -q --no-install-recommends \
-    curl unzip sed git bash xz-utils libglu1-mesa
+# This script downloads a local Flutter SDK (if not present in ./flutter),
+# enables web, fetches dependencies and builds the web release into build/web.
+# It's intentionally self-contained so CI systems (including Vercel's builders)
+# can run it via `npm run build` (which calls this script).
 
-# Download and install Flutter
 FLUTTER_VERSION="3.16.9"
-FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+FLUTTER_DIR="flutter"
+FLUTTER_TAR="flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/${FLUTTER_TAR}"
 
-echo "Downloading Flutter $FLUTTER_VERSION..."
-curl -L $FLUTTER_URL -o flutter.tar.xz
+download_flutter() {
+    if [ -d "$FLUTTER_DIR" ]; then
+        echo "Flutter already present in $FLUTTER_DIR"
+        return
+    fi
 
-echo "Extracting Flutter..."
-tar -xf flutter.tar.xz
-export PATH="$PATH:$(pwd)/flutter/bin"
+    echo "Downloading Flutter $FLUTTER_VERSION..."
+    curl -sS -L "$FLUTTER_URL" -o "$FLUTTER_TAR"
+    echo "Extracting Flutter..."
+    tar -xf "$FLUTTER_TAR"
+    mv flutter "$FLUTTER_DIR"
+    rm -f "$FLUTTER_TAR"
+}
 
-# Enable Flutter web and verify
-echo "=== Setting up Flutter ==="
-flutter config --enable-web
+export PATH="$PWD/$FLUTTER_DIR/bin:$PATH"
+
+download_flutter
+
+echo "=== Setting up Flutter for web ==="
+flutter config --enable-web || true
 flutter --version
 
 echo "=== Getting dependencies ==="
 flutter pub get
 
-echo "=== Building web version ==="
+echo "=== Building web (release) ==="
 flutter build web --release
 
-echo "=== Build complete! ==="
-ls -la build/web/
+echo "=== Build complete: build/web ==="
+ls -la build/web || true
+
+echo "If you plan to deploy on Vercel using @vercel/static-build, ensure that package.json's build script runs this file and vercel.json's distDir is set to build/web."
