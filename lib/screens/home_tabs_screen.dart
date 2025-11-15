@@ -25,14 +25,14 @@ class HomeTabsScreen extends StatelessWidget {
 
     final tabs = <Tab>[
       const Tab(text: 'Student Data'),
-      if (role == 'staff') const Tab(text: 'Register'),
+      if (isAdmin) const Tab(text: 'Register'),
       if (!isParent) const Tab(text: 'Staff Data'),
       if (isAdmin) const Tab(text: 'Transport Details'),
     ];
 
     final views = <Widget>[
       StudentDataWidget(parentMobile: isParent ? parentMobile ?? '' : null),
-      if (role == 'staff') const RegisterTab(),
+      if (isAdmin) RegisterTab(role: role),
       if (!isParent) const Center(child: StaffDataWidget()),
       if (isAdmin) const Center(child: TransportDataWidget()),
     ];

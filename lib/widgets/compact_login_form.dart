@@ -44,100 +44,61 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
 
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
-    final mobile = _mobileController.text.trim();
 
-    // Parent login - validate mobile in Supabase
-    if (widget.userRole.id == 'parent') {
-      final exists = await SupabaseService.parentMobileExists(mobile);
-      if (exists) {
-        Navigator.pushReplacementNamed(context, '/home', arguments: {
-          'role': 'parent',
-          'username': mobile, // Use mobile as identifier
-          'parentMobile': mobile,
-        });
-        return;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Mobile number not found in our records'),
-            backgroundColor: widget.userRole.color,
-          ),
-        );
-        return;
-      }
+    // All roles now use CRED table with role verification
+    final credResult = await SupabaseService.verifyCredentialsWithRole(username, password);
+
+    if (!credResult['valid']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Invalid credentials'),
+          backgroundColor: widget.userRole.color,
+        ),
+      );
+      return;
     }
 
-    // Simple demo credential checks per requirements
-    if (widget.userRole.id == 'admin') {
-      if (username == 'admin' && password == 'admin') {
-        // Navigate to admin home with 3 tabs
-        Navigator.pushReplacementNamed(context, '/home', arguments: {
-          'role': 'admin',
-          'username': username,
-        });
-        return;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Invalid admin credentials'),
-            backgroundColor: widget.userRole.color,
-          ),
-        );
-        return;
-      }
+    // Verify the role from CRED table matches the selected role
+    final credRole = (credResult['role'] as String?)?.toUpperCase() ?? '';
+    final expectedRole = _getRoleString(widget.userRole.id).toUpperCase();
+
+    if (credRole != expectedRole) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Role mismatch. Expected $expectedRole, found $credRole.'),
+          backgroundColor: widget.userRole.color,
+        ),
+      );
+      return;
     }
 
-    if (widget.userRole.id == 'staff') {
-      if (username == 'staff' && password == 'staff') {
-        // Navigate to staff home with 2 tabs
-        Navigator.pushReplacementNamed(context, '/home', arguments: {
-          'role': 'staff',
-          'username': username,
-        });
-        return;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Invalid staff credentials'),
-            backgroundColor: widget.userRole.color,
-          ),
-        );
-        return;
-      }
-    }
+    // Navigate to home with role from CRED table
+    Navigator.pushReplacementNamed(context, '/home', arguments: {
+      'role': credRole.toLowerCase(),
+      'username': credResult['username'],
+      'parentMobile': credResult['mobileNumber'],
+      'studentName': credResult['studentName'],
+    });
+  }
 
-    // Register role (for new staff registration) - same as staff login
-    if (widget.userRole.id == 'Register') {
-      if (username == 'staff' && password == 'staff') {
-        Navigator.pushReplacementNamed(context, '/home', arguments: {
-          'role': 'staff',
-          'username': username,
-        });
-        return;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Invalid credentials'),
-            backgroundColor: widget.userRole.color,
-          ),
-        );
-        return;
-      }
+  // Helper to convert role ID to CRED table role string (PARENT, STAFF, ADMIN)
+  String _getRoleString(String roleId) {
+    switch (roleId.toLowerCase()) {
+      case 'parent':
+        return 'PARENT';
+      case 'staff':
+        return 'STAFF';
+      case 'admin':
+        return 'ADMIN';
+      case 'register':
+        return 'STAFF'; // Register uses STAFF role
+      default:
+        return 'STAFF';
     }
-
-    // Default behavior for other roles: just welcome
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Welcome, $username!'),
-        backgroundColor: widget.userRole.color,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isParent = widget.userRole.id == 'parent';
-
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 400),
@@ -159,180 +120,132 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // For Parent: Mobile Number Field
-              if (isParent)
-                TextFormField(
-                  controller: _mobileController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Parent Mobile Number',
-                    labelStyle: GoogleFonts.inter(
-                      color: const Color(0xFF718096),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.phone,
-                      color: widget.userRole.color,
-                      size: 20,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF7FAFC),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+              // Username Field - Same for all roles
+              TextFormField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  labelStyle: GoogleFonts.inter(
+                    color: const Color(0xFF718096),
+                    fontSize: 14,
                   ),
-                  style: GoogleFonts.inter(fontSize: 14),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your mobile number';
-                    }
-                    return null;
-                  },
-                )
-              else
-                // Username Field - For non-parent roles
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Username / ID',
-                    labelStyle: GoogleFonts.inter(
-                      color: const Color(0xFF718096),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.person_outline,
-                      color: widget.userRole.color,
-                      size: 20,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF7FAFC),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                  prefixIcon: Icon(
+                    Icons.person_outline,
+                    color: widget.userRole.color,
+                    size: 20,
                   ),
-                  style: GoogleFonts.inter(fontSize: 14),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your username';
-                    }
-                    return null;
-                  },
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF7FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                 ),
+                style: GoogleFonts.inter(fontSize: 14),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your username';
+                  }
+                  return null;
+                },
+              ),
 
               const SizedBox(height: 16),
 
-              // Password Field - Only for non-parent roles
-              if (!isParent)
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: GoogleFonts.inter(
+              // Password Field - Same for all roles
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  labelStyle: GoogleFonts.inter(
+                    color: const Color(0xFF718096),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.lock_outline,
+                    color: widget.userRole.color,
+                    size: 20,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
                       color: const Color(0xFF718096),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.lock_outline,
-                      color: widget.userRole.color,
                       size: 20,
                     ),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: const Color(0xFF718096),
-                        size: 20,
-                      ),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF7FAFC),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
                   ),
-                  style: GoogleFonts.inter(fontSize: 14),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-
-                    // Allow demo credentials for admin/staff/Register even if shorter than 6 chars
-                    final roleId = widget.userRole.id.toLowerCase();
-                    if (roleId == 'admin' || roleId == 'staff' || roleId == 'register') {
-                      return null;
-                    }
-
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF7FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                 ),
+                style: GoogleFonts.inter(fontSize: 14),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  return null;
+                },
+              ),
 
-              if (!isParent) const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-              // Remember Me & Forgot Password - Only for non-parent
-              if (!isParent)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: Checkbox(
-                            value: true,
-                            onChanged: (value) {},
-                            activeColor: widget.userRole.color,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
+              // Remember Me & Forgot Password
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: Checkbox(
+                          value: true,
+                          onChanged: (value) {},
+                          activeColor: widget.userRole.color,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Remember me',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF718096),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: Text(
-                        'Forgot Password?',
+                      const SizedBox(width: 8),
+                      Text(
+                        'Remember me',
                         style: GoogleFonts.inter(
-                          color: widget.userRole.color,
+                          color: const Color(0xFF718096),
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                  ],
-                ),
+                    child: Text(
+                      'Forgot Password?',
+                      style: GoogleFonts.inter(
+                        color: widget.userRole.color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
               const SizedBox(height: 20),
 

@@ -238,4 +238,167 @@ class SupabaseService {
       return false;
     }
   }
+
+  // ===== CRED TABLE METHODS =====
+
+  // Verify credentials from CRED table and return role and other details
+  // Returns map with 'valid' (bool), 'role' (string), and 'username' (string)
+  static Future<Map<String, dynamic>> verifyCredentialsWithRole(
+      String username, String password) async {
+    try {
+      final response = await client
+          .from('CRED')
+          .select()
+          .eq('USERNAME', username)
+          .eq('PASSWORD', password)
+          .limit(1);
+
+      if ((response as List).isNotEmpty) {
+        final cred = response.first as Map<String, dynamic>;
+        return {
+          'valid': true,
+          'role': cred['ROLE'] as String? ?? 'STAFF',
+          'username': cred['USERNAME'] as String? ?? username,
+          'mobileNumber': cred['Mobile Number'] as String?,
+        };
+      }
+      return {
+        'valid': false,
+        'role': null,
+        'username': null,
+        'mobileNumber': null,
+      };
+    } catch (e) {
+      print('Error verifying credentials: $e');
+      return {
+        'valid': false,
+        'role': null,
+        'username': null,
+        'mobileNumber': null,
+      };
+    }
+  }
+
+  // Legacy method for backward compatibility - verify credentials exist
+  static Future<bool> verifyCredentials(
+      String username, String password) async {
+    try {
+      final response = await client
+          .from('CRED')
+          .select()
+          .eq('USERNAME', username)
+          .eq('PASSWORD', password)
+          .limit(1);
+
+      return (response as List).isNotEmpty;
+    } catch (e) {
+      print('Error verifying credentials: $e');
+      return false;
+    }
+  }
+
+  // Verify parent credentials from CRED table using username and password
+  // Returns Student data associated with parent mobile if credentials match and role is PARENT
+  static Future<Map<String, dynamic>?> verifyParentCredentials(
+      String username, String password) async {
+    try {
+      final response = await client
+          .from('CRED')
+          .select()
+          .eq('USERNAME', username)
+          .eq('PASSWORD', password)
+          .eq('ROLE', 'PARENT')
+          .limit(1);
+
+      if ((response as List).isEmpty) {
+        return null;
+      }
+
+      final cred = response.first as Map<String, dynamic>;
+      final mobileNumber = cred['Mobile Number'] as String?;
+
+      // Fetch student by parent mobile to link parent credentials with student data
+      if (mobileNumber != null && mobileNumber.isNotEmpty) {
+        final students = await getStudentsByParentMobile(mobileNumber);
+        if (students.isNotEmpty) {
+          return {
+            'valid': true,
+            'role': 'PARENT',
+            'username': cred['USERNAME'],
+            'mobileNumber': mobileNumber,
+            'studentName': students.first.name,
+          };
+        }
+      }
+
+      // Return credential info even if no student found (may be parent without student enrolled yet)
+      return {
+        'valid': true,
+        'role': 'PARENT',
+        'username': cred['USERNAME'],
+        'mobileNumber': mobileNumber,
+        'studentName': null,
+      };
+    } catch (e) {
+      print('Error verifying parent credentials: $e');
+      return null;
+    }
+  }
+
+  // Insert or update credentials in CRED table with role
+  static Future<bool> insertOrUpdateCredentials(
+      String username, String password, {String? mobileNumber, String role = 'STAFF'}) async {
+    try {
+      // Check if username already exists
+      final existing = await client
+          .from('CRED')
+          .select()
+          .eq('USERNAME', username)
+          .limit(1);
+
+      if ((existing as List).isNotEmpty) {
+        // Update existing
+        await client
+            .from('CRED')
+            .update({
+              'PASSWORD': password,
+              'ROLE': role,
+              if (mobileNumber != null) 'Mobile Number': mobileNumber,
+            })
+            .eq('USERNAME', username);
+      } else {
+        // Insert new
+        await client.from('CRED').insert({
+          'USERNAME': username,
+          'PASSWORD': password,
+          'ROLE': role,
+          if (mobileNumber != null) 'Mobile Number': mobileNumber,
+        });
+      }
+      return true;
+    } catch (e) {
+      print('Error inserting/updating credentials: $e');
+      return false;
+    }
+  }
+
+  // Get CRED record by username
+  static Future<Map<String, dynamic>?> getCredentialsByUsername(
+      String username) async {
+    try {
+      final response = await client
+          .from('CRED')
+          .select()
+          .eq('USERNAME', username)
+          .limit(1);
+
+      if ((response as List).isNotEmpty) {
+        return response.first as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching credentials: $e');
+      return null;
+    }
+  }
 }
