@@ -21,20 +21,34 @@ download_flutter() {
     fi
 
     echo "Downloading Flutter $FLUTTER_VERSION..."
-    curl -sS -L "$FLUTTER_URL" -o "$FLUTTER_TAR"
-    echo "Extracting Flutter..."
-    tar -xf "$FLUTTER_TAR" -C "$(mktemp -d)" --strip-components=1 -O | tar -xf - -C .
-    # Alternative simpler approach: extract and rename
-    if [ -d "flutter_extracted" ]; then rm -rf "flutter_extracted"; fi
-    mkdir "flutter_extracted"
-    tar -xf "$FLUTTER_TAR" -C "flutter_extracted"
-    if [ -d "flutter_extracted/flutter" ]; then
-        mv "flutter_extracted/flutter" "$FLUTTER_DIR"
-    else
-        mv "flutter_extracted" "$FLUTTER_DIR"
+    # Use -f to fail on HTTP errors, -S to show errors, -L to follow redirects, -# for progress
+    if ! curl -fSL# "$FLUTTER_URL" -o "$FLUTTER_TAR"; then
+        echo "Error: Failed to download Flutter from $FLUTTER_URL"
+        exit 1
     fi
-    rm -rf "flutter_extracted"
+    
+    # Verify the download is a valid tar
+    if ! file "$FLUTTER_TAR" | grep -q "XZ compressed"; then
+        echo "Error: Downloaded file is not a valid XZ tar archive"
+        echo "File type: $(file "$FLUTTER_TAR")"
+        rm -f "$FLUTTER_TAR"
+        exit 1
+    fi
+    
+    echo "Extracting Flutter..."
+    # Extract with verbose error reporting
+    if ! tar -xJf "$FLUTTER_TAR"; then
+        echo "Error: Failed to extract Flutter tar archive"
+        exit 1
+    fi
+    
+    # Handle the extracted directory
+    if [ -d "flutter" ] && [ "$FLUTTER_DIR" != "flutter" ]; then
+        mv "flutter" "$FLUTTER_DIR"
+    fi
+    
     rm -f "$FLUTTER_TAR"
+    echo "Flutter extracted successfully to $FLUTTER_DIR"
 }
 
 export PATH="$PWD/$FLUTTER_DIR/bin:$PATH"
