@@ -1,0 +1,419 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:school_management/services/supabase_service.dart';
+import 'package:school_management/models/student.dart';
+import 'package:school_management/models/staff.dart';
+import 'package:school_management/screens/student_detail_screen.dart';
+import 'package:school_management/screens/register_tab.dart';
+
+class HomeTabsScreen extends StatelessWidget {
+  final String role;
+  final String username;
+  final String? parentMobile;
+
+  const HomeTabsScreen({
+    super.key,
+    required this.role,
+    required this.username,
+    this.parentMobile,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isAdmin = role == 'admin';
+    final isParent = role == 'parent';
+
+    final tabs = <Tab>[
+      const Tab(text: 'Student Data'),
+      if (role == 'staff') const Tab(text: 'Register'),
+      if (!isParent) const Tab(text: 'Staff Data'),
+      if (isAdmin) const Tab(text: 'Transport Details'),
+    ];
+
+    final views = <Widget>[
+      StudentDataWidget(parentMobile: isParent ? parentMobile ?? '' : null),
+      if (role == 'staff') const RegisterTab(),
+      if (!isParent) const Center(child: StaffDataWidget()),
+      if (isAdmin) const Center(child: TransportDataWidget()),
+    ];
+
+    return DefaultTabController(
+      length: tabs.length,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            isParent ? 'Parent Dashboard' : (isAdmin ? 'Admin Dashboard' : 'Staff Dashboard'),
+            style: GoogleFonts.poppins(),
+          ),
+          centerTitle: true,
+          bottom: TabBar(
+            tabs: tabs,
+          ),
+        ),
+        body: TabBarView(
+          children: views,
+        ),
+      ),
+    );
+  }
+}
+
+// Student Data Widget - Fetches from Supabase with class filter
+class StudentDataWidget extends StatefulWidget {
+  final String? parentMobile;
+
+  const StudentDataWidget({super.key, this.parentMobile});
+
+  @override
+  State<StudentDataWidget> createState() => _StudentDataWidgetState();
+}
+
+class _StudentDataWidgetState extends State<StudentDataWidget> {
+  late Future<List<String>> _classesFuture;
+  String? _selectedClass;
+  late Future<List<Student>> _studentsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _classesFuture = SupabaseService.getUniqueClasses();
+    _studentsFuture = Future.value([]);
+  }
+
+  void _onClassSelected(String? className) {
+    setState(() {
+      _selectedClass = className;
+      if (className != null && className.isNotEmpty) {
+        // Fetch students for this class
+        if (widget.parentMobile != null && widget.parentMobile!.isNotEmpty) {
+          // Parent: fetch their children in the selected class
+          _studentsFuture = SupabaseService.getStudentsByClassAndParentMobile(
+              className, widget.parentMobile!);
+        } else {
+          // Admin/Staff: fetch all students in the selected class
+          _studentsFuture = SupabaseService.getStudentsByClass(className);
+        }
+      } else {
+        _studentsFuture = Future.value([]);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Class Filter Dropdown
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: FutureBuilder<List<String>>(
+            future: _classesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 60,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Text('Error loading classes: ${snapshot.error}');
+              }
+
+              final classes = snapshot.data ?? [];
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Filter by Class',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedClass,
+                      hint: Text(
+                        'Select a class',
+                        style: GoogleFonts.inter(color: Colors.grey),
+                      ),
+                      underline: const SizedBox(),
+                      items: classes
+                          .map(
+                            (className) => DropdownMenuItem<String>(
+                              value: className,
+                              child: Text(className),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _onClassSelected,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+
+        // Student List
+        if (_selectedClass != null && _selectedClass!.isNotEmpty)
+          Expanded(
+            child: FutureBuilder<List<Student>>(
+              future: _studentsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline,
+                              size: 48, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text('Error loading students: ${snapshot.error}',
+                              textAlign: TextAlign.center),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final students = snapshot.data ?? [];
+
+                if (students.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.school,
+                              size: 48, color: Colors.blueAccent),
+                          const SizedBox(height: 12),
+                          const Text('No students found in this class'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: students.length,
+                  itemBuilder: (context, index) {
+                    final student = students[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12.0),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16.0),
+                        title: Text(
+                          student.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            Text(
+                              'Class: ${student.className}',
+                              style: GoogleFonts.inter(color: Colors.grey),
+                            ),
+                            Text(
+                              'Father: ${student.fatherName}',
+                              style: GoogleFonts.inter(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          // Navigate to student detail screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  StudentDetailScreen(student: student),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          )
+        else
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 48, color: Colors.blueAccent),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Select a class to view students',
+                      style: GoogleFonts.inter(
+                        color: Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// Staff Data Widget - Fetches staff from Supabase STAFF table
+class StaffDataWidget extends StatefulWidget {
+  const StaffDataWidget({super.key});
+
+  @override
+  State<StaffDataWidget> createState() => _StaffDataWidgetState();
+}
+
+class _StaffDataWidgetState extends State<StaffDataWidget> {
+  late Future<List<Staff>> _staffFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _staffFuture = SupabaseService.getAllStaff();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Staff>>(
+      future: _staffFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text('Error loading staff: ${snapshot.error}'),
+            ),
+          );
+        }
+
+        final staffList = snapshot.data ?? [];
+
+        if (staffList.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.people, size: 48, color: Colors.green),
+                  const SizedBox(height: 12),
+                  Text('No Staff Records', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text('No staff members are currently registered.', style: GoogleFonts.inter(color: Colors.grey)),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: staffList.length,
+          itemBuilder: (context, index) {
+            final staff = staffList[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      staff.name,
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.green),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.school, size: 16, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Qualification: ${staff.qualification}',
+                            style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.phone, size: 16, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Mobile: ${staff.mobile}',
+                          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class TransportDataWidget extends StatelessWidget {
+  const TransportDataWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.directions_bus, size: 48, color: Colors.orange),
+          const SizedBox(height: 12),
+          Text('Transport Details', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Text('Routes, vehicles and driver info appear here.', style: GoogleFonts.inter(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
