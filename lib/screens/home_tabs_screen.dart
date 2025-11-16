@@ -5,6 +5,8 @@ import 'package:school_management/models/student.dart';
 import 'package:school_management/models/staff.dart';
 import 'package:school_management/screens/student_detail_screen.dart';
 import 'package:school_management/screens/register_tab.dart';
+import 'package:school_management/screens/fees_tab.dart';
+import 'package:school_management/screens/report_tab.dart';
 
 class HomeTabsScreen extends StatelessWidget {
   final String role;
@@ -20,21 +22,22 @@ class HomeTabsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = role == 'admin';
-    final isParent = role == 'parent';
-
     final tabs = <Tab>[
       const Tab(text: 'Student Data'),
-      if (isAdmin) const Tab(text: 'Register'),
-      if (!isParent) const Tab(text: 'Staff Data'),
-      if (isAdmin) const Tab(text: 'Transport Details'),
+      const Tab(text: 'Register'),
+      const Tab(text: 'Staff Data'),
+      const Tab(text: 'Transport Details'),
+      const Tab(text: 'Fees'),
+      const Tab(text: 'Reports'),
     ];
 
     final views = <Widget>[
-      StudentDataWidget(parentMobile: isParent ? parentMobile ?? '' : null),
-      if (isAdmin) RegisterTab(role: role),
-      if (!isParent) const Center(child: StaffDataWidget()),
-      if (isAdmin) const Center(child: TransportDataWidget()),
+      StudentDataWidget(parentMobile: null),
+      const RegisterTab(),
+      const Center(child: StaffDataWidget()),
+      const Center(child: TransportDataWidget()),
+      const Center(child: FeesTab()),
+      const Center(child: ReportTab()),
     ];
 
     return DefaultTabController(
@@ -42,12 +45,30 @@ class HomeTabsScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isParent ? 'Parent Dashboard' : (isAdmin ? 'Admin Dashboard' : 'Staff Dashboard'),
-            style: GoogleFonts.poppins(),
+            'Admin Dashboard',
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           centerTitle: true,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue[800]!, Colors.blue[600]!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
           bottom: TabBar(
             tabs: tabs,
+            isScrollable: true,
+            indicatorColor: Colors.white,
+            indicatorWeight: 3,
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
           ),
         ),
         body: TabBarView(
@@ -103,8 +124,15 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Class Filter Dropdown
-        Padding(
+        // Class Filter Dropdown with gradient header
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.cyan[600]!, Colors.cyan[400]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
           padding: const EdgeInsets.all(16.0),
           child: FutureBuilder<List<String>>(
             future: _classesFuture,
@@ -130,14 +158,15 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
+                      color: Colors.white,
+                      border: Border.all(color: Colors.cyan[300]!, width: 2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: DropdownButton<String>(
@@ -205,7 +234,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.school,
-                              size: 48, color: Colors.blueAccent),
+                              size: 48, color: Colors.cyan[600]),
                           const SizedBox(height: 12),
                           const Text('No students found in this class'),
                         ],
@@ -221,40 +250,55 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                     final student = students[index];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12.0),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16.0),
-                        title: Text(
-                          student.name,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [Colors.cyan[50]!, Colors.blue[50]!],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 8),
-                            Text(
-                              'Class: ${student.className}',
-                              style: GoogleFonts.inter(color: Colors.grey),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16.0),
+                          title: Text(
+                            student.name,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.cyan[900],
                             ),
-                            Text(
-                              'Father: ${student.fatherName}',
-                              style: GoogleFonts.inter(color: Colors.grey),
-                            ),
-                          ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 8),
+                              Text(
+                                'Class: ${student.className}',
+                                style: GoogleFonts.inter(color: Colors.grey),
+                              ),
+                              Text(
+                                'Father: ${student.fatherName}',
+                                style: GoogleFonts.inter(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.cyan[600]),
+                          onTap: () {
+                            // Navigate to student detail screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    StudentDetailScreen(student: student),
+                              ),
+                            );
+                          },
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () {
-                          // Navigate to student detail screen
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  StudentDetailScreen(student: student),
-                            ),
-                          );
-                        },
                       ),
                     );
                   },
@@ -271,7 +315,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.info_outline,
-                        size: 48, color: Colors.blueAccent),
+                        size: 48, color: Colors.cyan[600]),
                     const SizedBox(height: 12),
                     Text(
                       'Select a class to view students',
@@ -334,9 +378,9 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.people, size: 48, color: Colors.green),
+                  Icon(Icons.people, size: 48, color: Colors.amber[600]),
                   const SizedBox(height: 12),
-                  Text('No Staff Records', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600)),
+                  Text('No Staff Records', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.amber[700])),
                   const SizedBox(height: 8),
                   Text('No staff members are currently registered.', style: GoogleFonts.inter(color: Colors.grey)),
                 ],
@@ -352,41 +396,56 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
             final staff = staffList[index];
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      staff.name,
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.green),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.school, size: 16, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Qualification: ${staff.qualification}',
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [Colors.amber[50]!, Colors.orange[50]!],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        staff.name,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.school, size: 16, color: Colors.amber[600]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Qualification: ${staff.qualification}',
+                              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.phone, size: 16, color: Colors.amber[600]),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Mobile: ${staff.mobile}',
                             style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.phone, size: 16, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Mobile: ${staff.mobile}',
-                          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -402,17 +461,40 @@ class TransportDataWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.directions_bus, size: 48, color: Colors.orange),
-          const SizedBox(height: 12),
-          Text('Transport Details', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Text('Routes, vehicles and driver info appear here.', style: GoogleFonts.inter(color: Colors.grey)),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.orange[50]!, Colors.deepOrange[50]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.directions_bus, size: 64, color: Colors.deepOrange[600]),
+            const SizedBox(height: 20),
+            Text(
+              'Transport Details',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.deepOrange[900],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Routes, vehicles and driver info appear here.',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

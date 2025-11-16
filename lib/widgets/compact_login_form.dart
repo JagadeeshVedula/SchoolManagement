@@ -16,7 +16,6 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _mobileController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -24,7 +23,6 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
-    _mobileController.dispose();
     super.dispose();
   }
 
@@ -45,55 +43,25 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
-    // All roles now use CRED table with role verification
-    final credResult = await SupabaseService.verifyCredentialsWithRole(username, password);
-
-    if (!credResult['valid']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Invalid credentials'),
-          backgroundColor: widget.userRole.color,
-        ),
-      );
-      return;
-    }
-
-    // Verify the role from CRED table matches the selected role
-    final credRole = (credResult['role'] as String?)?.toUpperCase() ?? '';
-    final expectedRole = _getRoleString(widget.userRole.id).toUpperCase();
-
-    if (credRole != expectedRole) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Role mismatch. Expected $expectedRole, found $credRole.'),
-          backgroundColor: widget.userRole.color,
-        ),
-      );
-      return;
-    }
-
-    // Navigate to home with role from CRED table
-    Navigator.pushReplacementNamed(context, '/home', arguments: {
-      'role': credRole.toLowerCase(),
-      'username': credResult['username'],
-      'parentMobile': credResult['mobileNumber'],
-      'studentName': credResult['studentName'],
-    });
-  }
-
-  // Helper to convert role ID to CRED table role string (PARENT, STAFF, ADMIN)
-  String _getRoleString(String roleId) {
-    switch (roleId.toLowerCase()) {
-      case 'parent':
-        return 'PARENT';
-      case 'staff':
-        return 'STAFF';
-      case 'admin':
-        return 'ADMIN';
-      case 'register':
-        return 'STAFF'; // Register uses STAFF role
-      default:
-        return 'STAFF';
+    // Admin login - validate credentials against CRED table
+    if (widget.userRole.id == 'admin') {
+      final isValid = await SupabaseService.validateAdminCredentials(username, password);
+      if (isValid) {
+        // Navigate to admin home with 3 tabs
+        Navigator.pushReplacementNamed(context, '/home', arguments: {
+          'role': 'admin',
+          'username': username,
+        });
+        return;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Invalid admin credentials'),
+            backgroundColor: widget.userRole.color,
+          ),
+        );
+        return;
+      }
     }
   }
 
@@ -120,11 +88,11 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Username Field - Same for all roles
+              // Username Field
               TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'Username / ID',
                   labelStyle: GoogleFonts.inter(
                     color: const Color(0xFF718096),
                     fontSize: 14,
@@ -149,12 +117,11 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
                     return 'Please enter your username';
                   }
                   return null;
-                },
-              ),
-
+                  },
+                ),
               const SizedBox(height: 16),
 
-              // Password Field - Same for all roles
+              // Password Field
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -176,7 +143,9 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
                       });
                     },
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: const Color(0xFF718096),
                       size: 20,
                     ),
@@ -195,6 +164,7 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
                   }
+                  // Password validation will be done on server side with CRED table
                   return null;
                 },
               ),

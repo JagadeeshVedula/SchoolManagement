@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:school_management/models/user_role.dart';
-import 'package:school_management/widgets/login_form.dart';
 import 'package:school_management/widgets/compact_login_form.dart';
 import 'package:google_fonts/google_fonts.dart';
 

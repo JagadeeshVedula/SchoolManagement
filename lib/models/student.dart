@@ -5,6 +5,8 @@ class Student {
   final String fatherName;
   final String motherName;
   final String parentMobile;
+  final double schoolFeeConcession;
+  final double tuitionFeeConcession;
 
   Student({
     this.id,
@@ -13,6 +15,8 @@ class Student {
     required this.fatherName,
     required this.motherName,
     required this.parentMobile,
+    this.schoolFeeConcession = 0.0,
+    this.tuitionFeeConcession = 0.0,
   });
 
   // Convert JSON from Supabase to Student object
@@ -24,6 +28,8 @@ class Student {
       fatherName: json['Father Name'] as String? ?? '',
       motherName: json['Mother Name'] as String? ?? '',
       parentMobile: json['Parent Mobile'] as String? ?? '',
+      schoolFeeConcession: double.tryParse((json['School Fee Concession'] as dynamic).toString()) ?? 0.0,
+      tuitionFeeConcession: double.tryParse((json['Tuition Fee Concession'] as dynamic).toString()) ?? 0.0,
     );
   }
 
@@ -36,6 +42,8 @@ class Student {
       'Father Name': fatherName,
       'Mother Name': motherName,
       'Parent Mobile': parentMobile,
+      'School Fee Concession': schoolFeeConcession,
+      'Tuition Fee Concession': tuitionFeeConcession,
     };
   }
 }

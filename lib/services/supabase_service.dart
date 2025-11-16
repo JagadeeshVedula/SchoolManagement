@@ -228,6 +228,24 @@ class SupabaseService {
     }
   }
 
+
+  // Validate admin credentials against CRED table
+  static Future<bool> validateAdminCredentials(String username, String password) async {
+    try {
+      final response = await client
+          .from('CRED')
+          .select()
+          .eq('USERNAME', username)
+          .eq('PASSWORD', password)
+          .limit(1);
+
+      return (response as List).isNotEmpty;
+    } catch (e) {
+      print('Error validating admin credentials: $e');
+      return false;
+    }
+  }
+
   // Insert a staff record into STAFF table
   static Future<bool> insertStaff(Map<String, dynamic> staffData) async {
     try {
@@ -239,166 +257,295 @@ class SupabaseService {
     }
   }
 
-  // ===== CRED TABLE METHODS =====
-
-  // Verify credentials from CRED table and return role and other details
-  // Returns map with 'valid' (bool), 'role' (string), and 'username' (string)
-  static Future<Map<String, dynamic>> verifyCredentialsWithRole(
-      String username, String password) async {
+  // Insert a bus/transport record into TRANSPORT table
+  static Future<bool> insertTransport(Map<String, dynamic> transportData) async {
     try {
-      final response = await client
-          .from('CRED')
-          .select()
-          .eq('USERNAME', username)
-          .eq('PASSWORD', password)
-          .limit(1);
-
-      if ((response as List).isNotEmpty) {
-        final cred = response.first as Map<String, dynamic>;
-        return {
-          'valid': true,
-          'role': cred['ROLE'] as String? ?? 'STAFF',
-          'username': cred['USERNAME'] as String? ?? username,
-          'mobileNumber': cred['Mobile Number'] as String?,
-        };
-      }
-      return {
-        'valid': false,
-        'role': null,
-        'username': null,
-        'mobileNumber': null,
-      };
-    } catch (e) {
-      print('Error verifying credentials: $e');
-      return {
-        'valid': false,
-        'role': null,
-        'username': null,
-        'mobileNumber': null,
-      };
-    }
-  }
-
-  // Legacy method for backward compatibility - verify credentials exist
-  static Future<bool> verifyCredentials(
-      String username, String password) async {
-    try {
-      final response = await client
-          .from('CRED')
-          .select()
-          .eq('USERNAME', username)
-          .eq('PASSWORD', password)
-          .limit(1);
-
-      return (response as List).isNotEmpty;
-    } catch (e) {
-      print('Error verifying credentials: $e');
-      return false;
-    }
-  }
-
-  // Verify parent credentials from CRED table using username and password
-  // Returns Student data associated with parent mobile if credentials match and role is PARENT
-  static Future<Map<String, dynamic>?> verifyParentCredentials(
-      String username, String password) async {
-    try {
-      final response = await client
-          .from('CRED')
-          .select()
-          .eq('USERNAME', username)
-          .eq('PASSWORD', password)
-          .eq('ROLE', 'PARENT')
-          .limit(1);
-
-      if ((response as List).isEmpty) {
-        return null;
-      }
-
-      final cred = response.first as Map<String, dynamic>;
-      final mobileNumber = cred['Mobile Number'] as String?;
-
-      // Fetch student by parent mobile to link parent credentials with student data
-      if (mobileNumber != null && mobileNumber.isNotEmpty) {
-        final students = await getStudentsByParentMobile(mobileNumber);
-        if (students.isNotEmpty) {
-          return {
-            'valid': true,
-            'role': 'PARENT',
-            'username': cred['USERNAME'],
-            'mobileNumber': mobileNumber,
-            'studentName': students.first.name,
-          };
-        }
-      }
-
-      // Return credential info even if no student found (may be parent without student enrolled yet)
-      return {
-        'valid': true,
-        'role': 'PARENT',
-        'username': cred['USERNAME'],
-        'mobileNumber': mobileNumber,
-        'studentName': null,
-      };
-    } catch (e) {
-      print('Error verifying parent credentials: $e');
-      return null;
-    }
-  }
-
-  // Insert or update credentials in CRED table with role
-  static Future<bool> insertOrUpdateCredentials(
-      String username, String password, {String? mobileNumber, String role = 'STAFF'}) async {
-    try {
-      // Check if username already exists
-      final existing = await client
-          .from('CRED')
-          .select()
-          .eq('USERNAME', username)
-          .limit(1);
-
-      if ((existing as List).isNotEmpty) {
-        // Update existing
-        await client
-            .from('CRED')
-            .update({
-              'PASSWORD': password,
-              'ROLE': role,
-              if (mobileNumber != null) 'Mobile Number': mobileNumber,
-            })
-            .eq('USERNAME', username);
-      } else {
-        // Insert new
-        await client.from('CRED').insert({
-          'USERNAME': username,
-          'PASSWORD': password,
-          'ROLE': role,
-          if (mobileNumber != null) 'Mobile Number': mobileNumber,
-        });
-      }
+      await client.from('TRANSPORT').insert(transportData);
       return true;
     } catch (e) {
-      print('Error inserting/updating credentials: $e');
+      print('Error inserting transport: $e');
       return false;
     }
   }
 
-  // Get CRED record by username
-  static Future<Map<String, dynamic>?> getCredentialsByUsername(
-      String username) async {
+  // Insert a fee record into FEES table
+  // Expected keys: 'STUDENT NAME','TERM MONTH','TERM YEAR','FEE TYPE','AMOUNT','TERM NO'
+  static Future<bool> insertFee(Map<String, dynamic> feeData) async {
+    try {
+      await client.from('FEES').insert(feeData);
+      return true;
+    } catch (e) {
+      print('Error inserting fee: $e');
+      return false;
+    }
+  }
+
+  // Fetch fees for a specific student
+  static Future<List<Map<String, dynamic>>> getFeesByStudent(String studentName) async {
     try {
       final response = await client
-          .from('CRED')
+          .from('FEES')
           .select()
-          .eq('USERNAME', username)
-          .limit(1);
+          .eq('STUDENT NAME', studentName);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching fees for student: $e');
+      return [];
+    }
+  }
 
+  // Fetch fees for all students in a class
+  // Since FEES table stores student names, we fetch students by class then their fees
+  static Future<Map<String, List<Map<String, dynamic>>>> getFeesByClass(String className) async {
+    try {
+      final students = await getStudentsByClass(className);
+      final result = <String, List<Map<String, dynamic>>>{};
+      for (final s in students) {
+        final fees = await getFeesByStudent(s.name);
+        result[s.name] = fees;
+      }
+      return result;
+    } catch (e) {
+      print('Error fetching fees by class: $e');
+      return {};
+    }
+  }
+
+  // Fetch fee structure for a class (CLASS and FEE columns)
+  static Future<Map<String, dynamic>?> getFeeStructureByClass(String className) async {
+    try {
+      final response = await client
+          .from('FEE STRUCTURE')
+          .select()
+          .eq('CLASS', className)
+          .limit(1);
       if ((response as List).isNotEmpty) {
-        return response.first as Map<String, dynamic>;
+        return response[0] as Map<String, dynamic>;
       }
       return null;
     } catch (e) {
-      print('Error fetching credentials: $e');
+      print('Error fetching fee structure: $e');
       return null;
+    }
+  }
+
+  // Calculate term fee amounts: Term 1 = 40%, Term 2 = 40%, Term 3 = 20%
+  static Map<int, double> calculateTermFees(double totalFee, double concession) {
+    final effectiveFee = (totalFee - concession).clamp(0, double.infinity);
+    return {
+      1: effectiveFee * 0.40,  // Term 1: 40%
+      2: effectiveFee * 0.40,  // Term 2: 40%
+      3: effectiveFee * 0.20,  // Term 3: 20%
+    };
+  }
+
+  // Get which term corresponds to a given TERM MONTH
+  static int? getTermNumberFromMonth(String termMonth) {
+    switch (termMonth.toLowerCase()) {
+      case 'june - september':
+        return 1;
+      case 'november - february':
+        return 2;
+      case 'march - june':
+        return 3;
+      default:
+        return null;
+    }
+  }
+
+  // Get term month string from term number
+  static String getTermMonthFromNumber(int termNumber) {
+    switch (termNumber) {
+      case 1:
+        return 'June - September';
+      case 2:
+        return 'November - February';
+      case 3:
+        return 'March - June';
+      default:
+        return '';
+    }
+  }
+
+  // Calculate due amount for a student based on FEE TYPE and TERM NO
+  // Logic: fetch student's existing FEES for the given FEE TYPE and TERM NO
+  // Return (total term fee - already paid)
+  static Future<Map<String, dynamic>> calculateStudentDue(
+      String studentName,
+      String feeType,
+      int termNumber,
+      double totalTermFee) async {
+    try {
+      final allFees = await getFeesByStudent(studentName);
+      double paidAmount = 0;
+      for (final fee in allFees) {
+        final feeTypeDb = fee['FEE TYPE'] as String? ?? '';
+        final termNoDb = fee['TERM NO'] as String? ?? '';
+        
+        // Check if fee type matches and term number is in TERM NO string
+        if (feeTypeDb.contains(feeType) && termNoDb.contains('Term $termNumber')) {
+          final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+          paidAmount += amt;
+        }
+      }
+      final dueAmount = (totalTermFee - paidAmount).clamp(0, double.infinity);
+      return {'paid': paidAmount, 'due': dueAmount, 'total': totalTermFee};
+    } catch (e) {
+      print('Error calculating due: $e');
+      return {'paid': 0, 'due': totalTermFee, 'total': totalTermFee};
+    }
+  }
+
+  // Calculate due amount for a student based on TERM MONTH/TERM YEAR (legacy support)
+  // Logic: fetch student's existing FEES for the given TERM MONTH/TERM YEAR
+  // Return (total term fee - already paid)
+  static Future<Map<String, dynamic>> calculateStudentDueByMonth(
+      String studentName,
+      String termMonth,
+      String termYear,
+      double totalTermFee) async {
+    try {
+      final allFees = await getFeesByStudent(studentName);
+      double paidAmount = 0;
+      for (final fee in allFees) {
+        final feeTermMonth = fee['TERM MONTH'] as String? ?? '';
+        final feeTermYear = fee['TERM YEAR'] as String? ?? '';
+        if (feeTermMonth == termMonth && feeTermYear == termYear) {
+          final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+          paidAmount += amt;
+        }
+      }
+      final dueAmount = (totalTermFee - paidAmount).clamp(0, double.infinity);
+      return {'paid': paidAmount, 'due': dueAmount, 'total': totalTermFee};
+    } catch (e) {
+      print('Error calculating due: $e');
+      return {'paid': 0, 'due': totalTermFee, 'total': totalTermFee};
+    }
+  }
+
+  // Fetch bus fee from TRANSPORT table by route name
+  static Future<double> getBusFeeByRoute(String routeName) async {
+    try {
+      final response = await client
+          .from('TRANSPORT')
+          .select('Fees')
+          .eq('Route', routeName)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final fee = double.tryParse((response[0]['Fees'] as dynamic).toString()) ?? 0;
+        return fee;
+      }
+      return 0;
+    } catch (e) {
+      print('Error fetching bus fee: $e');
+      return 0;
+    }
+  }
+
+  // Fetch all unique routes from TRANSPORT table
+  static Future<List<String>> getUniqueRoutes() async {
+    try {
+      final response = await client.from('TRANSPORT').select('Route');
+      final routes = <String>{};
+      for (var item in response as List) {
+        final routeName = item['Route'] as String?;
+        if (routeName != null && routeName.isNotEmpty) {
+          routes.add(routeName);
+        }
+      }
+      return routes.toList()..sort();
+    } catch (e) {
+      print('Error fetching routes: $e');
+      return [];
+    }
+  }
+
+  // Calculate due amount for a student's bus fee based on TERM YEAR
+  // Logic: fetch student's existing BUS FEE for the given TERM YEAR
+  // Return (bus fee - already paid)
+  static Future<Map<String, dynamic>> calculateBusFeesDue(
+      String studentName,
+      String termYear,
+      double totalBusFee) async {
+    try {
+      final allFees = await getFeesByStudent(studentName);
+      double paidAmount = 0;
+      for (final fee in allFees) {
+        final feeTypeDb = fee['FEE TYPE'] as String? ?? '';
+        final feeTermYear = fee['TERM YEAR'] as String? ?? '';
+        
+        // Check if fee type contains 'Bus' and year matches
+        if (feeTypeDb.contains('Bus') && feeTermYear == termYear) {
+          final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+          paidAmount += amt;
+        }
+      }
+      final dueAmount = (totalBusFee - paidAmount).clamp(0, double.infinity);
+      return {'paid': paidAmount, 'due': dueAmount, 'total': totalBusFee};
+    } catch (e) {
+      print('Error calculating bus fee due: $e');
+      return {'paid': 0, 'due': totalBusFee, 'total': totalBusFee};
+    }
+  }
+
+  // Get Bus Fee due for a student based on FEE TYPE = 'Bus Fee' and current TERM YEAR
+  // Returns: {paid: <amount_paid>, due: <amount_due>, total: <total_fee>}
+  static Future<Map<String, dynamic>> getBusFeeDueForCurrentYear(String studentName) async {
+    try {
+      final currentYear = DateTime.now().year.toString();
+      final allFees = await getFeesByStudent(studentName);
+      
+      double paidAmount = 0;
+      double totalBusFeeAmount = 0;
+      
+      for (final fee in allFees) {
+        final feeType = (fee['FEE TYPE'] as String? ?? '').trim();
+        final feeTermYear = (fee['TERM YEAR'] as String? ?? '').trim();
+        
+        // Check if FEE TYPE is exactly 'Bus Fee' and TERM YEAR matches current year
+        if (feeType == 'Bus Fee' && feeTermYear == currentYear) {
+          final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+          paidAmount += amt;
+          // Assuming first entry has the total, or we accumulate if it's partial payments
+          // In this case, each record is a payment record
+        }
+      }
+      
+      // If no records found, total bus fee is 0 (student hasn't been assigned a route)
+      // Otherwise, we need to look up the route to get the actual fee
+      // For now, we'll return paid and 0 total if no records exist
+      final dueAmount = (totalBusFeeAmount - paidAmount).clamp(0, double.infinity);
+      
+      return {
+        'paid': paidAmount,
+        'due': dueAmount,
+        'total': totalBusFeeAmount,
+        'year': currentYear,
+        'hasRecords': paidAmount > 0
+      };
+    } catch (e) {
+      print('Error getting bus fee due for current year: $e');
+      return {'paid': 0, 'due': 0, 'total': 0, 'year': DateTime.now().year.toString(), 'hasRecords': false};
+    }
+  }
+
+  // Update student concession
+  static Future<bool> updateStudentConcession(
+    String studentName,
+    double schoolFeeConcession,
+    double tuitionFeeConcession,
+  ) async {
+    try {
+      await client.from('STUDENTS').update({
+        'School Fee Concession': schoolFeeConcession,
+        'Tuition Fee Concession': tuitionFeeConcession,
+      }).eq('Name', studentName);
+      return true;
+    } catch (e) {
+      print('Error updating student concession: $e');
+      return false;
     }
   }
 }
+
