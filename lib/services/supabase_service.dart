@@ -587,7 +587,7 @@ class SupabaseService {
     try {
       final response = await client
           .from('BOOKS')
-          .select('BOOKS FEE')
+          .select('"BOOKS FEE"')
           .eq('CLASS', className)
           .limit(1);
       
@@ -633,7 +633,7 @@ class SupabaseService {
     try {
       final response = await client
           .from('UNIFORM')
-          .select('UNIFORM FEE')
+          .select('"UNIFORM FEE"')
           .eq('CLASS', className)
           .eq('GENDER', gender)
           .limit(1);

@@ -32,6 +32,10 @@ class _FeesTabState extends State<FeesTab> {
   // Bus Fee checkbox state
   bool _payBusFee = false;
 
+  // Books and Uniform Fee year selection
+  String? _selectedBooksYear;
+  String? _selectedUniformYear;
+
   // Dues
   String? _selectedDueType; // 'School'
 
@@ -140,6 +144,22 @@ class _FeesTabState extends State<FeesTab> {
         .where((f) => (f['FEE TYPE'] as String? ?? '').contains('Bus Fee'))
         .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
     return busFeesPaid > 0;
+  }
+
+  Future<bool> _checkBooksFeeAlreadyPaid(String studentName) async {
+    final fees = await SupabaseService.getFeesByStudent(studentName);
+    final booksFeePaid = fees
+        .where((f) => (f['FEE TYPE'] as String? ?? '').contains('Books Fee'))
+        .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+    return booksFeePaid > 0;
+  }
+
+  Future<bool> _checkUniformFeeAlreadyPaid(String studentName) async {
+    final fees = await SupabaseService.getFeesByStudent(studentName);
+    final uniformFeePaid = fees
+        .where((f) => (f['FEE TYPE'] as String? ?? '').contains('Uniform Fee'))
+        .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+    return uniformFeePaid > 0;
   }
 
   @override
@@ -269,65 +289,60 @@ class _FeesTabState extends State<FeesTab> {
           const SizedBox(height: 16),
           Text('Fee Structure for ${_selectedStudent!.className}', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          FutureBuilder<Map<String, dynamic>?>(
-            future: SupabaseService.getFeeStructureByClass(_selectedStudent!.className),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final structure = snap.data;
-              if (structure == null) {
-                return const Text('No fee structure found', style: TextStyle(color: Colors.red));
-              }
-              final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
-              
-              // Determine concession based on selected payment type
-              final concession = _selectedPaymentType == 'School Fee' 
-                  ? _selectedStudent!.schoolFeeConcession
-                  : 0.0;
-              
-              // Calculate term fees with concession
-              final termFees = SupabaseService.calculateTermFees(totalFee, concession);
-              
-              return Column(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(color: Colors.blue[100]),
-                    child: Row(
-                      children: [
-                        Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Term', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)))),
-                        Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Amount', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)))),
-                        Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Due', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)))),
-                      ],
-                    ),
-                  ),
-                  for (int i = 1; i <= 3; i++)
+          if (_selectedPaymentType == 'School Fee')
+            FutureBuilder<Map<String, dynamic>?>(
+              future: SupabaseService.getFeeStructureByClass(_selectedStudent!.className),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final structure = snap.data;
+                if (structure == null) {
+                  return const Text('No fee structure found', style: TextStyle(color: Colors.red));
+                }
+                final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
+                final concession = _selectedStudent!.schoolFeeConcession;
+                final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                
+                return Column(
+                  children: [
                     Container(
-                      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[300]!))),
+                      decoration: BoxDecoration(color: Colors.blue[100]),
                       child: Row(
                         children: [
-                          Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Term $i'))),
-                          Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('₹${termFees[i]!.toStringAsFixed(2)}'))),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: FutureBuilder<Map<String, dynamic>>(
-                                future: SupabaseService.calculateStudentDue(
-                                  _selectedStudent!.name, 
-                                  _selectedPaymentType ?? '',
-                                  i,
-                                  termFees[i]!
-                                ),
-                                builder: (context, dueSn) {
-                                  final due = dueSn.data?['due'] as double? ?? 0;
-                                  return Text('₹${due.toStringAsFixed(2)}', style: TextStyle(color: due > 0 ? Colors.red : Colors.green));
-                                },
-                              ),
-                            ),
-                          ),
+                          Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Term', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)))),
+                          Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Amount', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)))),
+                          Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Due', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)))),
                         ],
                       ),
                     ),
+                    for (int i = 1; i <= 3; i++)
+                      Container(
+                        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[300]!))),
+                        child: Row(
+                          children: [
+                            Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('Term $i'))),
+                            Expanded(child: Padding(padding: const EdgeInsets.all(8), child: Text('₹${termFees[i]!.toStringAsFixed(2)}'))),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: FutureBuilder<Map<String, dynamic>>(
+                                  future: SupabaseService.calculateStudentDue(
+                                    _selectedStudent!.name, 
+                                    'School Fee',
+                                    i,
+                                    termFees[i]!
+                                  ),
+                                  builder: (context, dueSn) {
+                                    final due = dueSn.data?['due'] as double? ?? 0;
+                                    return Text('₹${due.toStringAsFixed(2)}', style: TextStyle(color: due > 0 ? Colors.red : Colors.green));
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.amber[50],
@@ -356,8 +371,263 @@ class _FeesTabState extends State<FeesTab> {
                   ),
                 ],
               );
-            },
-          ),
+              }
+            ),
+          // Books Fee Section
+          if (_selectedPaymentType == 'Books Fee')
+            FutureBuilder<double>(
+              future: SupabaseService.getBooksFeeByClass(_selectedStudent!.className),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final booksFee = snap.data ?? 0;
+                
+                return FutureBuilder<bool>(
+                  future: _checkBooksFeeAlreadyPaid(_selectedStudent!.name),
+                  builder: (context, paidSnap) {
+                    final booksFeeAlreadyPaid = paidSnap.data ?? false;
+                    
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.orange),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Books Fee', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          if (!booksFeeAlreadyPaid) ...[
+                            // Fee amount
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Amount:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                Text('₹${booksFee.toStringAsFixed(2)}', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.blue)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Year selection
+                            Text('Select Year:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedBooksYear,
+                              items: List.generate(5, (i) {
+                                final year = (DateTime.now().year - i).toString();
+                                return DropdownMenuItem(value: year, child: Text(year));
+                              }).toList(),
+                              onChanged: (v) => setState(() => _selectedBooksYear = v),
+                              decoration: InputDecoration(
+                                hintText: 'Choose year',
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Pay button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: _selectedBooksYear != null ? () async {
+                                  if (_selectedStudent != null) {
+                                    setState(() => _isSubmitting = true);
+                                    try {
+                                      final feeData = {
+                                        'STUDENT NAME': _selectedStudent!.name,
+                                        'FEE TYPE': 'Books Fee',
+                                        'AMOUNT': booksFee,
+                                        'TERM YEAR': _selectedBooksYear,
+                                        'TERM MONTH': 'Full Year',
+                                        'TERM NO': 'Books',
+                                      };
+                                      await SupabaseService.insertFee(feeData);
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Books Fee paid successfully')),
+                                        );
+                                        setState(() {
+                                          _selectedPaymentType = null;
+                                          _selectedBooksYear = null;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Error: $e')),
+                                        );
+                                      }
+                                    } finally {
+                                      setState(() => _isSubmitting = false);
+                                    }
+                                  }
+                                } : null,
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                                      )
+                                    : const Text('Pay Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ] else
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                border: Border.all(color: Colors.green),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.check_circle, color: Colors.green),
+                                  const SizedBox(width: 8),
+                                  Text('Fee Already Paid', style: GoogleFonts.poppins(color: Colors.green, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          // Uniform Fee Section
+          if (_selectedPaymentType == 'Uniform Fee')
+            FutureBuilder<double>(
+              future: SupabaseService.getUniformFeeByClassAndGender(
+                _selectedStudent!.className, 
+                _selectedStudent!.gender ?? 'Male'
+              ),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final uniformFee = snap.data ?? 0;
+                
+                return FutureBuilder<bool>(
+                  future: _checkUniformFeeAlreadyPaid(_selectedStudent!.name),
+                  builder: (context, paidSnap) {
+                    final uniformFeeAlreadyPaid = paidSnap.data ?? false;
+                    
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.purple),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Uniform Fee', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          if (!uniformFeeAlreadyPaid) ...[
+                            // Fee amount
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Amount:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                Text('₹${uniformFee.toStringAsFixed(2)}', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.purple)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Year selection
+                            Text('Select Year:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedUniformYear,
+                              items: List.generate(5, (i) {
+                                final year = (DateTime.now().year - i).toString();
+                                return DropdownMenuItem(value: year, child: Text(year));
+                              }).toList(),
+                              onChanged: (v) => setState(() => _selectedUniformYear = v),
+                              decoration: InputDecoration(
+                                hintText: 'Choose year',
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Pay button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.purple,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: _selectedUniformYear != null ? () async {
+                                  if (_selectedStudent != null) {
+                                    setState(() => _isSubmitting = true);
+                                    try {
+                                      final feeData = {
+                                        'STUDENT NAME': _selectedStudent!.name,
+                                        'FEE TYPE': 'Uniform Fee',
+                                        'AMOUNT': uniformFee,
+                                        'TERM YEAR': _selectedUniformYear,
+                                        'TERM MONTH': 'Full Year',
+                                        'TERM NO': 'Uniform',
+                                      };
+                                      await SupabaseService.insertFee(feeData);
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Uniform Fee paid successfully')),
+                                        );
+                                        setState(() {
+                                          _selectedPaymentType = null;
+                                          _selectedUniformYear = null;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Error: $e')),
+                                        );
+                                      }
+                                    } finally {
+                                      setState(() => _isSubmitting = false);
+                                    }
+                                  }
+                                } : null,
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                                      )
+                                    : const Text('Pay Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ] else
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                border: Border.all(color: Colors.green),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.check_circle, color: Colors.green),
+                                  const SizedBox(width: 8),
+                                  Text('Fee Already Paid', style: GoogleFonts.poppins(color: Colors.green, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           const SizedBox(height: 16),
           // Bus Fee Checkbox (only for School Fee)
           if (_selectedPaymentType == 'School Fee' && (_selectedStudent?.busRoute?.isNotEmpty ?? false))

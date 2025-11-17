@@ -63,40 +63,74 @@ class _ReportTabState extends State<ReportTab> {
         }
         final busFeedue = busFee > 0 ? (busFee - busFeeCheckPaid).clamp(0, double.infinity) : 0;
 
+        // Get Books Fee and Uniform Fee
+        final booksFeeFull = await SupabaseService.getBooksFeeByClass(student.className);
+        double booksFeePaid = 0;
+        for (final fee in fees) {
+          if ((fee['FEE TYPE'] as String? ?? '').contains('Books Fee')) {
+            booksFeePaid += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+          }
+        }
+        final booksFeedue = booksFeeFull > 0 ? (booksFeeFull - booksFeePaid).clamp(0, double.infinity) : 0;
+
+        final uniformFeeFull = await SupabaseService.getUniformFeeByClassAndGender(student.className, student.gender ?? 'Male');
+        double uniformFeePaid = 0;
+        for (final fee in fees) {
+          if ((fee['FEE TYPE'] as String? ?? '').contains('Uniform Fee')) {
+            uniformFeePaid += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+          }
+        }
+        final uniformFeedue = uniformFeeFull > 0 ? (uniformFeeFull - uniformFeePaid).clamp(0, double.infinity) : 0;
+
+        // Build term data for each term (single row per student with term1, term2, term3 columns)
+        final Map<String, dynamic> termData = {
+          'Student Name': student.name,
+          'Class': student.className,
+          'Gender': student.gender ?? 'N/A',
+        };
+
+        // Process each term
         for (int term = 1; term <= 3; term++) {
           final termKey = 'Term $term';
-          double paidAmount = 0;
+          double termPaidAmount = 0;
 
           for (final fee in fees) {
             final feeType = (fee['FEE TYPE'] as String? ?? '').trim().toLowerCase();
             final termNo = (fee['TERM NO'] as String? ?? '').trim();
 
             if (feeType == 'school fee' && termNo.contains(termKey)) {
-              paidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+              termPaidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
             }
           }
 
           final termFee = termFees[term] ?? 0;
-          final dueAmount = (termFee - paidAmount).clamp(0, double.infinity);
-
-          // Bus fee is shown only in Term 1, NA for other terms
-          final displayBusFee = term == 1 ? busFee : 0.0;
-          final displayBusFeePaid = term == 1 ? busFeeCheckPaid : 0.0;
-          final displayBusFeedue = term == 1 ? busFeedue : 0.0;
-
-          reportData.add({
-            'Student Name': student.name,
-            'Class': student.className,
-            'Term': termKey,
-            'Term Fee': termFee,
-            'Paid Amount': paidAmount,
-            'Due Amount': dueAmount,
-            'Bus Fee': displayBusFee,
-            'Bus Fee Paid': displayBusFeePaid,
-            'Bus Fee Due': displayBusFeedue,
-            'Status': dueAmount <= 0 ? 'PAID' : 'PENDING',
-          });
+          final termDue = (termFee - termPaidAmount).clamp(0, double.infinity);
+          
+          termData['Term$term Fee'] = termFee;
+          termData['Term$term Paid'] = termPaidAmount;
+          termData['Term$term Due'] = termDue;
         }
+
+        // Add Bus Fee details
+        termData['Bus Fee'] = busFee;
+        termData['Bus Fee Paid'] = busFeeCheckPaid;
+        termData['Bus Fee Due'] = busFeedue;
+
+        // Add Books Fee details
+        termData['Books Fee'] = booksFeeFull;
+        termData['Books Fee Paid'] = booksFeePaid;
+        termData['Books Fee Due'] = booksFeedue;
+
+        // Add Uniform Fee details
+        termData['Uniform Fee'] = uniformFeeFull;
+        termData['Uniform Fee Paid'] = uniformFeePaid;
+        termData['Uniform Fee Due'] = uniformFeedue;
+
+        // Calculate overall status
+        final totalDue = termData['Term1 Due'] + termData['Term2 Due'] + termData['Term3 Due'] + busFeedue + booksFeedue + uniformFeedue;
+        termData['Overall Status'] = totalDue <= 0 ? 'PAID' : 'PENDING';
+
+        reportData.add(termData);
       }
 
       setState(() {
@@ -123,26 +157,56 @@ class _ReportTabState extends State<ReportTab> {
       final excel = excel_pkg.Excel.createExcel();
       final sheet = excel['Sheet1'];
 
-      // Add header with proper columns
-      final headers = ['Student Name', 'Class', 'Term', 'School Fee', 'School Fee Paid', 'School Fee Due', 'Bus Fee', 'Bus Fee Paid', 'Bus Fee Due', 'Status'];
+      // Add header with proper columns for single-row-per-student format
+      final headers = [
+        'Student Name', 'Class', 'Gender',
+        'Term1 Fee', 'Term1 Paid', 'Term1 Due',
+        'Term2 Fee', 'Term2 Paid', 'Term2 Due',
+        'Term3 Fee', 'Term3 Paid', 'Term3 Due',
+        'Bus Fee', 'Bus Fee Paid', 'Bus Fee Due',
+        'Books Fee', 'Books Fee Paid', 'Books Fee Due',
+        'Uniform Fee', 'Uniform Fee Paid', 'Uniform Fee Due',
+        'Overall Status'
+      ];
 
       for (int i = 0; i < headers.length; i++) {
         sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).value = headers[i];
       }
 
-      // Add data rows
+      // Add data rows (one row per student)
       for (int rowIndex = 0; rowIndex < _reportData.length; rowIndex++) {
         final data = _reportData[rowIndex];
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex + 1)).value = data['Student Name'];
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex + 1)).value = data['Class'];
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex + 1)).value = data['Term'];
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term Fee'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex + 1)).value = _formatAmount(data['Paid Amount'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex + 1)).value = _formatAmount(data['Due Amount'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex + 1)).value = (data['Bus Fee'] as double? ?? 0) == 0 ? 'NA' : _formatAmount(data['Bus Fee'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex + 1)).value = (data['Bus Fee Paid'] as double? ?? 0) == 0 ? 'NA' : _formatAmount(data['Bus Fee Paid'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex + 1)).value = (data['Bus Fee Due'] as double? ?? 0) == 0 ? 'NA' : _formatAmount(data['Bus Fee Due'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: rowIndex + 1)).value = data['Status'];
+        int colIndex = 0;
+        
+        // Student info
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = data['Student Name'];
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = data['Class'];
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = data['Gender'];
+        
+        // Term 1-3 columns
+        for (int term = 1; term <= 3; term++) {
+          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term$term Fee'] as double?);
+          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term$term Paid'] as double?);
+          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term$term Due'] as double?);
+        }
+        
+        // Bus Fee
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Bus Fee'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Bus Fee Paid'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Bus Fee Due'] as double?);
+        
+        // Books Fee
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Books Fee'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Books Fee Paid'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Books Fee Due'] as double?);
+        
+        // Uniform Fee
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Uniform Fee'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Uniform Fee Paid'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Uniform Fee Due'] as double?);
+        
+        // Overall Status
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = data['Overall Status'];
       }
 
       // Get bytes and download
@@ -411,7 +475,7 @@ class _ReportTabState extends State<ReportTab> {
           child: DataTable(
             headingRowColor: MaterialStateProperty.all(Colors.blue[700]),
             headingRowHeight: 56,
-            dataRowHeight: 56,
+            dataRowHeight: 80,
             columns: [
               DataColumn(
                 label: Text(
@@ -433,65 +497,146 @@ class _ReportTabState extends State<ReportTab> {
               ),
               DataColumn(
                 label: Text(
-                  'Term',
+                  'Gender',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
               ),
+              // Term 1 columns
               DataColumn(
                 label: Text(
-                  'School Fee',
+                  'T1 Fee',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               DataColumn(
                 label: Text(
-                  'School Paid',
+                  'T1 Paid',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               DataColumn(
                 label: Text(
-                  'School Due',
+                  'T1 Due',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // Term 2 columns
+              DataColumn(
+                label: Text(
+                  'T2 Fee',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               DataColumn(
                 label: Text(
-                  'Bus Fee',
+                  'T2 Paid',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               DataColumn(
                 label: Text(
-                  'Bus Paid',
+                  'T2 Due',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // Term 3 columns
+              DataColumn(
+                label: Text(
+                  'T3 Fee',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               DataColumn(
                 label: Text(
-                  'Bus Due',
+                  'T3 Paid',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'T3 Due',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Bus\n(F/P/D)',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 11,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Books\n(F/P/D)',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 11,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Uniform\n(F/P/D)',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 11,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               DataColumn(
@@ -508,7 +653,7 @@ class _ReportTabState extends State<ReportTab> {
               for (final data in _reportData)
                 DataRow(
                   color: MaterialStateProperty.all(
-                    data['Status'] == 'PAID'
+                    data['Overall Status'] == 'PAID'
                         ? Colors.green[50]
                         : Colors.red[50],
                   ),
@@ -527,75 +672,105 @@ class _ReportTabState extends State<ReportTab> {
                     ),
                     DataCell(
                       Text(
-                        data['Term'] ?? '',
+                        data['Gender'] ?? '',
                         style: GoogleFonts.poppins(),
                       ),
                     ),
+                    // Term 1 data
                     DataCell(
                       Text(
-                        '₹${(data['Term Fee'] ?? 0).toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue[700],
-                        ),
+                        '₹${(data['Term1 Fee'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     DataCell(
                       Text(
-                        '₹${(data['Paid Amount'] ?? 0).toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green[700],
-                        ),
+                        '₹${(data['Term1 Paid'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.green[700]),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     DataCell(
                       Text(
-                        '₹${(data['Due Amount'] ?? 0).toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: (data['Due Amount'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
-                        ),
+                        '₹${(data['Term1 Due'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10, color: (data['Term1 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    // Term 2 data
+                    DataCell(
+                      Text(
+                        '₹${(data['Term2 Fee'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     DataCell(
                       Text(
-                        (data['Bus Fee'] as double? ?? 0) == 0 ? 'NA' : '₹${(data['Bus Fee'] ?? 0).toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: (data['Bus Fee'] as double? ?? 0) == 0 ? Colors.grey[500] : Colors.orange[700],
-                        ),
+                        '₹${(data['Term2 Paid'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.green[700]),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     DataCell(
                       Text(
-                        (data['Bus Fee Paid'] as double? ?? 0) == 0 ? 'NA' : '₹${(data['Bus Fee Paid'] ?? 0).toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: (data['Bus Fee Paid'] as double? ?? 0) == 0 ? Colors.grey[500] : Colors.green[700],
-                        ),
+                        '₹${(data['Term2 Due'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10, color: (data['Term2 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    // Term 3 data
+                    DataCell(
+                      Text(
+                        '₹${(data['Term3 Fee'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     DataCell(
                       Text(
-                        (data['Bus Fee Due'] as double? ?? 0) == 0 ? 'NA' : '₹${(data['Bus Fee Due'] ?? 0).toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: (data['Bus Fee Due'] as double? ?? 0) == 0 ? Colors.grey[500] : ((data['Bus Fee Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
-                        ),
+                        '₹${(data['Term3 Paid'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.green[700]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        '₹${(data['Term3 Due'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10, color: (data['Term3 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        '₹${(data['Bus Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Due'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        '₹${(data['Books Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Due'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        '₹${(data['Uniform Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Due'] ?? 0).toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(fontSize: 10),
                       ),
                     ),
                     DataCell(
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: data['Status'] == 'PAID'
+                          color: data['Overall Status'] == 'PAID'
                               ? Colors.green
                               : Colors.orange,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          data['Status'] ?? '',
+                          data['Overall Status'] ?? '',
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
