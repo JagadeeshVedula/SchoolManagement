@@ -16,7 +16,7 @@ class ReportTab extends StatefulWidget {
 }
 
 class _ReportTabState extends State<ReportTab> {
-  String? _selectedFeeType; // 'Bus Fee', 'School Fee', 'Tuition Fee'
+  String? _selectedFeeType = 'School Fee'; // Only 'School Fee' now
   String? _selectedClass;
   List<String> _classes = [];
   List<Map<String, dynamic>> _reportData = [];
@@ -44,73 +44,58 @@ class _ReportTabState extends State<ReportTab> {
 
       for (final student in students) {
         final fees = await SupabaseService.getFeesByStudent(student.name);
+        final feeStructure = await SupabaseService.getFeeStructureByClass(student.className);
+        if (feeStructure == null) continue;
 
-        if (_selectedFeeType == 'Bus Fee') {
-          // Bus Fee - aggregate by year
-          final currentYear = DateTime.now().year.toString();
+        final totalFee = double.tryParse((feeStructure['FEE'] as dynamic).toString()) ?? 0;
+        final concession = student.schoolFeeConcession;
+        
+        // Calculate term fees
+        final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+
+        // Calculate bus fee info
+        final busFee = await SupabaseService.getStudentBusFee(student.name);
+        double busFeeCheckPaid = 0;
+        for (final fee in fees) {
+          if ((fee['FEE TYPE'] as String? ?? '') == 'Bus Fee') {
+            busFeeCheckPaid += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+          }
+        }
+        final busFeedue = busFee > 0 ? (busFee - busFeeCheckPaid).clamp(0, double.infinity) : 0;
+
+        for (int term = 1; term <= 3; term++) {
+          final termKey = 'Term $term';
           double paidAmount = 0;
 
           for (final fee in fees) {
-            final feeType = (fee['FEE TYPE'] as String? ?? '').trim();
-            final feeYear = (fee['TERM YEAR'] as String? ?? '').trim();
+            final feeType = (fee['FEE TYPE'] as String? ?? '').trim().toLowerCase();
+            final termNo = (fee['TERM NO'] as String? ?? '').trim();
 
-            if (feeType == 'Bus Fee' && feeYear == currentYear) {
+            if (feeType == 'school fee' && termNo.contains(termKey)) {
               paidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
             }
           }
 
+          final termFee = termFees[term] ?? 0;
+          final dueAmount = (termFee - paidAmount).clamp(0, double.infinity);
+
+          // Bus fee is shown only in Term 1, NA for other terms
+          final displayBusFee = term == 1 ? busFee : 0.0;
+          final displayBusFeePaid = term == 1 ? busFeeCheckPaid : 0.0;
+          final displayBusFeedue = term == 1 ? busFeedue : 0.0;
+
           reportData.add({
             'Student Name': student.name,
             'Class': student.className,
-            'Fee Type': 'Bus Fee',
-            'Year': currentYear,
+            'Term': termKey,
+            'Term Fee': termFee,
             'Paid Amount': paidAmount,
-            'Due Amount': 0.0, // Bus fee due needs route lookup
-            'Status': paidAmount > 0 ? 'PAID' : 'UNPAID',
+            'Due Amount': dueAmount,
+            'Bus Fee': displayBusFee,
+            'Bus Fee Paid': displayBusFeePaid,
+            'Bus Fee Due': displayBusFeedue,
+            'Status': dueAmount <= 0 ? 'PAID' : 'PENDING',
           });
-        } else {
-          // School Fee / Tuition Fee - show by terms with fee structure
-          final feeStructure = await SupabaseService.getFeeStructureByClass(student.className);
-          if (feeStructure == null) continue;
-
-          final totalFee = double.tryParse((feeStructure['FEE'] as dynamic).toString()) ?? 0;
-          
-          // Get concession for this fee type
-          final concession = _selectedFeeType == 'School Fee' 
-              ? student.schoolFeeConcession 
-              : student.tuitionFeeConcession;
-          
-          // Calculate term fees
-          final termFees = SupabaseService.calculateTermFees(totalFee, concession);
-
-          for (int term = 1; term <= 3; term++) {
-            final termKey = 'Term $term';
-            double paidAmount = 0;
-
-            for (final fee in fees) {
-              final feeType = (fee['FEE TYPE'] as String? ?? '').trim().toLowerCase();
-              final termNo = (fee['TERM NO'] as String? ?? '').trim();
-              final selectedFeeTypeLower = (_selectedFeeType ?? '').toLowerCase();
-
-              if (feeType == selectedFeeTypeLower && termNo.contains(termKey)) {
-                paidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
-              }
-            }
-
-            final termFee = termFees[term] ?? 0;
-            final dueAmount = (termFee - paidAmount).clamp(0, double.infinity);
-
-            reportData.add({
-              'Student Name': student.name,
-              'Class': student.className,
-              'Fee Type': _selectedFeeType,
-              'Term': termKey,
-              'Term Fee': termFee,
-              'Paid Amount': paidAmount,
-              'Due Amount': dueAmount,
-              'Status': dueAmount <= 0 ? 'PAID' : 'PENDING',
-            });
-          }
         }
       }
 
@@ -139,9 +124,7 @@ class _ReportTabState extends State<ReportTab> {
       final sheet = excel['Sheet1'];
 
       // Add header with proper columns
-      final headers = _selectedFeeType == 'Bus Fee'
-          ? ['Student Name', 'Class', 'Fee Type', 'Year', 'Paid Amount', 'Due Amount', 'Status']
-          : ['Student Name', 'Class', 'Fee Type', 'Term', 'Term Fee', 'Paid Amount', 'Due Amount', 'Status'];
+      final headers = ['Student Name', 'Class', 'Term', 'School Fee', 'School Fee Paid', 'School Fee Due', 'Bus Fee', 'Bus Fee Paid', 'Bus Fee Due', 'Status'];
 
       for (int i = 0; i < headers.length; i++) {
         sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).value = headers[i];
@@ -152,20 +135,14 @@ class _ReportTabState extends State<ReportTab> {
         final data = _reportData[rowIndex];
         sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex + 1)).value = data['Student Name'];
         sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex + 1)).value = data['Class'];
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex + 1)).value = data['Fee Type'];
-        
-        if (_selectedFeeType == 'Bus Fee') {
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex + 1)).value = data['Year'];
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex + 1)).value = _formatAmount(data['Paid Amount'] as double?);
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex + 1)).value = _formatAmount(data['Due Amount'] as double?);
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex + 1)).value = data['Status'];
-        } else {
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex + 1)).value = data['Term'];
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term Fee'] as double?);
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex + 1)).value = _formatAmount(data['Paid Amount'] as double?);
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex + 1)).value = _formatAmount(data['Due Amount'] as double?);
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex + 1)).value = data['Status'];
-        }
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex + 1)).value = data['Term'];
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term Fee'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex + 1)).value = _formatAmount(data['Paid Amount'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex + 1)).value = _formatAmount(data['Due Amount'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex + 1)).value = (data['Bus Fee'] as double? ?? 0) == 0 ? 'NA' : _formatAmount(data['Bus Fee'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex + 1)).value = (data['Bus Fee Paid'] as double? ?? 0) == 0 ? 'NA' : _formatAmount(data['Bus Fee Paid'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex + 1)).value = (data['Bus Fee Due'] as double? ?? 0) == 0 ? 'NA' : _formatAmount(data['Bus Fee Due'] as double?);
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: rowIndex + 1)).value = data['Status'];
       }
 
       // Get bytes and download
@@ -177,7 +154,7 @@ class _ReportTabState extends State<ReportTab> {
         return;
       }
 
-      final fileName = '${_selectedFeeType}_Report_${DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now())}.xlsx';
+      final fileName = 'School_Fee_Report_${DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now())}.xlsx';
       
       // Platform-specific download
       if (kIsWeb) {
@@ -288,9 +265,7 @@ class _ReportTabState extends State<ReportTab> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildFeeTypeChip('Bus Fee', Colors.orange),
               _buildFeeTypeChip('School Fee', Colors.green),
-              _buildFeeTypeChip('Tuition Fee', Colors.purple),
             ],
           ),
           const SizedBox(height: 24),
@@ -456,39 +431,9 @@ class _ReportTabState extends State<ReportTab> {
                   ),
                 ),
               ),
-              if (_selectedFeeType == 'Bus Fee')
-                DataColumn(
-                  label: Text(
-                    'Year',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                )
-              else
-                DataColumn(
-                  label: Text(
-                    'Term',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              if (_selectedFeeType != 'Bus Fee')
-                DataColumn(
-                  label: Text(
-                    'Term Fee',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
               DataColumn(
                 label: Text(
-                  'Paid Amount',
+                  'Term',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -497,7 +442,52 @@ class _ReportTabState extends State<ReportTab> {
               ),
               DataColumn(
                 label: Text(
-                  'Due Amount',
+                  'School Fee',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'School Paid',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'School Due',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Bus Fee',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Bus Paid',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Bus Due',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -537,20 +527,19 @@ class _ReportTabState extends State<ReportTab> {
                     ),
                     DataCell(
                       Text(
-                        _selectedFeeType == 'Bus Fee' ? (data['Year'] ?? '') : (data['Term'] ?? ''),
+                        data['Term'] ?? '',
                         style: GoogleFonts.poppins(),
                       ),
                     ),
-                    if (_selectedFeeType != 'Bus Fee')
-                      DataCell(
-                        Text(
-                          '₹${(data['Term Fee'] ?? 0).toStringAsFixed(2)}',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[700],
-                          ),
+                    DataCell(
+                      Text(
+                        '₹${(data['Term Fee'] ?? 0).toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[700],
                         ),
                       ),
+                    ),
                     DataCell(
                       Text(
                         '₹${(data['Paid Amount'] ?? 0).toStringAsFixed(2)}',
@@ -566,6 +555,33 @@ class _ReportTabState extends State<ReportTab> {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           color: (data['Due Amount'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        (data['Bus Fee'] as double? ?? 0) == 0 ? 'NA' : '₹${(data['Bus Fee'] ?? 0).toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: (data['Bus Fee'] as double? ?? 0) == 0 ? Colors.grey[500] : Colors.orange[700],
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        (data['Bus Fee Paid'] as double? ?? 0) == 0 ? 'NA' : '₹${(data['Bus Fee Paid'] ?? 0).toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: (data['Bus Fee Paid'] as double? ?? 0) == 0 ? Colors.grey[500] : Colors.green[700],
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        (data['Bus Fee Due'] as double? ?? 0) == 0 ? 'NA' : '₹${(data['Bus Fee Due'] ?? 0).toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: (data['Bus Fee Due'] as double? ?? 0) == 0 ? Colors.grey[500] : ((data['Bus Fee Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
                         ),
                       ),
                     ),

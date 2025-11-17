@@ -14,7 +14,7 @@ class _FeesTabState extends State<FeesTab> {
   int _currentPage = 0; // 0 menu, 1 payments, 2 dues
 
   // Payments
-  String? _selectedPaymentType; // 'School Fee','Tuition Fee','Bus Fee'
+  String? _selectedPaymentType; // 'School Fee', 'Books Fee', 'Uniform Fee'
   String? _selectedClass;
   List<String> _classes = [];
   List<Student> _students = [];
@@ -25,13 +25,15 @@ class _FeesTabState extends State<FeesTab> {
   final _termYear = TextEditingController();
   final _feeType = TextEditingController();
   final _amount = TextEditingController();
-  final _busRoute = TextEditingController(); // For Bus Fee route selection
   final _concession = TextEditingController(); // Concession amount input
   // Term No selections (checkboxes)
   final Map<int, bool> _termSelections = {1: false, 2: false, 3: false};
 
+  // Bus Fee checkbox state
+  bool _payBusFee = false;
+
   // Dues
-  String? _selectedDueType; // 'School', 'Bus'
+  String? _selectedDueType; // 'School'
 
   bool _isSubmitting = false;
 
@@ -95,8 +97,6 @@ class _FeesTabState extends State<FeesTab> {
     
     if (_selectedPaymentType == 'School Fee') {
       newSchoolFeeConcession = concessionAmount;
-    } else if (_selectedPaymentType == 'Tuition Fee') {
-      newTuitionFeeConcession = concessionAmount;
     }
     
     // Call supabase service to update
@@ -134,12 +134,19 @@ class _FeesTabState extends State<FeesTab> {
     }
   }
 
+  Future<bool> _checkBusFeeAlreadyPaid(String studentName) async {
+    final fees = await SupabaseService.getFeesByStudent(studentName);
+    final busFeesPaid = fees
+        .where((f) => (f['FEE TYPE'] as String? ?? '').contains('Bus Fee'))
+        .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+    return busFeesPaid > 0;
+  }
+
   @override
   void dispose() {
     _termYear.dispose();
     _feeType.dispose();
     _amount.dispose();
-    _busRoute.dispose();
     _concession.dispose();
     super.dispose();
   }
@@ -188,8 +195,8 @@ class _FeesTabState extends State<FeesTab> {
         const SizedBox(height: 12),
         Wrap(spacing: 8, runSpacing: 8, children: [
           ChoiceChip(label: const Text('School Fee'), selected: _selectedPaymentType == 'School Fee', onSelected: (_) => setState(() => _selectedPaymentType = 'School Fee')),
-          ChoiceChip(label: const Text('Tuition Fee'), selected: _selectedPaymentType == 'Tuition Fee', onSelected: (_) => setState(() => _selectedPaymentType = 'Tuition Fee')),
-          ChoiceChip(label: const Text('Bus Fee'), selected: _selectedPaymentType == 'Bus Fee', onSelected: (_) => setState(() => _selectedPaymentType = 'Bus Fee')),
+          ChoiceChip(label: const Text('Books Fee'), selected: _selectedPaymentType == 'Books Fee', onSelected: (_) => setState(() => _selectedPaymentType = 'Books Fee')),
+          ChoiceChip(label: const Text('Uniform Fee'), selected: _selectedPaymentType == 'Uniform Fee', onSelected: (_) => setState(() => _selectedPaymentType = 'Uniform Fee')),
         ]),
         const SizedBox(height: 16),
         if (_selectedPaymentType != null) ...[
@@ -238,24 +245,20 @@ class _FeesTabState extends State<FeesTab> {
                   decoration: InputDecoration(
                     labelText: _selectedPaymentType == 'School Fee' 
                         ? 'School Fee Concession (Current: ₹${_selectedStudent!.schoolFeeConcession.toStringAsFixed(2)})'
-                        : _selectedPaymentType == 'Tuition Fee'
-                            ? 'Tuition Fee Concession (Current: ₹${_selectedStudent!.tuitionFeeConcession.toStringAsFixed(2)})'
-                            : 'Bus Fee (No Concession)',
+                        : 'No Concession for this Fee Type',
                     border: const OutlineInputBorder(),
-                    enabled: _selectedPaymentType != 'Bus Fee',
                   ),
                   keyboardType: TextInputType.number,
-                  enabled: _selectedPaymentType != 'Bus Fee',
+                  enabled: _selectedPaymentType == 'School Fee',
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   height: 40,
                   child: ElevatedButton(
-                    onPressed: _selectedPaymentType == 'Bus Fee' ? null : _saveConcession,
+                    onPressed: _saveConcession,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber,
-                      disabledBackgroundColor: Colors.grey[300],
                     ),
                     child: const Text('Save Concession', style: TextStyle(color: Colors.white)),
                   ),
@@ -281,74 +284,9 @@ class _FeesTabState extends State<FeesTab> {
               // Determine concession based on selected payment type
               final concession = _selectedPaymentType == 'School Fee' 
                   ? _selectedStudent!.schoolFeeConcession
-                  : (_selectedPaymentType == 'Tuition Fee'
-                      ? _selectedStudent!.tuitionFeeConcession
-                      : 0.0);
+                  : 0.0;
               
-              // For Bus Fee, show route selection and fetch fee from TRANSPORT table
-              if (_selectedPaymentType == 'Bus Fee') {
-                return FutureBuilder<List<String>>(
-                  future: SupabaseService.getUniqueRoutes(),
-                  builder: (context, routesSnap) {
-                    if (routesSnap.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    }
-                    final routes = routesSnap.data ?? [];
-                    
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Select Route:', style: TextStyle(fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: _busRoute.text.isEmpty ? null : _busRoute.text,
-                                items: routes.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                                onChanged: (route) {
-                                  if (route != null) {
-                                    setState(() => _busRoute.text = route);
-                                  }
-                                },
-                                decoration: const InputDecoration(
-                                  labelText: 'Choose Route',
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              if (_busRoute.text.isNotEmpty)
-                                FutureBuilder<double>(
-                                  future: SupabaseService.getBusFeeByRoute(_busRoute.text),
-                                  builder: (context, feeSnap) {
-                                    final fee = feeSnap.data ?? 0;
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 12),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text('Bus Fee for ${_busRoute.text}:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                                          Text('₹${fee.toStringAsFixed(2)}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.green)),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-              
-              // Calculate term fees with concession for School and Tuition Fee
+              // Calculate term fees with concession
               final termFees = SupabaseService.calculateTermFees(totalFee, concession);
               
               return Column(
@@ -421,7 +359,89 @@ class _FeesTabState extends State<FeesTab> {
             },
           ),
           const SizedBox(height: 16),
-          const Text('Payment Details', style: TextStyle(fontWeight: FontWeight.w600)),
+          // Bus Fee Checkbox (only for School Fee)
+          if (_selectedPaymentType == 'School Fee' && (_selectedStudent?.busRoute?.isNotEmpty ?? false))
+            FutureBuilder<bool>(
+              future: _checkBusFeeAlreadyPaid(_selectedStudent!.name),
+              builder: (context, busFeeStatusSnap) {
+                final busFeeAlreadyPaid = busFeeStatusSnap.data ?? false;
+                
+                return Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.orange[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _payBusFee,
+                            onChanged: busFeeAlreadyPaid
+                                ? null
+                                : (value) => setState(() => _payBusFee = value ?? false),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Add Bus Fee',
+                                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  'Route: ${_selectedStudent!.busRoute}',
+                                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                                ),
+                                if (busFeeAlreadyPaid)
+                                  Text(
+                                    'Already Paid',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_payBusFee && !busFeeAlreadyPaid)
+                        FutureBuilder<double>(
+                          future: SupabaseService.getBusFeeByRoute(_selectedStudent!.busRoute ?? ''),
+                          builder: (context, busFeeSnap) {
+                            final busFee = busFeeSnap.data ?? 0;
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 12, left: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Bus Fee:',
+                                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                                  ),
+                                  Text(
+                                    '₹${busFee.toStringAsFixed(2)}',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          const SizedBox(height: 16),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _selectedTermMonth,
@@ -482,21 +502,7 @@ class _FeesTabState extends State<FeesTab> {
               backgroundColor: _selectedDueType == 'School Fee' ? Colors.blue : Colors.grey,
             ),
             onPressed: () => setState(() => _selectedDueType = 'School Fee'),
-            child: const Text('School Fees Due'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _selectedDueType == 'Tuition Fee' ? Colors.blue : Colors.grey,
-            ),
-            onPressed: () => setState(() => _selectedDueType = 'Tuition Fee'),
-            child: const Text('Tuition Fees Due'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _selectedDueType == 'Bus Fee' ? Colors.blue : Colors.grey,
-            ),
-            onPressed: () => setState(() => _selectedDueType = 'Bus Fee'),
-            child: const Text('Bus Fees Due'),
+            child: const Text('School & Bus Fees Due'),
           ),
         ]),
         const SizedBox(height: 12),
@@ -517,70 +523,8 @@ class _FeesTabState extends State<FeesTab> {
             const Text('Students', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             for (final s in _students)
-              if (_selectedDueType == 'Bus Fee')
-                // Bus Fee logic: Calculate due based on FEE TYPE = 'Bus Fee' and current TERM YEAR
-                FutureBuilder<Map<String, dynamic>>(
-                  future: SupabaseService.getBusFeeDueForCurrentYear(s.name),
-                  builder: (context, busDueSnap) {
-                    if (busDueSnap.connectionState == ConnectionState.waiting) {
-                      return const SizedBox();
-                    }
-                    
-                    final busData = busDueSnap.data ?? {};
-                    final paidAmount = (busData['paid'] as num?)?.toDouble() ?? 0;
-                    final year = (busData['year'] as String?) ?? DateTime.now().year.toString();
-                    
-                    // If no Bus Fee payment records exist, mark as due (unpaid)
-                    if (paidAmount == 0) {
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Bus Fee Due ($year)', style: const TextStyle(fontSize: 14)),
-                                  Text('Unpaid', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              const Text('No payment recorded for this year', style: TextStyle(color: Colors.orange, fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    
-                    // If bus fee has been paid, show paid status
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                const SizedBox(height: 4),
-                                Text('₹${paidAmount.toStringAsFixed(2)} paid', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                              ],
-                            ),
-                            const Text('PAID', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                )
-              else
-                // School and Tuition Fee logic: show due based on terms
+              if (_selectedDueType == 'School Fee')
+                // School and Bus Fee combined logic: show due based on terms
                 FutureBuilder<Map<String, dynamic>?>(
                   future: SupabaseService.getFeeStructureByClass(s.className),
                   builder: (context, structureSnap) {
@@ -591,11 +535,7 @@ class _FeesTabState extends State<FeesTab> {
                     if (structure == null) return const SizedBox();
                     
                     final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
-                    
-                    // Determine concession based on selected due type
-                    final concession = _selectedDueType == 'School Fee' 
-                        ? s.schoolFeeConcession
-                        : s.tuitionFeeConcession;
+                    final concession = s.schoolFeeConcession;
                     
                     // Calculate term fees with concession
                     final termFees = SupabaseService.calculateTermFees(totalFee, concession);
@@ -614,65 +554,114 @@ class _FeesTabState extends State<FeesTab> {
                           final termKey = 'Term $term';
                           double paidAmount = 0;
                           
-                          // Calculate paid amount for this term and fee type
+                          // Calculate paid amount for this term (School Fee only)
                           for (final fee in fees) {
-                            if ((fee['FEE TYPE'] as String? ?? '').contains(_selectedDueType ?? '') &&
+                            if ((fee['FEE TYPE'] as String? ?? '').contains('School Fee') &&
                                 (fee['TERM NO'] as String? ?? '').contains(termKey)) {
                               final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
                               paidAmount += amt;
                             }
                           }
                           
-                          // If paid < term fee, add to due list
                           final termFee = termFees[term]!;
                           if (paidAmount < termFee) {
                             termsWithDue[term] = termFee - paidAmount;
                           }
                         }
                         
-                        if (termsWithDue.isEmpty) {
-                          return ListTile(
-                            title: Text(s.name),
-                            subtitle: const Text('All fees paid'),
-                            trailing: const Text('PAID', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                          );
+                        // Check if student has bus route and bus fee due
+                        bool busFeeAlreadyPaid = false;
+                        
+                        if (s.busRoute != null && s.busRoute!.isNotEmpty) {
+                          // Check if bus fee paid
+                          final busPaidAmount = fees
+                              .where((f) => (f['FEE TYPE'] as String? ?? '').contains('Bus Fee'))
+                              .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+                          
+                          if (busPaidAmount > 0) {
+                            busFeeAlreadyPaid = true;
+                          } else {
+                            // Fetch bus fee for this route
+                            // This will be done via FutureBuilder below
+                          }
                         }
                         
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                const SizedBox(height: 8),
-                                for (final term in termsWithDue.keys)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Due Term $term', style: const TextStyle(fontSize: 14)),
-                                        Text('₹${termsWithDue[term]!.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
-                                      ],
-                                    ),
-                                  ),
-                                if (termsWithDue.length > 1)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Total Due', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                                        Text('₹${termsWithDue.values.reduce((a, b) => a + b).toStringAsFixed(2)}', 
-                                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
+                        return FutureBuilder<double>(
+                          future: (s.busRoute != null && s.busRoute!.isNotEmpty && !busFeeAlreadyPaid)
+                              ? SupabaseService.getBusFeeByRoute(s.busRoute!)
+                              : Future.value(0),
+                          builder: (context, busFeeSnap) {
+                            if (busFeeSnap.connectionState == ConnectionState.waiting) {
+                              return const SizedBox();
+                            }
+                            
+                            final busFee = busFeeSnap.data ?? 0;
+                            final hasBusFeesDue = busFee > 0 && !busFeeAlreadyPaid;
+                            
+                            if (termsWithDue.isEmpty && !hasBusFeesDue) {
+                              return ListTile(
+                                title: Text(s.name),
+                                subtitle: const Text('All fees paid'),
+                                trailing: const Text('PAID', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              );
+                            }
+                            
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    const SizedBox(height: 8),
+                                    if (termsWithDue.isNotEmpty) ...[
+                                      const Text('School Fee:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey)),
+                                      for (final term in termsWithDue.keys)
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 4),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text('  Due Term $term', style: const TextStyle(fontSize: 14)),
+                                              Text('₹${termsWithDue[term]!.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                    if (hasBusFeesDue) ...[
+                                      if (termsWithDue.isNotEmpty) const SizedBox(height: 8),
+                                      const Text('Bus Fee:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey)),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('  Route: ${s.busRoute}', style: const TextStyle(fontSize: 14)),
+                                            Text('₹${busFee.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    if ((termsWithDue.isNotEmpty || hasBusFeesDue) && (termsWithDue.length > 1 || (termsWithDue.isNotEmpty && hasBusFeesDue)))
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Total Due', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                            Text(
+                                              '₹${(termsWithDue.values.fold<double>(0, (a, b) => a + b) + (hasBusFeesDue ? busFee : 0)).toStringAsFixed(2)}',
+                                              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
                     );

@@ -547,5 +547,174 @@ class SupabaseService {
       return false;
     }
   }
+
+  // Fetch student's bus route from STUDENTS table
+  static Future<String?> getStudentRoute(String studentName) async {
+    try {
+      final response = await client
+          .from('STUDENTS')
+          .select('Route')
+          .eq('Name', studentName)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final route = response[0]['Route'] as String?;
+        return route?.isEmpty == true ? null : route;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching student route: $e');
+      return null;
+    }
+  }
+
+  // Get bus fee for a student's route
+  static Future<double> getStudentBusFee(String studentName) async {
+    try {
+      final route = await getStudentRoute(studentName);
+      if (route == null || route.isEmpty) {
+        return 0;
+      }
+      return await getBusFeeByRoute(route);
+    } catch (e) {
+      print('Error getting student bus fee: $e');
+      return 0;
+    }
+  }
+
+  // Fetch books fee by class from BOOKS table
+  static Future<double> getBooksFeeByClass(String className) async {
+    try {
+      final response = await client
+          .from('BOOKS')
+          .select('BOOKS FEE')
+          .eq('CLASS', className)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final fee = double.tryParse((response[0]['BOOKS FEE'] as dynamic).toString()) ?? 0;
+        return fee;
+      }
+      return 0;
+    } catch (e) {
+      print('Error fetching books fee: $e');
+      return 0;
+    }
+  }
+
+  // Wrapper for getBusFeeByRoute (called as getBusFee in fees_tab)
+  static Future<double> getBusFee(String routeName) async {
+    return await getBusFeeByRoute(routeName);
+  }
+
+  // Wrapper for getFeeStructureByClass (called as getSchoolFeeStructure in fees_tab)
+  static Future<Map<String, dynamic>> getSchoolFeeStructure(String className) async {
+    try {
+      final response = await client
+          .from('FEE STRUCTURE')
+          .select()
+          .eq('CLASS', className)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final feeData = response[0] as Map<String, dynamic>;
+        final fee = double.tryParse((feeData['FEE'] as dynamic).toString()) ?? 0;
+        return {'fee': fee, ...feeData};
+      }
+      return {'fee': 0};
+    } catch (e) {
+      print('Error fetching school fee structure: $e');
+      return {'fee': 0};
+    }
+  }
+
+  // Fetch uniform fee by class and gender from UNIFORM table
+  static Future<double> getUniformFeeByClassAndGender(String className, String gender) async {
+    try {
+      final response = await client
+          .from('UNIFORM')
+          .select('UNIFORM FEE')
+          .eq('CLASS', className)
+          .eq('GENDER', gender)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final fee = double.tryParse((response[0]['UNIFORM FEE'] as dynamic).toString()) ?? 0;
+        return fee;
+      }
+      return 0;
+    } catch (e) {
+      print('Error fetching uniform fee: $e');
+      return 0;
+    }
+  }
+
+  // Update student books fee paid status
+  static Future<bool> updateStudentBooksFeeStatus(String studentName, String status) async {
+    try {
+      await client.from('STUDENTS').update({
+        'BOOKS FEE': status,
+      }).eq('Name', studentName);
+      return true;
+    } catch (e) {
+      print('Error updating books fee status: $e');
+      return false;
+    }
+  }
+
+  // Update student uniform fee paid status
+  static Future<bool> updateStudentUniformFeeStatus(String studentName, String status) async {
+    try {
+      await client.from('STUDENTS').update({
+        'UNIFORM FEE': status,
+      }).eq('Name', studentName);
+      return true;
+    } catch (e) {
+      print('Error updating uniform fee status: $e');
+      return false;
+    }
+  }
+
+  // Check student books fee paid status
+  static Future<String> checkStudentBooksFeeStatus(String studentName) async {
+    try {
+      final response = await client
+          .from('STUDENTS')
+          .select('BOOKS FEE')
+          .eq('Name', studentName)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final status = response[0]['BOOKS FEE']?.toString() ?? 'UNPAID';
+        return status;
+      }
+      return 'UNPAID';
+    } catch (e) {
+      print('Error checking books fee status: $e');
+      return 'UNPAID';
+    }
+  }
+
+  // Check student uniform fee paid status
+  static Future<String> checkStudentUniformFeeStatus(String studentName) async {
+    try {
+      final response = await client
+          .from('STUDENTS')
+          .select('UNIFORM FEE')
+          .eq('Name', studentName)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final status = response[0]['UNIFORM FEE']?.toString() ?? 'UNPAID';
+        return status;
+      }
+      return 'UNPAID';
+    } catch (e) {
+      print('Error checking uniform fee status: $e');
+      return 'UNPAID';
+    }
+  }
 }
+
+
 

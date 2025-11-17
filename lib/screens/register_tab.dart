@@ -19,6 +19,7 @@ class _RegisterTabState extends State<RegisterTab> {
   final _sFather = TextEditingController();
   final _sMother = TextEditingController();
   final _sParentMobile = TextEditingController();
+  String? _sGender;
 
   // Performance controllers
   String? _perfStudent;
@@ -73,8 +74,8 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Future<void> _submitStudent() async {
-    if (_sName.text.trim().isEmpty || _sClass.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter student name and class')));
+    if (_sName.text.trim().isEmpty || _sClass.text.trim().isEmpty || _sGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter student name, class, and gender')));
       return;
     }
     setState(() => _isSubmittingStudent = true);
@@ -84,13 +85,14 @@ class _RegisterTabState extends State<RegisterTab> {
       'Father Name': _sFather.text.trim(),
       'Mother Name': _sMother.text.trim(),
       'Parent Mobile': _sParentMobile.text.trim(),
+      'Gender': _sGender,
     };
     final ok = await SupabaseService.insertStudent(data);
     setState(() => _isSubmittingStudent = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student registered successfully')));
       _sName.clear(); _sClass.clear(); _sFather.clear(); _sMother.clear(); _sParentMobile.clear();
-      setState(() { _studentsFuture = SupabaseService.getAllStudents(); _currentPage = 0; });
+      setState(() { _sGender = null; _studentsFuture = SupabaseService.getAllStudents(); _currentPage = 0; });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to register student')));
     }
@@ -268,6 +270,13 @@ class _RegisterTabState extends State<RegisterTab> {
           TextField(controller: _sMother, decoration: const InputDecoration(labelText: "Mother's Name", border: OutlineInputBorder())),
           const SizedBox(height: 12),
           TextField(controller: _sParentMobile, decoration: const InputDecoration(labelText: 'Parent Mobile', border: OutlineInputBorder()), keyboardType: TextInputType.phone),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _sGender,
+            items: const [DropdownMenuItem(value: 'Male', child: Text('Male')), DropdownMenuItem(value: 'Female', child: Text('Female'))],
+            onChanged: (v) => setState(() => _sGender = v),
+            decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
