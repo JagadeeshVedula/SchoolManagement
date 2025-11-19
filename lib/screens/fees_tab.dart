@@ -293,8 +293,11 @@ class _FeesTabState extends State<FeesTab> {
           double paidAmount = 0;
           
           for (final fee in fees) {
-            if ((fee['FEE TYPE'] as String? ?? '').contains('School Fee') &&
-                (fee['TERM NO'] as String? ?? '').contains(termKeyFull)) {
+            final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
+            final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
+            
+            // Match school fee payments for this term
+            if (feeType.contains('school fee') && termNo.contains(termKeyFull.toLowerCase())) {
               final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
               paidAmount += amt;
             }
@@ -545,8 +548,12 @@ class _FeesTabState extends State<FeesTab> {
                   ? SupabaseService.getFeeStructureByClass(_selectedStudent!.className)
                   : Future.value(null),
               builder: (context, structureSnap) {
+                if (structureSnap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
                 double calculatedBalance = 0;
-                if (structureSnap.hasData && structureSnap.data != null) {
+                if (structureSnap.hasData && structureSnap.data != null && _selectedStudent != null) {
                   final structure = structureSnap.data!;
                   final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
                   final concession = _selectedStudent!.schoolFeeConcession;
@@ -560,104 +567,39 @@ class _FeesTabState extends State<FeesTab> {
                     totalTermFee += termFees[term] ?? 0;
                   }
                   
-                  calculatedBalance = (totalTermFee - paidAmount).clamp(0, double.infinity);
+                  // Now fetch all payments for this student to calculate actual balance
+                  return FutureBuilder<List<Map<String, dynamic>>>(
+                    future: SupabaseService.getFeesByStudent(_selectedStudent!.name),
+                    builder: (context, feesSnap) {
+                      if (feesSnap.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      
+                      final fees = feesSnap.data ?? [];
+                      double totalPaidForTerms = 0;
+                      
+                      // Sum all payments for these specific terms
+                      for (final term in termNos) {
+                        final termKeyFull = 'Term $term';
+                        for (final fee in fees) {
+                          final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
+                          final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
+                          
+                          if (feeType.contains('school fee') && termNo.contains(termKeyFull.toLowerCase())) {
+                            final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+                            totalPaidForTerms += amt;
+                          }
+                        }
+                      }
+                      
+                      calculatedBalance = (totalTermFee - totalPaidForTerms).clamp(0, double.infinity);
+                      
+                      return _buildInvoiceContent(payment, paidAmount, calculatedBalance, totalTermFee, totalPaidForTerms);
+                    },
+                  );
                 }
                 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Center(
-                      child: Text('FEE RECEIPT', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Receipt No:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                        Text('REC${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 8)}'),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Date:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                        Text(DateTime.now().toString().split(' ')[0]),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    Text('STUDENT DETAILS', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Name:'),
-                        Text(_selectedStudent!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Class:'),
-                        Text(_selectedStudent!.className, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Parent Mobile:'),
-                        Text(_selectedStudent!.parentMobile),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    Text('PAYMENT DETAILS', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Fee Type:'),
-                        Text(payment['FEE TYPE'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Term(s):'),
-                        Text(payment['TERM NO'] as String),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Amount Paid:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                        Text('₹${paidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
-                      ],
-                    ),
-                    if (calculatedBalance > 0) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Balance Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                          Text('₹${calculatedBalance.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    Center(
-                      child: Text('Payment received successfully', style: GoogleFonts.poppins(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.green)),
-                    ),
-                  ],
-                );
+                return _buildInvoiceContent(payment, paidAmount, calculatedBalance, 0, 0);
               },
             ),
           ),
@@ -673,6 +615,131 @@ class _FeesTabState extends State<FeesTab> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInvoiceContent(Map<String, dynamic> payment, double paidAmount, double calculatedBalance, double totalTermFee, double totalPaid) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: Text('FEE RECEIPT', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+        ),
+        const Divider(),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Receipt No:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text('REC${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 8)}'),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Date:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text(DateTime.now().toString().split(' ')[0]),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const Divider(),
+        Text('STUDENT DETAILS', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Name:'),
+            Text(_selectedStudent!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Class:'),
+            Text(_selectedStudent!.className, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Parent Mobile:'),
+            Text(_selectedStudent!.parentMobile),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const Divider(),
+        Text('PAYMENT DETAILS', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Fee Type:'),
+            Text(payment['FEE TYPE'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Term(s):'),
+            Text(payment['TERM NO'] as String),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Amount Paid (This Payment):', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text('₹${paidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+          ],
+        ),
+        if (totalTermFee > 0) ...[
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total Term Fee:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              Text('₹${totalTermFee.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total Paid (All Payments):', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              Text('₹${totalPaid.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue)),
+            ],
+          ),
+        ],
+        if (calculatedBalance > 0) ...[
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Remaining Balance Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              Text('₹${calculatedBalance.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
+            ],
+          ),
+        ] else if (totalTermFee > 0) ...[
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Status:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              Text('FULLY PAID', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green[700])),
+            ],
+          ),
+        ],
+        const SizedBox(height: 16),
+        const Divider(),
+        Center(
+          child: Text('Payment received successfully', style: GoogleFonts.poppins(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.green)),
+        ),
+      ],
     );
   }
 
@@ -782,34 +849,91 @@ class _FeesTabState extends State<FeesTab> {
     showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
-        child: StatefulBuilder(
-          builder: (context, setDialogState) => SizedBox(
-            width: 600,
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Payment Details',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 18),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Student: ${_selectedStudent!.name} (${_selectedStudent!.className})',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Payment Type: ${_selectedPaymentType!.trim()}',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.blue),
-                    ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 12,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.blue[50]!, Colors.indigo[100]!],
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: StatefulBuilder(
+            builder: (context, setDialogState) => SizedBox(
+              width: 600,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.indigo[600],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Payment Details',
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 20, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          border: Border.all(color: Colors.blue[200]!, width: 1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Student: ${_selectedStudent!.name}',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                color: Colors.blue[900],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Class: ${_selectedStudent!.className}',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.purple[50],
+                          border: Border.all(color: Colors.purple[200]!, width: 1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Payment Type: ${_selectedPaymentType!.trim()}',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.purple[900],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                     // Already Paid Status for Books and Uniform Fees
                     if (_selectedPaymentType == 'Books Fee' && _booksFeeAlreadyPaid)
                       Padding(
-                        padding: const EdgeInsets.only(top: 12),
+                        padding: const EdgeInsets.only(bottom: 12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
@@ -995,7 +1119,7 @@ class _FeesTabState extends State<FeesTab> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   @override
@@ -1010,17 +1134,26 @@ class _FeesTabState extends State<FeesTab> {
   @override
   Widget build(BuildContext context) {
     if (_currentPage == 0) {
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Fees', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 20),
-            _menuButton(icon: Icons.payments, title: 'Payments', onPressed: () => setState(() => _currentPage = 1)),
-            const SizedBox(height: 12),
-            _menuButton(icon: Icons.request_quote, title: 'Dues', onPressed: () => setState(() => _currentPage = 2)),
-          ],
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.blue[50]!, Colors.indigo[100]!],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Fees', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.indigo[900])),
+              const SizedBox(height: 30),
+              _menuButton(icon: Icons.payments, title: 'Payments', onPressed: () => setState(() => _currentPage = 1), color: Colors.blue),
+              const SizedBox(height: 16),
+              _menuButton(icon: Icons.request_quote, title: 'Dues', onPressed: () => setState(() => _currentPage = 2), color: Colors.orange),
+            ],
+          ),
         ),
       );
     } else if (_currentPage == 1) {
@@ -1030,214 +1163,373 @@ class _FeesTabState extends State<FeesTab> {
     }
   }
 
-  Widget _menuButton({required IconData icon, required String title, required VoidCallback onPressed}) {
+  Widget _menuButton({required IconData icon, required String title, required VoidCallback onPressed, required Color color}) {
     return SizedBox(
-      height: 110,
+      height: 120,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 36), const SizedBox(height: 8), Text(title, style: GoogleFonts.poppins(fontSize: 16))]),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 8,
+        ),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, size: 40, color: Colors.white),
+          const SizedBox(height: 10),
+          Text(title, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white))
+        ]),
       ),
     );
   }
 
   Widget _buildPaymentsPage() {
-    return SingleChildScrollView( 
-      padding: const EdgeInsets.all(16), 
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ 
-        ElevatedButton.icon( 
-          onPressed: () => setState(() => _currentPage = 0), 
-          icon: const Icon(Icons.arrow_back), 
-          label: const Text('Back'), 
-        ), 
-        const SizedBox(height: 12), 
-        Text('Payments', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)), 
-        const SizedBox(height: 12), 
-        Wrap(spacing: 8, runSpacing: 8, children: [ 
-          ChoiceChip( 
-            label: const Text('School Fee'), 
-            selected: _selectedPaymentType == 'School Fee', 
-            onSelected: (_) => setState(() {
-              _selectedPaymentType = 'School Fee';
-              _showPaymentHistory = false; // Collapse history
-            }), 
-          ), 
-          ChoiceChip( 
-            label: const Text('Books Fee'), 
-            selected: _selectedPaymentType == 'Books Fee', 
-            onSelected: (_) => setState(() {
-              _selectedPaymentType = 'Books Fee';
-              _showPaymentHistory = false; // Collapse history
-            }), 
-          ), 
-          ChoiceChip( 
-            label: const Text('Uniform Fee'), 
-            selected: _selectedPaymentType == 'Uniform Fee', 
-            onSelected: (_) => setState(() {
-              _selectedPaymentType = 'Uniform Fee';
-              _showPaymentHistory = false; // Collapse history
-            }), 
-          ), 
-        ]), 
-        const SizedBox(height: 16), 
-        if (_selectedPaymentType != null) ...[  
-          const Text('Select Class', style: TextStyle(fontWeight: FontWeight.w600)), 
-          const SizedBox(height: 8), 
-          DropdownButtonFormField<String>( 
-            value: _selectedClass, 
-            items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(), 
-            onChanged: (v) { 
-              setState(() { 
-                _selectedClass = v; 
-                _selectedStudent = null; 
-                _students = []; 
-              }); 
-              if (v != null) _loadStudentsForClass(v); 
-            }, 
-            decoration: const InputDecoration(border: OutlineInputBorder()), 
-          ), 
-          const SizedBox(height: 12), 
-          SizedBox( 
-            width: double.infinity, 
-            child: ElevatedButton.icon( 
-              onPressed: _openStudentSearchDialog, 
-              icon: const Icon(Icons.search), 
-              label: const Text('Search & Select Student'), 
-              style: ElevatedButton.styleFrom( 
-                backgroundColor: Colors.blue, 
-                padding: const EdgeInsets.symmetric(vertical: 12), 
-              ), 
-            ), 
-          ), 
-        ], 
-        if (_selectedStudent != null) ...[  
-          const SizedBox(height: 12), 
-          Text(
-            'Selected: ${_selectedStudent!.name} (${_selectedStudent!.className})',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.blue,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.blue[50]!, Colors.cyan[100]!],
+        ),
+      ),
+      child: SingleChildScrollView( 
+        padding: const EdgeInsets.all(16), 
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ 
+          ElevatedButton.icon( 
+            onPressed: () => setState(() => _currentPage = 0), 
+            icon: const Icon(Icons.arrow_back), 
+            label: const Text('Back'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
             ),
-          ),
-          const SizedBox(height: 12), 
-          SizedBox( 
-            width: double.infinity, 
-            child: ElevatedButton.icon( 
-              onPressed: _openPaymentScreen, 
-              icon: const Icon(Icons.payment), 
-              label: const Text('Open Payment Screen'), 
-              style: ElevatedButton.styleFrom( 
-                backgroundColor: Colors.green, 
-                padding: const EdgeInsets.symmetric(vertical: 12), 
+          ), 
+          const SizedBox(height: 16), 
+          Text('Payments', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.indigo[900])), 
+          const SizedBox(height: 20), 
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+            ),
+            child: Wrap(spacing: 10, runSpacing: 10, children: [ 
+              ChoiceChip( 
+                label: const Text('School Fee', style: TextStyle(fontWeight: FontWeight.w600)), 
+                selected: _selectedPaymentType == 'School Fee',
+                backgroundColor: Colors.grey[200],
+                selectedColor: Colors.blue,
+                labelStyle: TextStyle(
+                  color: _selectedPaymentType == 'School Fee' ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
+                onSelected: (_) => setState(() {
+                  _selectedPaymentType = 'School Fee';
+                  _showPaymentHistory = false;
+                }), 
               ), 
-            ), 
+              ChoiceChip( 
+                label: const Text('Books Fee', style: TextStyle(fontWeight: FontWeight.w600)), 
+                selected: _selectedPaymentType == 'Books Fee',
+                backgroundColor: Colors.grey[200],
+                selectedColor: Colors.green,
+                labelStyle: TextStyle(
+                  color: _selectedPaymentType == 'Books Fee' ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
+                onSelected: (_) => setState(() {
+                  _selectedPaymentType = 'Books Fee';
+                  _showPaymentHistory = false;
+                }), 
+              ), 
+              ChoiceChip( 
+                label: const Text('Uniform Fee', style: TextStyle(fontWeight: FontWeight.w600)), 
+                selected: _selectedPaymentType == 'Uniform Fee',
+                backgroundColor: Colors.grey[200],
+                selectedColor: Colors.orange,
+                labelStyle: TextStyle(
+                  color: _selectedPaymentType == 'Uniform Fee' ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
+                onSelected: (_) => setState(() {
+                  _selectedPaymentType = 'Uniform Fee';
+                  _showPaymentHistory = false;
+                }), 
+              ), 
+            ]),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _loadPaymentHistory,
-              icon: const Icon(Icons.history),
-              label: const Text('Payment History'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+          const SizedBox(height: 20), 
+          if (_selectedPaymentType != null) ...[  
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Select Class', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.indigo[800])), 
+                  const SizedBox(height: 12), 
+                  DropdownButtonFormField<String>( 
+                    value: _selectedClass, 
+                    items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(), 
+                    onChanged: (v) { 
+                      setState(() { 
+                        _selectedClass = v; 
+                        _selectedStudent = null; 
+                        _students = []; 
+                      }); 
+                      if (v != null) _loadStudentsForClass(v); 
+                    }, 
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ), 
+                  ), 
+                  const SizedBox(height: 16), 
+                  SizedBox( 
+                    width: double.infinity, 
+                    child: ElevatedButton.icon( 
+                      onPressed: _openStudentSearchDialog, 
+                      icon: const Icon(Icons.search), 
+                      label: const Text('Search & Select Student', style: TextStyle(fontWeight: FontWeight.w600)), 
+                      style: ElevatedButton.styleFrom( 
+                        backgroundColor: Colors.blue, 
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ), 
+                    ), 
+                  ),
+                ],
               ),
             ),
-          ),
-          if (_showPaymentHistory && _paymentHistory.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text('Payment History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 12),
-            ..._paymentHistory.map((payment) => Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                title: Text(payment['FEE TYPE'] as String),
-                subtitle: Text('₹${payment['AMOUNT']} - ${payment['TERM NO']}'),
-                trailing: ElevatedButton.icon(
-                  onPressed: () => _showPaymentInvoiceDialog(payment),
-                  icon: const Icon(Icons.receipt),
-                  label: const Text('View Invoice'),
+          ], 
+          if (_selectedStudent != null) ...[  
+            const SizedBox(height: 16), 
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                border: Border.all(color: Colors.blue[200]!, width: 2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Selected: ${_selectedStudent!.name} (${_selectedStudent!.className})',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue[900],
                 ),
               ),
-            )).toList(),
-          ],
-        ], 
-      ]), 
+            ),
+            const SizedBox(height: 16), 
+            SizedBox( 
+              width: double.infinity, 
+              child: ElevatedButton.icon( 
+                onPressed: _openPaymentScreen, 
+                icon: const Icon(Icons.payment), 
+                label: const Text('Open Payment Screen', style: TextStyle(fontWeight: FontWeight.w600)), 
+                style: ElevatedButton.styleFrom( 
+                  backgroundColor: Colors.green, 
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ), 
+              ), 
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _loadPaymentHistory,
+                icon: const Icon(Icons.history),
+                label: const Text('Payment History', style: TextStyle(fontWeight: FontWeight.w600)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepOrange,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+            if (_showPaymentHistory && _paymentHistory.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Payment History', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.indigo[900])),
+                    const SizedBox(height: 16),
+                    ..._paymentHistory.map((payment) => Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      color: Colors.amber[50],
+                      child: ListTile(
+                        leading: Icon(Icons.receipt_long, color: Colors.deepOrange),
+                        title: Text(
+                          payment['FEE TYPE'] as String,
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.indigo[900]),
+                        ),
+                        subtitle: Text('₹${payment['AMOUNT']} - ${payment['TERM NO']}', style: const TextStyle(color: Colors.grey)),
+                        trailing: ElevatedButton.icon(
+                          onPressed: () => _showPaymentInvoiceDialog(payment),
+                          icon: const Icon(Icons.preview),
+                          label: const Text('View', style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                          ),
+                        ),
+                      ),
+                    )).toList(),
+                  ],
+                ),
+              ),
+            ],
+          ], 
+        ]), 
+      ),
     ); 
   }
   Widget _buildDuesPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        ElevatedButton.icon(onPressed: () => setState(() => _currentPage = 0), icon: const Icon(Icons.arrow_back), label: const Text('Back')),
-        const SizedBox(height: 12),
-        Text('Dues', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        Wrap(spacing: 8, children: [
-          ElevatedButton(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.orange[50]!, Colors.amber[100]!],
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ElevatedButton.icon(
+            onPressed: () => setState(() => _currentPage = 0), 
+            icon: const Icon(Icons.arrow_back), 
+            label: const Text('Back'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: _selectedDueType == 'School Fee' ? Colors.blue : Colors.grey,
+              backgroundColor: Colors.indigo,
             ),
-            onPressed: () => setState(() => _selectedDueType = 'School Fee'),
-            child: const Text('School & Bus Fees Due'),
-          ),
-        ]),
-        const SizedBox(height: 12),
-        if (_selectedDueType != null) ...[
-          const Text('Select Class', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: _selectedClass,
-            items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (v) {
-              setState(() { _selectedClass = v; _students = []; _selectedStudent = null; });
-              if (v != null) _loadStudentsForClass(v);
-            },
-            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
           const SizedBox(height: 16),
-          // Term Selection Checkboxes
-          const Text('Filter by Terms', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
+          Text('Dues', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.orange[900])),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+            ),
+            child: Wrap(spacing: 10, children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _selectedDueType == 'School Fee' ? Colors.deepOrange : Colors.grey[300],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => setState(() => _selectedDueType = 'School Fee'),
+                child: Text(
+                  'School & Bus Fees Due',
+                  style: TextStyle(
+                    color: _selectedDueType == 'School Fee' ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 16),
+          if (_selectedDueType != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+              ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('Select Class', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.orange[800])),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _selectedClass,
+                    items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (v) {
+                      setState(() { _selectedClass = v; _students = []; _selectedStudent = null; });
+                      if (v != null) _loadStudentsForClass(v);
+                    },
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Term Selection Checkboxes
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Filter by Terms', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.orange[800])),
+                  const SizedBox(height: 12),
                   CheckboxListTile(
-                    title: const Text('Term 1'),
+                    title: const Text('Term 1', style: TextStyle(fontWeight: FontWeight.w600)),
                     value: _dueTerms['Term1'],
+                    activeColor: Colors.deepOrange,
                     onChanged: (v) => setState(() => _dueTerms['Term1'] = v ?? false),
                   ),
                   CheckboxListTile(
-                    title: const Text('Term 2'),
+                    title: const Text('Term 2', style: TextStyle(fontWeight: FontWeight.w600)),
                     value: _dueTerms['Term2'],
+                    activeColor: Colors.deepOrange,
                     onChanged: (v) => setState(() => _dueTerms['Term2'] = v ?? false),
                   ),
                   CheckboxListTile(
-                    title: const Text('Term 3'),
+                    title: const Text('Term 3', style: TextStyle(fontWeight: FontWeight.w600)),
                     value: _dueTerms['Term3'],
+                    activeColor: Colors.deepOrange,
                     onChanged: (v) => setState(() => _dueTerms['Term3'] = v ?? false),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          // Excel Export Button
-          if (_selectedClass != null && _students.isNotEmpty)
-            ElevatedButton.icon(
-              icon: const Icon(Icons.download),
-              label: const Text('Export to Excel'),
-              onPressed: () => _exportDuesToExcel(),
-            ),
-          const SizedBox(height: 12),
-          if (_students.isNotEmpty && _selectedDueType != null) ...[
-            const Text('Students', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            for (final s in _students)
+            const SizedBox(height: 16),
+            // Excel Export Button
+            if (_selectedClass != null && _students.isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.download),
+                  label: const Text('Export to Excel', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onPressed: () => _exportDuesToExcel(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            if (_students.isNotEmpty && _selectedDueType != null) ...[
+              Text('Students', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.orange[900])),
+              const SizedBox(height: 12),
+              for (final s in _students)
               if (_selectedDueType == 'School Fee')
                 FutureBuilder<Map<String, dynamic>?>(
                   future: SupabaseService.getFeeStructureByClass(s.className),
@@ -1248,9 +1540,10 @@ class _FeesTabState extends State<FeesTab> {
                     final structure = structureSnap.data;
                     if (structure == null) return const SizedBox();
                     
-                    final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
+                    // Get the fee structure amount and calculate term fees with 40/40/20 split
+                    final structureFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
                     final concession = s.schoolFeeConcession;
-                    final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                    final termFees = SupabaseService.calculateTermFees(structureFee, concession);
                     
                     return FutureBuilder<List<Map<String, dynamic>>>(
                       future: SupabaseService.getFeesByStudent(s.name),
@@ -1269,17 +1562,27 @@ class _FeesTabState extends State<FeesTab> {
                           final termKeyFull = 'Term $term';
                           double paidAmount = 0;
                           
+                          // Sum all payments for this specific term
                           for (final fee in fees) {
-                            if ((fee['FEE TYPE'] as String? ?? '').contains('School Fee') &&
-                                (fee['TERM NO'] as String? ?? '').contains(termKeyFull)) {
+                            final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
+                            final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
+                            
+                            // Match school fee payments for this term
+                            if (feeType.contains('school fee') && termNo.contains(termKeyFull.toLowerCase())) {
                               final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
                               paidAmount += amt;
                             }
                           }
                           
-                          final termFee = termFees[term]!;
-                          if (paidAmount < termFee) {
-                            termsWithDue[term] = termFee - paidAmount;
+                          // Get term fee from 40/40/20 calculation
+                          final termFeeAmount = termFees[term] ?? 0;
+                          
+                          // Calculate due: term fee - total paid for this term
+                          if (termFeeAmount > 0) {
+                            final due = termFeeAmount - paidAmount;
+                            if (due > 0) {
+                              termsWithDue[term] = due;
+                            }
                           }
                         }
                         
@@ -1302,62 +1605,136 @@ class _FeesTabState extends State<FeesTab> {
                             final hasBusFeesDue = busFee > 0 && !busFeeAlreadyPaid;
                             
                             if (termsWithDue.isEmpty && !hasBusFeesDue) {
-                              return ListTile(
-                                title: Text(s.name),
-                                subtitle: const Text('All fees paid'),
-                                trailing: const Text('PAID', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[50],
+                                  border: Border.all(color: Colors.green[300]!, width: 1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: ListTile(
+                                  title: Text(s.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.green[900])),
+                                  subtitle: const Text('All fees paid', style: TextStyle(color: Colors.green)),
+                                  trailing: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text('PAID', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                  ),
+                                ),
                               );
                             }
                             
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              color: Colors.red[50],
                               child: Padding(
-                                padding: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                    const SizedBox(height: 8),
+                                    Text(
+                                      s.name,
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: Colors.red[900],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
                                     if (termsWithDue.isNotEmpty) ...[
-                                      const Text('School Fee:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey)),
+                                      Text(
+                                        'School Fee:',
+                                        style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: Colors.orange[800],
+                                        ),
+                                      ),
                                       for (final term in termsWithDue.keys)
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 4),
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Text('  Due Term $term', style: const TextStyle(fontSize: 14)),
-                                              Text('₹${termsWithDue[term]!.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+                                              Text('  Due Term $term', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red[100],
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  '₹${termsWithDue[term]!.toStringAsFixed(2)}',
+                                                  style: TextStyle(color: Colors.red[900], fontWeight: FontWeight.bold, fontSize: 14),
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
                                     ],
                                     if (hasBusFeesDue) ...[
-                                      if (termsWithDue.isNotEmpty) const SizedBox(height: 8),
-                                      const Text('Bus Fee:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey)),
+                                      if (termsWithDue.isNotEmpty) const SizedBox(height: 12),
+                                      Text(
+                                        'Bus Fee:',
+                                        style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: Colors.orange[800],
+                                        ),
+                                      ),
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        padding: const EdgeInsets.symmetric(vertical: 6),
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text('  Route: ${s.busRoute}', style: const TextStyle(fontSize: 14)),
-                                            Text('₹${busFee.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+                                            Text('  Route: ${s.busRoute}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red[100],
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                '₹${busFee.toStringAsFixed(2)}',
+                                                style: TextStyle(color: Colors.red[900], fontWeight: FontWeight.bold, fontSize: 14),
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
                                     ],
                                     if ((termsWithDue.isNotEmpty || hasBusFeesDue) && (termsWithDue.length > 1 || (termsWithDue.isNotEmpty && hasBusFeesDue)))
                                       Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text('Total Due', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                                            Text(
-                                              '₹${(termsWithDue.values.fold<double>(0, (a, b) => a + b) + (hasBusFeesDue ? busFee : 0)).toStringAsFixed(2)}',
-                                              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14),
-                                            ),
-                                          ],
+                                        padding: const EdgeInsets.only(top: 16),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.deepOrange[100],
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Total Due',
+                                                style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: Colors.deepOrange[900]),
+                                              ),
+                                              Text(
+                                                '₹${(termsWithDue.values.fold<double>(0, (a, b) => a + b) + (hasBusFeesDue ? busFee : 0)).toStringAsFixed(2)}',
+                                                style: TextStyle(
+                                                  color: Colors.deepOrange[900],
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -1370,9 +1747,11 @@ class _FeesTabState extends State<FeesTab> {
                     );
                   },
                 ),
-          ],
-        ],
-      ]),
+            ],
+          ],]
+        ),
+  
+      ),
     );
   }
 }

@@ -296,42 +296,55 @@ class _RegisterTabState extends State<RegisterTab> {
   Widget build(BuildContext context) {
     if (_currentPage == 0) {
       // Menu page with 4 buttons
-      return Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Registration Menu',
-                style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
-              _buildMenuButton(
-                icon: Icons.school,
-                title: 'Register Student',
-                onPressed: () => setState(() => _currentPage = 1),
-              ),
-              const SizedBox(height: 16),
-              _buildMenuButton(
-                icon: Icons.people,
-                title: 'Register Staff',
-                onPressed: () => setState(() => _currentPage = 2),
-              ),
-              const SizedBox(height: 16),
-              _buildMenuButton(
-                icon: Icons.bar_chart,
-                title: 'Add Performance',
-                onPressed: () => setState(() => _currentPage = 3),
-              ),
-              const SizedBox(height: 16),
-              _buildMenuButton(
-                icon: Icons.directions_bus,
-                title: 'Register Bus',
-                onPressed: () => setState(() => _currentPage = 4),
-              ),
-            ],
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.purple[50]!, Colors.pink[100]!],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Registration Menu',
+                  style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.purple[900]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                _buildMenuButton(
+                  icon: Icons.school,
+                  title: 'Register Student',
+                  color: Colors.blue,
+                  onPressed: () => setState(() => _currentPage = 1),
+                ),
+                const SizedBox(height: 16),
+                _buildMenuButton(
+                  icon: Icons.people,
+                  title: 'Register Staff',
+                  color: Colors.green,
+                  onPressed: () => setState(() => _currentPage = 2),
+                ),
+                const SizedBox(height: 16),
+                _buildMenuButton(
+                  icon: Icons.bar_chart,
+                  title: 'Add Performance',
+                  color: Colors.orange,
+                  onPressed: () => setState(() => _currentPage = 3),
+                ),
+                const SizedBox(height: 16),
+                _buildMenuButton(
+                  icon: Icons.directions_bus,
+                  title: 'Register Bus',
+                  color: Colors.teal,
+                  onPressed: () => setState(() => _currentPage = 4),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -350,22 +363,22 @@ class _RegisterTabState extends State<RegisterTab> {
     }
   }
 
-  Widget _buildMenuButton({required IconData icon, required String title, required VoidCallback onPressed}) {
+  Widget _buildMenuButton({required IconData icon, required String title, required Color color, required VoidCallback onPressed}) {
     return SizedBox(
       width: double.infinity,
-      height: 120,
+      height: 130,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 4,
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 8,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: Colors.white),
-            const SizedBox(height: 8),
+            Icon(icon, size: 44, color: Colors.white),
+            const SizedBox(height: 10),
             Text(
               title,
               style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
@@ -378,106 +391,218 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Widget _buildStudentRegistrationPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildBackButton(),
-          const SizedBox(height: 16),
-          Text('Register Student', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 20),
-          TextField(controller: _sName, decoration: const InputDecoration(labelText: 'Student Name', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _sClass,
-            items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (v) {
-              setState(() {
-                _sClass = v;
-                print('DEBUG: Selected class: $v');
-                // Auto-load hostel fee if hostel facility is already checked
-                if (_sHostelFacility && v != null) {
-                  print('DEBUG: Hostel facility checked, loading fee for class: $v');
-                  print('DEBUG: Available fees: $_hostelFeesByClass');
-                  _sHostelFee = _hostelFeesByClass[v] ?? 0;
-                  print('DEBUG: Set hostel fee to: $_sHostelFee');
-                }
-              });
-            },
-            decoration: const InputDecoration(labelText: 'Class', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 12),
-          TextField(controller: _sFather, decoration: const InputDecoration(labelText: "Father's Name", border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _sMother, decoration: const InputDecoration(labelText: "Mother's Name", border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _sParentMobile, decoration: const InputDecoration(labelText: 'Parent Mobile', border: OutlineInputBorder()), keyboardType: TextInputType.phone),
-          const SizedBox(height: 12),
-          TextField(controller: _sAddress, decoration: const InputDecoration(labelText: 'Address', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _sGender,
-            items: const [DropdownMenuItem(value: 'Male', child: Text('Male')), DropdownMenuItem(value: 'Female', child: Text('Female'))],
-            onChanged: (v) => setState(() => _sGender = v),
-            decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 16),
-          // Bus Facility
-          CheckboxListTile(
-            title: const Text('Bus Facility'),
-            value: _sBusFacility,
-            onChanged: (v) => setState(() => _sBusFacility = v ?? false),
-          ),
-          if (_sBusFacility) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _sBusRoute,
-              items: _busRoutes.map((route) => DropdownMenuItem(value: route, child: Text(route))).toList(),
-              onChanged: (v) => setState(() => _sBusRoute = v),
-              decoration: const InputDecoration(labelText: 'Select Bus Route', border: OutlineInputBorder()),
-            ),
-          ],
-          const SizedBox(height: 12),
-          // Hostel Facility
-          CheckboxListTile(
-            title: const Text('Hostel Facility'),
-            value: _sHostelFacility,
-            onChanged: (v) {
-              setState(() {
-                _sHostelFacility = v ?? false;
-                // Auto-load hostel fee if class is selected
-                if (_sHostelFacility && _sClass != null) {
-                  print('DEBUG: Checking hostel fee for class: $_sClass');
-                  print('DEBUG: Available fees: $_hostelFeesByClass');
-                  _sHostelFee = _hostelFeesByClass[_sClass] ?? 0;
-                  print('DEBUG: Set hostel fee to: $_sHostelFee');
-                }
-              });
-            },
-          ),
-          if (_sHostelFacility) ...[
-            const SizedBox(height: 12),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.blue[50]!, Colors.cyan[100]!],
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildBackButton(),
+            const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(border: Border.all(color: Colors.blue), borderRadius: BorderRadius.circular(4)),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[600],
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Text(
-                'Hostel Fee: ₹${_sHostelFee.toStringAsFixed(2)}',
-                style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue),
+                'Register Student',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _sName,
+                    decoration: InputDecoration(
+                      labelText: 'Student Name',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.blue[50],
+                      prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _sClass,
+                    items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (v) {
+                      setState(() {
+                        _sClass = v;
+                        print('DEBUG: Selected class: $v');
+                        // Auto-load hostel fee if hostel facility is already checked
+                        if (_sHostelFacility && v != null) {
+                          print('DEBUG: Hostel facility checked, loading fee for class: $v');
+                          print('DEBUG: Available fees: $_hostelFeesByClass');
+                          _sHostelFee = _hostelFeesByClass[v] ?? 0;
+                          print('DEBUG: Set hostel fee to: $_sHostelFee');
+                        }
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Class',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.blue[50],
+                      prefixIcon: const Icon(Icons.school, color: Colors.blue),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _sFather,
+                    decoration: InputDecoration(
+                      labelText: "Father's Name",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.blue[50],
+                      prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _sMother,
+                    decoration: InputDecoration(
+                      labelText: "Mother's Name",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.blue[50],
+                      prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _sParentMobile,
+                    decoration: InputDecoration(
+                      labelText: 'Parent Mobile',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.blue[50],
+                      prefixIcon: const Icon(Icons.phone, color: Colors.blue),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _sAddress,
+                    decoration: InputDecoration(
+                      labelText: 'Address',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.blue[50],
+                      prefixIcon: const Icon(Icons.home, color: Colors.blue),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _sGender,
+                    items: const [DropdownMenuItem(value: 'Male', child: Text('Male')), DropdownMenuItem(value: 'Female', child: Text('Female'))],
+                    onChanged: (v) => setState(() => _sGender = v),
+                    decoration: InputDecoration(
+                      labelText: 'Gender',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.blue[50],
+                      prefixIcon: const Icon(Icons.wc, color: Colors.blue),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Bus Facility
+                  CheckboxListTile(
+                    title: const Text('Bus Facility', style: TextStyle(fontWeight: FontWeight.w600)),
+                    value: _sBusFacility,
+                    activeColor: Colors.blue,
+                    onChanged: (v) => setState(() => _sBusFacility = v ?? false),
+                  ),
+                  if (_sBusFacility) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _sBusRoute,
+                      items: _busRoutes.map((route) => DropdownMenuItem(value: route, child: Text(route))).toList(),
+                      onChanged: (v) => setState(() => _sBusRoute = v),
+                      decoration: InputDecoration(
+                        labelText: 'Select Bus Route',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        filled: true,
+                        fillColor: Colors.blue[50],
+                        prefixIcon: const Icon(Icons.directions_bus, color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  // Hostel Facility
+                  CheckboxListTile(
+                    title: const Text('Hostel Facility', style: TextStyle(fontWeight: FontWeight.w600)),
+                    value: _sHostelFacility,
+                    activeColor: Colors.blue,
+                    onChanged: (v) {
+                      setState(() {
+                        _sHostelFacility = v ?? false;
+                        // Auto-load hostel fee if class is selected
+                        if (_sHostelFacility && _sClass != null) {
+                          print('DEBUG: Checking hostel fee for class: $_sClass');
+                          print('DEBUG: Available fees: $_hostelFeesByClass');
+                          _sHostelFee = _hostelFeesByClass[_sClass] ?? 0;
+                          print('DEBUG: Set hostel fee to: $_sHostelFee');
+                        }
+                      });
+                    },
+                  ),
+                  if (_sHostelFacility) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        border: Border.all(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Hostel Fee: ₹${_sHostelFee.toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue[900]),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isSubmittingStudent ? null : _submitStudent,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: _isSubmittingStudent
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                          : const Text('Register Student', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _isSubmittingStudent ? null : _submitStudent,
-              child: _isSubmittingStudent ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Register Student'),
-            ),
-          ),
-        ],
+        ),
       ),
     );
+
   }
 
   Widget _buildStaffRegistrationPage() {
