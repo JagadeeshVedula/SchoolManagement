@@ -53,6 +53,7 @@ class _FeesTabState extends State<FeesTab> {
   // Track payment status for Books and Uniform fees
   bool _booksFeeAlreadyPaid = false;
   bool _uniformFeeAlreadyPaid = false;
+  bool _hostelFeeAlreadyPaid = false;
 
   bool _isSubmitting = false;
 
@@ -197,6 +198,39 @@ class _FeesTabState extends State<FeesTab> {
       (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0)
     );
     return uniformFeePaid > 0;
+  }
+
+  Future<bool> _checkHostelFeeAlreadyPaid(String studentName) async {
+    final fees = await SupabaseService.getFeesByStudent(studentName);
+    final currentYear = DateTime.now().year.toString();
+    
+    final hostelFeesForCurrentYear = fees.where((f) {
+      final feeType = (f['FEE TYPE'] as String? ?? '').toLowerCase();
+      final termYear = (f['TERM YEAR'] as String? ?? '').toString();
+      final isHostelFee = feeType.contains('hostel');
+      final isCurrentYear = termYear == currentYear || termYear.isEmpty;
+      return isHostelFee && isCurrentYear;
+    }).toList();
+    
+    final hostelFeePaid = hostelFeesForCurrentYear.fold<double>(
+      0, 
+      (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0)
+    );
+    return hostelFeePaid > 0;
+  }
+
+  Future<double> _getHostelFeePaid(String studentName) async {
+    final fees = await SupabaseService.getFeesByStudent(studentName);
+    final hostelPayments = fees.where((f) {
+      final feeType = (f['FEE TYPE'] as String? ?? '').toLowerCase();
+      return feeType.contains('hostel');
+    }).toList();
+    
+    final totalPaid = hostelPayments.fold<double>(
+      0,
+      (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0)
+    );
+    return totalPaid;
   }
 
   Future<void> _downloadFile(List<int> bytes, String fileName) async {
@@ -411,7 +445,24 @@ class _FeesTabState extends State<FeesTab> {
             totalTermFee += termFees[term] ?? 0;
           }
           
-          balanceAmount = (totalTermFee - paidAmount).clamp(0, double.infinity);
+          // Fetch all payments to calculate total paid for these terms
+          final fees = await SupabaseService.getFeesByStudent(_selectedStudent!.name);
+          double totalPaidForTerms = 0;
+          
+          for (final term in termNos) {
+            final termKeyFull = 'Term $term';
+            for (final fee in fees) {
+              final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
+              final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
+              
+              if (feeType.contains('school fee') && termNo.contains(termKeyFull.toLowerCase())) {
+                final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+                totalPaidForTerms += amt;
+              }
+            }
+          }
+          
+          balanceAmount = (totalTermFee - totalPaidForTerms).clamp(0, double.infinity);
         }
       }
       
@@ -498,6 +549,17 @@ class _FeesTabState extends State<FeesTab> {
                   pw.Text('Rs. ${paidAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
+              // For School Fee, show total term fee and balance
+              if ((payment['FEE TYPE'] as String? ?? '').contains('School Fee') && balanceAmount >= 0) ...[
+                pw.SizedBox(height: 6),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Total Term Fee:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Rs. ${(balanceAmount + paidAmount).toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  ],
+                ),
+              ],
               if (balanceAmount > 0) ...[
                 pw.SizedBox(height: 6),
                 pw.Row(
@@ -505,6 +567,15 @@ class _FeesTabState extends State<FeesTab> {
                   children: [
                     pw.Text('Balance Due:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                     pw.Text('Rs. ${balanceAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.red)),
+                  ],
+                ),
+              ] else if ((payment['FEE TYPE'] as String? ?? '').contains('School Fee')) ...[
+                pw.SizedBox(height: 6),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Status:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    pw.Text('FULLY PAID', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
                   ],
                 ),
               ],
@@ -535,6 +606,7 @@ class _FeesTabState extends State<FeesTab> {
 
   void _showPaymentInvoiceDialog(Map<String, dynamic> payment) {
     final paidAmount = double.tryParse((payment['AMOUNT'] as dynamic).toString()) ?? 0;
+    final isSchoolFee = (payment['FEE TYPE'] as String? ?? '').contains('School Fee');
     
     showDialog(
       context: context,
@@ -543,65 +615,70 @@ class _FeesTabState extends State<FeesTab> {
         content: SingleChildScrollView(
           child: SizedBox(
             width: 400,
-            child: FutureBuilder<Map<String, dynamic>?>(
-              future: (payment['FEE TYPE'] as String? ?? '').contains('School Fee') && _selectedStudent != null
-                  ? SupabaseService.getFeeStructureByClass(_selectedStudent!.className)
-                  : Future.value(null),
-              builder: (context, structureSnap) {
-                if (structureSnap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                
-                double calculatedBalance = 0;
-                if (structureSnap.hasData && structureSnap.data != null && _selectedStudent != null) {
-                  final structure = structureSnap.data!;
-                  final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
-                  final concession = _selectedStudent!.schoolFeeConcession;
-                  final termFees = SupabaseService.calculateTermFees(totalFee, concession);
-                  
-                  final termNoStr = payment['TERM NO'] as String? ?? '';
-                  final termNos = termNoStr.split(',').map((t) => int.tryParse(t.trim().replaceAll('Term ', '')) ?? 0).where((t) => t > 0).toList();
-                  
-                  double totalTermFee = 0;
-                  for (final term in termNos) {
-                    totalTermFee += termFees[term] ?? 0;
-                  }
-                  
-                  // Now fetch all payments for this student to calculate actual balance
-                  return FutureBuilder<List<Map<String, dynamic>>>(
-                    future: SupabaseService.getFeesByStudent(_selectedStudent!.name),
-                    builder: (context, feesSnap) {
-                      if (feesSnap.connectionState == ConnectionState.waiting) {
+            child: isSchoolFee && _selectedStudent != null
+                ? FutureBuilder<Map<String, dynamic>?>(
+                    future: SupabaseService.getFeeStructureByClass(_selectedStudent!.className),
+                    builder: (context, structureSnap) {
+                      if (structureSnap.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       }
                       
-                      final fees = feesSnap.data ?? [];
+                      double calculatedBalance = 0;
+                      double totalTermFee = 0;
                       double totalPaidForTerms = 0;
                       
-                      // Sum all payments for these specific terms
-                      for (final term in termNos) {
-                        final termKeyFull = 'Term $term';
-                        for (final fee in fees) {
-                          final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
-                          final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
-                          
-                          if (feeType.contains('school fee') && termNo.contains(termKeyFull.toLowerCase())) {
-                            final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
-                            totalPaidForTerms += amt;
-                          }
+                      if (structureSnap.hasData && structureSnap.data != null && _selectedStudent != null) {
+                        final structure = structureSnap.data!;
+                        final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
+                        final concession = _selectedStudent!.schoolFeeConcession;
+                        final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                        
+                        final termNoStr = payment['TERM NO'] as String? ?? '';
+                        final termNos = termNoStr.split(',').map((t) => int.tryParse(t.trim().replaceAll('Term ', '')) ?? 0).where((t) => t > 0).toList();
+                        
+                        for (final term in termNos) {
+                          totalTermFee += termFees[term] ?? 0;
                         }
                       }
                       
-                      calculatedBalance = (totalTermFee - totalPaidForTerms).clamp(0, double.infinity);
-                      
-                      return _buildInvoiceContent(payment, paidAmount, calculatedBalance, totalTermFee, totalPaidForTerms);
+                      // Fetch all payments to calculate balance
+                      return FutureBuilder<List<Map<String, dynamic>>>(
+                        future: SupabaseService.getFeesByStudent(_selectedStudent!.name),
+                        builder: (context, feesSnap) {
+                          if (feesSnap.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          
+                          final fees = feesSnap.data ?? [];
+                          final termNoStr = payment['TERM NO'] as String? ?? '';
+                          final termNos = termNoStr.split(',').map((t) => int.tryParse(t.trim().replaceAll('Term ', '')) ?? 0).where((t) => t > 0).toList();
+                          
+                          for (final term in termNos) {
+                            final termKeyFull = 'Term $term';
+                            for (final fee in fees) {
+                              final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
+                              final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
+                              
+                              if (feeType.contains('school fee') && termNo.contains(termKeyFull.toLowerCase())) {
+                                final amt = double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+                                totalPaidForTerms += amt;
+                              }
+                            }
+                          }
+                          
+                          calculatedBalance = (totalTermFee - totalPaidForTerms).clamp(0, double.infinity);
+                          
+                          return _buildInvoiceContent(payment, paidAmount, calculatedBalance, totalTermFee, totalPaidForTerms);
+                        },
+                      );
                     },
-                  );
-                }
-                
-                return _buildInvoiceContent(payment, paidAmount, calculatedBalance, 0, 0);
-              },
-            ),
+                  )
+                : FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _selectedStudent != null ? SupabaseService.getFeesByStudent(_selectedStudent!.name) : Future.value([]),
+                    builder: (context, feesSnap) {
+                      return _buildInvoiceContent(payment, paidAmount, 0, 0, 0);
+                    },
+                  ),
           ),
         ),
         actions: [
@@ -697,43 +774,137 @@ class _FeesTabState extends State<FeesTab> {
             Text('₹${paidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
           ],
         ),
-        if (totalTermFee > 0) ...[
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Total Term Fee:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-              Text('₹${totalTermFee.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        // For School Fee payments, always show term fee breakdown
+        if ((payment['FEE TYPE'] as String? ?? '').contains('School Fee')) ...[
+          // Show term fee info if available
+          if (totalTermFee > 0) ...[
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Total Term Fee:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                Text('₹${totalTermFee.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Total Paid (All Payments):', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                Text('₹${totalPaid.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            if (calculatedBalance > 0) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Remaining Balance Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  Text('₹${calculatedBalance.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
+                ],
+              ),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Status:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  Text('FULLY PAID', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green[700])),
+                ],
+              ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Total Paid (All Payments):', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-              Text('₹${totalPaid.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue)),
-            ],
-          ),
+          ] else ...[
+            // If totalTermFee is 0, show that fee structure couldn't be loaded
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Status:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                Text('Unable to calculate fee structure', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orange)),
+              ],
+            ),
+          ],
         ],
-        if (calculatedBalance > 0) ...[
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Remaining Balance Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-              Text('₹${calculatedBalance.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
-            ],
+        const SizedBox(height: 16),
+        const Divider(),
+        // Hostel Fee Section
+        if (_selectedStudent != null) 
+          FutureBuilder<bool>(
+            future: _checkHostelFeeAlreadyPaid(_selectedStudent!.name),
+            builder: (context, hostelSnap) {
+              final hostelFacility = _selectedStudent!.hostelFacility;
+              final hasHostelFacility = hostelFacility != null && hostelFacility.isNotEmpty;
+              
+              if (!hasHostelFacility) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Hostel Fee:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    Text('N/A', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey)),
+                  ],
+                );
+              }
+              
+              // Get hostel fee details
+              return FutureBuilder<double>(
+                future: SupabaseService.getHostelFeeByClass(_selectedStudent!.className.split('-')[0]),
+                builder: (context, feeSnap) {
+                  final hostelFeeAmount = feeSnap.data ?? 0;
+                  
+                  return FutureBuilder<double>(
+                    future: _getHostelFeePaid(_selectedStudent!.name),
+                    builder: (context, paidSnap) {
+                      final hostelPaidAmount = paidSnap.data ?? 0;
+                      final hostelDueAmount = (hostelFeeAmount - hostelPaidAmount).clamp(0, double.infinity);
+                      
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('HOSTEL FEE DETAILS', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Hostel Fee Amount:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                              Text('₹${hostelFeeAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            ],
+                          ),
+                          if (hostelPaidAmount > 0) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Already Paid:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                Text('₹${hostelPaidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
+                              ],
+                            ),
+                          ],
+                          if (hostelDueAmount > 0) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Remaining Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                Text('₹${hostelDueAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
+                              ],
+                            ),
+                          ] else if (hostelFeeAmount > 0) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Status:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                Text('FULLY PAID', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green[700])),
+                              ],
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            },
           ),
-        ] else if (totalTermFee > 0) ...[
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Status:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-              Text('FULLY PAID', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green[700])),
-            ],
-          ),
-        ],
         const SizedBox(height: 16),
         const Divider(),
         Center(
@@ -838,10 +1009,15 @@ class _FeesTabState extends State<FeesTab> {
     final termMonthController = ValueNotifier<String?>(_selectedTermMonth);
     final termYearController = TextEditingController();
     final amountController = TextEditingController();
+    final hostelPaymentController = TextEditingController();
     final termSelections = Map<int, bool>.from(_termSelections);
     
     // Extract class without section (e.g., "V-A" -> "V")
     final classWithoutSection = _selectedStudent!.className.split('-')[0];
+    
+    // Check if student has hostel facility
+    final hasHostelFacility = _selectedStudent!.hostelFacility != null && (_selectedStudent!.hostelFacility?.isNotEmpty ?? false);
+    bool payHostelFee = false;
     
     // Auto-populate amount based on payment type
     _populateAmountByFeeType(amountController, classWithoutSection);
@@ -1018,6 +1194,156 @@ class _FeesTabState extends State<FeesTab> {
                         controlAffinity: ListTileControlAffinity.leading,
                         dense: true,
                       ),
+                      const SizedBox(height: 16),
+                      // Hostel Fee Section - Only for School Fee
+                      if (hasHostelFacility)
+                        FutureBuilder<double>(
+                          future: SupabaseService.getHostelFeeByClass(classWithoutSection),
+                          builder: (context, hostelFeeSnap) {
+                            if (hostelFeeSnap.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            final hostelFeeAmount = hostelFeeSnap.data ?? 0;
+                            
+                            return FutureBuilder<double>(
+                              future: _getHostelFeePaid(_selectedStudent!.name),
+                              builder: (context, paidSnap) {
+                                final hostelPaidAmount = paidSnap.data ?? 0;
+                                final hostelFeeDue = (hostelFeeAmount - hostelPaidAmount).clamp(0, double.infinity);
+                                final isHostelFullyPaid = hostelFeeDue == 0 && hostelFeeAmount > 0;
+                                
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.teal[50],
+                                        border: Border.all(color: Colors.teal[200]!, width: 1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Hostel Fee', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text('Total Amount:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                                              Text('₹${hostelFeeAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                            ],
+                                          ),
+                                          if (hostelPaidAmount > 0) ...[
+                                            const SizedBox(height: 6),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Text('Already Paid:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                                                Text('₹${hostelPaidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
+                                              ],
+                                            ),
+                                          ],
+                                          if (hostelFeeDue > 0) ...[
+                                            const SizedBox(height: 6),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Text('Remaining Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                                                Text('₹${hostelFeeDue.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
+                                              ],
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    if (!isHostelFullyPaid)
+                                      StatefulBuilder(
+                                        builder: (context, setPaymentState) => Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            CheckboxListTile(
+                                              value: payHostelFee,
+                                              onChanged: (v) {
+                                                setDialogState(() => payHostelFee = v ?? false);
+                                                if (!payHostelFee) {
+                                                  hostelPaymentController.clear();
+                                                }
+                                              },
+                                              title: const Text('Pay Hostel Fee', style: TextStyle(fontWeight: FontWeight.w600)),
+                                              subtitle: Text('₹${hostelFeeDue.toStringAsFixed(2)} due'),
+                                              controlAffinity: ListTileControlAffinity.leading,
+                                            ),
+                                            if (payHostelFee) ...[
+                                              const SizedBox(height: 8),
+                                              TextField(
+                                                controller: hostelPaymentController,
+                                                decoration: InputDecoration(
+                                                  labelText: 'Amount to Pay (Max: ₹${hostelFeeDue.toStringAsFixed(2)})',
+                                                  hintText: 'Enter amount to pay',
+                                                  border: const OutlineInputBorder(),
+                                                  suffixText: '₹',
+                                                ),
+                                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                                onChanged: (value) => setPaymentState(() {}),
+                                              ),
+                                              if (hostelPaymentController.text.isNotEmpty) ...[
+                                                const SizedBox(height: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue[50],
+                                                    border: Border.all(color: Colors.blue[200]!, width: 1),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    children: [
+                                                      Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text('Amount Paying:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500)),
+                                                          Text('₹${hostelPaymentController.text.isEmpty ? '0.00' : double.tryParse(hostelPaymentController.text)?.toStringAsFixed(2) ?? '0.00'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
+                                                        ],
+                                                      ),
+                                                      Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text('Remaining After Payment:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500)),
+                                                          Text('₹${(hostelFeeDue - (double.tryParse(hostelPaymentController.text) ?? 0)).clamp(0, double.infinity).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green[100],
+                                          border: Border.all(color: Colors.green, width: 1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.check_circle, color: Colors.green[700]),
+                                            const SizedBox(width: 8),
+                                            Text('Hostel Fee Fully Paid', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.green[700])),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
                     ],
                     const SizedBox(height: 24),
                     SizedBox(
@@ -1065,6 +1391,8 @@ class _FeesTabState extends State<FeesTab> {
                           setState(() => _isSubmitting = true);
                           try {
                             final currentYear = DateTime.now().year.toString();
+                            
+                            // Submit school fee payment
                             final feeData = {
                               'STUDENT NAME': _selectedStudent!.name,
                               'FEE TYPE': _selectedPaymentType!.trim(),
@@ -1074,10 +1402,30 @@ class _FeesTabState extends State<FeesTab> {
                               'TERM NO': selectedTermNos,
                             };
                             await SupabaseService.insertFee(feeData);
+                            
+                            // Submit hostel fee if selected
+                            if (_selectedPaymentType == 'School Fee' && payHostelFee && hasHostelFacility) {
+                              final hostelPaymentAmount = hostelPaymentController.text.trim();
+                              if (hostelPaymentAmount.isEmpty) {
+                                ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Please enter hostel payment amount')));
+                                return;
+                              }
+                              final hostelFeeData = {
+                                'STUDENT NAME': _selectedStudent!.name,
+                                'FEE TYPE': 'Hostel Fee',
+                                'AMOUNT': hostelPaymentAmount,
+                                'TERM YEAR': termYearController.text.trim(),
+                                'TERM MONTH': termMonthController.value ?? '',
+                                'TERM NO': 'N/A',
+                              };
+                              await SupabaseService.insertFee(hostelFeeData);
+                            }
+                            
                             if (mounted) {
                               Navigator.pop(dialogContext);
+                              final feeMessage = payHostelFee && hasHostelFacility ? 'School Fee and Hostel Fee paid successfully' : '${_selectedPaymentType!.trim()} paid successfully';
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('${_selectedPaymentType!.trim()} paid successfully'), backgroundColor: Colors.green),
+                                SnackBar(content: Text(feeMessage), backgroundColor: Colors.green),
                               );
                               setState(() {
                                 _selectedPaymentType = null;

@@ -65,7 +65,7 @@ class _RegisterTabState extends State<RegisterTab> {
 
   Future<void> _loadClasses() async {
     try {
-      final classes = await SupabaseService.getClassesFromFeeStructure();
+      final classes = await SupabaseService.getUniqueClasses();
       setState(() => _classes = classes);
     } catch (e) {
       print('Error loading classes: $e');
@@ -92,9 +92,8 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Future<void> _loadStudentsForClass(String className) async {
-    final students = await SupabaseService.getAllStudents();
-    final filtered = students.where((s) => s.className == className).toList();
-    setState(() => _perfStudents = filtered);
+    final students = await SupabaseService.getStudentsByClass(className);
+    setState(() => _perfStudents = students);
   }
 
   void _openStudentSearchDialog() {

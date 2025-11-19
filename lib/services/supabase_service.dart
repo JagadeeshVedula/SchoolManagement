@@ -649,6 +649,26 @@ class SupabaseService {
     }
   }
 
+  // Fetch hostel fee by class from HOSTEL table
+  static Future<double> getHostelFeeByClass(String className) async {
+    try {
+      final response = await client
+          .from('HOSTEL')
+          .select('"HOSTEL FEE"')
+          .eq('CLASS', className)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final fee = double.tryParse((response[0]['HOSTEL FEE'] as dynamic).toString()) ?? 0;
+        return fee;
+      }
+      return 0;
+    } catch (e) {
+      print('Error fetching hostel fee: $e');
+      return 0;
+    }
+  }
+
   // Update student books fee paid status
   static Future<bool> updateStudentBooksFeeStatus(String studentName, String status) async {
     try {

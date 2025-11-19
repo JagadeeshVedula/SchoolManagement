@@ -9,6 +9,7 @@ class Student {
   final double tuitionFeeConcession;
   final String? busRoute;
   final String? gender;
+  final String? hostelFacility;
 
   Student({
     this.id,
@@ -21,6 +22,7 @@ class Student {
     this.tuitionFeeConcession = 0.0,
     this.busRoute,
     this.gender,
+    this.hostelFacility,
   });
 
   // Convert JSON from Supabase to Student object
@@ -36,6 +38,7 @@ class Student {
       tuitionFeeConcession: double.tryParse((json['Tuition Fee Concession'] as dynamic).toString()) ?? 0.0,
       busRoute: json['Route'] as String?,
       gender: json['GENDER'] as String?,
+      hostelFacility: json['Hostel Facility'] as String?,
     );
   }
 
@@ -52,6 +55,7 @@ class Student {
       'Tuition Fee Concession': tuitionFeeConcession,
       'Route': busRoute,
       'GENDER': gender,
+      'Hostel Facility': hostelFacility,
     };
   }
 }
