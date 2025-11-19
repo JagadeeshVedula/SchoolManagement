@@ -6,6 +6,7 @@ import 'package:excel/excel.dart' as excel_pkg;
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io' show File;
+import 'dart:typed_data' show Uint8List;
 import 'dart:html' as html;
 
 class ReportTab extends StatefulWidget {
@@ -259,7 +260,17 @@ class _ReportTabState extends State<ReportTab> {
   void _downloadFileWeb(List<int> bytes, String fileName) {
     // Web download using Blob and download link
     try {
-      final blob = html.Blob([bytes]);
+      // Determine MIME type based on file extension
+      String mimeType = 'application/octet-stream';
+      if (fileName.endsWith('.pdf')) {
+        mimeType = 'application/pdf';
+      } else if (fileName.endsWith('.xlsx')) {
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      }
+      
+      // Create a Uint8List from the bytes to ensure proper byte handling
+      final uint8List = Uint8List.fromList(bytes);
+      final blob = html.Blob([uint8List], mimeType);
       final url = html.Url.createObjectUrlFromBlob(blob);
       final anchor = html.AnchorElement(href: url)
         ..target = 'blank'

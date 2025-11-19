@@ -714,6 +714,74 @@ class SupabaseService {
       return 'UNPAID';
     }
   }
+
+  // Get all bus routes from TRANSPORT table
+  static Future<List<String>> getBusRoutes() async {
+    try {
+      final response = await client
+          .from('TRANSPORT')
+          .select('Route')
+          .neq('Route', null);
+      
+      final routes = <String>{};
+      for (var item in response as List) {
+        final route = item['Route']?.toString();
+        if (route != null && route.isNotEmpty) {
+          routes.add(route);
+        }
+      }
+      return routes.toList();
+    } catch (e) {
+      print('Error fetching bus routes: $e');
+      return [];
+    }
+  }
+
+  // Get hostel fees by class from HOSTEL table
+  static Future<Map<String, double>> getHostelFees() async {
+    try {
+      final response = await client
+          .from('HOSTEL')
+          .select('Class, Fee');
+      
+      final fees = <String, double>{};
+      for (var item in response as List) {
+        final className = item['Class']?.toString();
+        final fee = item['Fee'];
+        print('DEBUG: Hostel - Class: $className, Fee: $fee');
+        if (className != null && fee != null) {
+          fees[className] = (fee is int) ? fee.toDouble() : double.parse(fee.toString());
+        }
+      }
+      print('DEBUG: Final hostel fees map: $fees');
+      return fees;
+    } catch (e) {
+      print('Error fetching hostel fees: $e');
+      return {};
+    }
+  }
+
+  // Get unique classes from FEE_STRUCTURE table
+  static Future<List<String>> getClassesFromFeeStructure() async {
+    try {
+      final response = await client
+          .from('FEE STRUCTURE')
+          .select('CLASS')
+          .neq('CLASS', null);
+      
+      final classes = <String>{};
+      for (var item in response as List) {
+        final className = item['CLASS']?.toString();
+        if (className != null && className.isNotEmpty) {
+          classes.add(className);
+        }
+      }
+      return classes.toList();
+    } catch (e) {
+      print('Error fetching classes from fee structure: $e');
+      return [];
+    }
+  }
 }
 
 

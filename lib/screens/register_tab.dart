@@ -15,14 +15,21 @@ class _RegisterTabState extends State<RegisterTab> {
 
   // Student registration controllers
   final _sName = TextEditingController();
-  final _sClass = TextEditingController();
+  String? _sClass;
   final _sFather = TextEditingController();
   final _sMother = TextEditingController();
   final _sParentMobile = TextEditingController();
+  final _sAddress = TextEditingController();
   String? _sGender;
+  bool _sBusFacility = false;
+  String? _sBusRoute;
+  bool _sHostelFacility = false;
+  double _sHostelFee = 0;
 
   // Performance controllers
-  String? _perfStudent;
+  String? _perfClass;
+  Student? _perfStudent;
+  List<Student> _perfStudents = [];
   final _perfAssessment = TextEditingController();
   final _perfSubject = TextEditingController();
   final _perfMarks = TextEditingController();
@@ -44,21 +51,123 @@ class _RegisterTabState extends State<RegisterTab> {
   bool _isSubmittingStaff = false;
   bool _isSubmittingBus = false;
 
-  late Future<List<Student>> _studentsFuture;
+  List<String> _classes = [];
+  List<String> _busRoutes = [];
+  Map<String, double> _hostelFeesByClass = {};
 
   @override
   void initState() {
     super.initState();
-    _studentsFuture = SupabaseService.getAllStudents();
+    _loadClasses();
+    _loadBusRoutes();
+    _loadHostelFees();
+  }
+
+  Future<void> _loadClasses() async {
+    try {
+      final classes = await SupabaseService.getClassesFromFeeStructure();
+      setState(() => _classes = classes);
+    } catch (e) {
+      print('Error loading classes: $e');
+    }
+  }
+
+  Future<void> _loadBusRoutes() async {
+    try {
+      final routes = await SupabaseService.getBusRoutes();
+      setState(() => _busRoutes = routes);
+    } catch (e) {
+      print('Error loading bus routes: $e');
+    }
+  }
+
+  Future<void> _loadHostelFees() async {
+    try {
+      final fees = await SupabaseService.getHostelFees();
+      print('DEBUG RegisterTab: Loaded hostel fees: $fees');
+      setState(() => _hostelFeesByClass = fees);
+    } catch (e) {
+      print('Error loading hostel fees: $e');
+    }
+  }
+
+  Future<void> _loadStudentsForClass(String className) async {
+    final students = await SupabaseService.getAllStudents();
+    final filtered = students.where((s) => s.className == className).toList();
+    setState(() => _perfStudents = filtered);
+  }
+
+  void _openStudentSearchDialog() {
+    if (_perfClass == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a class first')),
+      );
+      return;
+    }
+    if (_perfStudents.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No students found in this class')),
+      );
+      return;
+    }
+
+    final searchController = TextEditingController();
+    final dialogContext = context;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSearchState) => Dialog(
+          child: SizedBox(
+            width: 400,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Search student by name',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (_) => setSearchState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: ListView(
+                      children: _perfStudents
+                          .where((s) => s.name.toLowerCase().contains(searchController.text.toLowerCase()))
+                          .map(
+                            (s) => ListTile(
+                              title: Text(s.name),
+                              subtitle: Text('${s.className} - ${s.gender}'),
+                              onTap: () {
+                                setState(() => _perfStudent = s);
+                                Navigator.pop(dialogContext);
+                              },
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _sName.dispose();
-    _sClass.dispose();
     _sFather.dispose();
     _sMother.dispose();
     _sParentMobile.dispose();
+    _sAddress.dispose();
     _perfAssessment.dispose();
     _perfSubject.dispose();
     _perfMarks.dispose();
@@ -74,25 +183,42 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Future<void> _submitStudent() async {
-    if (_sName.text.trim().isEmpty || _sClass.text.trim().isEmpty || _sGender == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter student name, class, and gender')));
+    if (_sName.text.trim().isEmpty || _sClass == null || _sGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter student name, select class, and gender')));
+      return;
+    }
+    if (_sBusFacility && _sBusRoute == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a bus route')));
       return;
     }
     setState(() => _isSubmittingStudent = true);
     final data = {
       'Name': _sName.text.trim(),
-      'Class': _sClass.text.trim(),
+      'Class': _sClass,
       'Father Name': _sFather.text.trim(),
       'Mother Name': _sMother.text.trim(),
       'Parent Mobile': _sParentMobile.text.trim(),
-      'Gender': _sGender,
+      'ADDRESS': _sAddress.text.trim(),
+      'GENDER': _sGender,
+      'Route': _sBusRoute,
+      'Bus Facility': _sBusFacility ? 'Yes' : null,
+      'Hostel Facility': _sHostelFacility ? 'Yes' : null,
     };
     final ok = await SupabaseService.insertStudent(data);
     setState(() => _isSubmittingStudent = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student registered successfully')));
-      _sName.clear(); _sClass.clear(); _sFather.clear(); _sMother.clear(); _sParentMobile.clear();
-      setState(() { _sGender = null; _studentsFuture = SupabaseService.getAllStudents(); _currentPage = 0; });
+      _sName.clear(); _sFather.clear(); _sMother.clear(); _sParentMobile.clear(); _sAddress.clear();
+      setState(() { 
+        _sGender = null; 
+        _sClass = null;
+        _sBusFacility = false;
+        _sBusRoute = null;
+        _sHostelFacility = false;
+        _sHostelFee = 0;
+        _loadClasses(); 
+        _currentPage = 0; 
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to register student')));
     }
@@ -105,19 +231,18 @@ class _RegisterTabState extends State<RegisterTab> {
     }
     setState(() => _isSubmittingPerf = true);
     final data = {
-      'Student Name': _perfStudent!,
+      'Student Name': _perfStudent!.name,
       'Assessment': _perfAssessment.text.trim(),
-      'Subject Name': _perfSubject.text.trim(),
+      'Subject name': _perfSubject.text.trim(),
       'Marks': _perfMarks.text.trim(),
       'Grade': _perfGrade.text.trim(),
-      'Remarks': _perfRemarks.text.trim(),
     };
     final ok = await SupabaseService.insertPerformance(data);
     setState(() => _isSubmittingPerf = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Performance record added successfully')));
       _perfAssessment.clear(); _perfSubject.clear(); _perfMarks.clear(); _perfGrade.clear(); _perfRemarks.clear();
-      setState(() { _currentPage = 0; });
+      setState(() { _perfStudent = null; _perfClass = null; _currentPage = 0; });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to add performance')));
     }
@@ -263,7 +388,24 @@ class _RegisterTabState extends State<RegisterTab> {
           const SizedBox(height: 20),
           TextField(controller: _sName, decoration: const InputDecoration(labelText: 'Student Name', border: OutlineInputBorder())),
           const SizedBox(height: 12),
-          TextField(controller: _sClass, decoration: const InputDecoration(labelText: 'Class', border: OutlineInputBorder())),
+          DropdownButtonFormField<String>(
+            value: _sClass,
+            items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (v) {
+              setState(() {
+                _sClass = v;
+                print('DEBUG: Selected class: $v');
+                // Auto-load hostel fee if hostel facility is already checked
+                if (_sHostelFacility && v != null) {
+                  print('DEBUG: Hostel facility checked, loading fee for class: $v');
+                  print('DEBUG: Available fees: $_hostelFeesByClass');
+                  _sHostelFee = _hostelFeesByClass[v] ?? 0;
+                  print('DEBUG: Set hostel fee to: $_sHostelFee');
+                }
+              });
+            },
+            decoration: const InputDecoration(labelText: 'Class', border: OutlineInputBorder()),
+          ),
           const SizedBox(height: 12),
           TextField(controller: _sFather, decoration: const InputDecoration(labelText: "Father's Name", border: OutlineInputBorder())),
           const SizedBox(height: 12),
@@ -271,12 +413,59 @@ class _RegisterTabState extends State<RegisterTab> {
           const SizedBox(height: 12),
           TextField(controller: _sParentMobile, decoration: const InputDecoration(labelText: 'Parent Mobile', border: OutlineInputBorder()), keyboardType: TextInputType.phone),
           const SizedBox(height: 12),
+          TextField(controller: _sAddress, decoration: const InputDecoration(labelText: 'Address', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: _sGender,
             items: const [DropdownMenuItem(value: 'Male', child: Text('Male')), DropdownMenuItem(value: 'Female', child: Text('Female'))],
             onChanged: (v) => setState(() => _sGender = v),
             decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
           ),
+          const SizedBox(height: 16),
+          // Bus Facility
+          CheckboxListTile(
+            title: const Text('Bus Facility'),
+            value: _sBusFacility,
+            onChanged: (v) => setState(() => _sBusFacility = v ?? false),
+          ),
+          if (_sBusFacility) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _sBusRoute,
+              items: _busRoutes.map((route) => DropdownMenuItem(value: route, child: Text(route))).toList(),
+              onChanged: (v) => setState(() => _sBusRoute = v),
+              decoration: const InputDecoration(labelText: 'Select Bus Route', border: OutlineInputBorder()),
+            ),
+          ],
+          const SizedBox(height: 12),
+          // Hostel Facility
+          CheckboxListTile(
+            title: const Text('Hostel Facility'),
+            value: _sHostelFacility,
+            onChanged: (v) {
+              setState(() {
+                _sHostelFacility = v ?? false;
+                // Auto-load hostel fee if class is selected
+                if (_sHostelFacility && _sClass != null) {
+                  print('DEBUG: Checking hostel fee for class: $_sClass');
+                  print('DEBUG: Available fees: $_hostelFeesByClass');
+                  _sHostelFee = _hostelFeesByClass[_sClass] ?? 0;
+                  print('DEBUG: Set hostel fee to: $_sHostelFee');
+                }
+              });
+            },
+          ),
+          if (_sHostelFacility) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(border: Border.all(color: Colors.blue), borderRadius: BorderRadius.circular(4)),
+              child: Text(
+                'Hostel Fee: ₹${_sHostelFee.toStringAsFixed(2)}',
+                style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
@@ -328,20 +517,46 @@ class _RegisterTabState extends State<RegisterTab> {
           const SizedBox(height: 16),
           Text('Add Performance', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
           const SizedBox(height: 20),
-          FutureBuilder<List<Student>>(
-            future: _studentsFuture,
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) return const CircularProgressIndicator();
-              final students = snap.data ?? [];
-              return DropdownButtonFormField<String>(
-                value: _perfStudent,
-                items: students.map((s) => DropdownMenuItem(value: s.name, child: Text(s.name))).toList(),
-                onChanged: (v) => setState(() => _perfStudent = v),
-                decoration: const InputDecoration(labelText: 'Select Student', border: OutlineInputBorder()),
-              );
+          const Text('Select Class', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _perfClass,
+            items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (v) {
+              setState(() {
+                _perfClass = v;
+                _perfStudent = null;
+                _perfStudents = [];
+              });
+              if (v != null) _loadStudentsForClass(v);
             },
+            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _openStudentSearchDialog,
+              icon: const Icon(Icons.search),
+              label: const Text('Search & Select Student'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+          if (_perfStudent != null) ...[  
+            const SizedBox(height: 12), 
+            Text(
+              'Selected: ${_perfStudent!.name} (${_perfStudent!.className})',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
           TextField(controller: _perfAssessment, decoration: const InputDecoration(labelText: 'Assessment', border: OutlineInputBorder())),
           const SizedBox(height: 12),
           TextField(controller: _perfSubject, decoration: const InputDecoration(labelText: 'Subject Name', border: OutlineInputBorder())),
