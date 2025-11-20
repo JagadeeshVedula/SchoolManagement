@@ -36,6 +36,10 @@ class _RegisterTabState extends State<RegisterTab> {
   final _perfMarks = TextEditingController();
   final _perfGrade = TextEditingController();
   final _perfRemarks = TextEditingController();
+  
+  // Subject marks controllers
+  late Map<String, TextEditingController> _subjectMarksControllers;
+  final List<String> _subjects = ['Telugu', 'English', 'Hindi', 'Maths', 'Science', 'Social', 'Computers'];
 
   // Staff controllers
   final _staffName = TextEditingController();
@@ -60,6 +64,9 @@ class _RegisterTabState extends State<RegisterTab> {
   @override
   void initState() {
     super.initState();
+    _subjectMarksControllers = {
+      for (var subject in _subjects) subject: TextEditingController(),
+    };
     _loadClasses();
     _loadBusRoutes();
     _loadHostelFees();
@@ -186,6 +193,9 @@ class _RegisterTabState extends State<RegisterTab> {
     _perfMarks.dispose();
     _perfGrade.dispose();
     _perfRemarks.dispose();
+    for (var controller in _subjectMarksControllers.values) {
+      controller.dispose();
+    }
     _staffName.dispose();
     _staffQualification.dispose();
     _staffMobile.dispose();
@@ -245,26 +255,54 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Future<void> _submitPerformance() async {
-    if (_perfStudent == null || _perfSubject.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Select a student and enter subject')));
+    if (_perfStudent == null || _perfAssessment.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Select a student and enter assessment')));
       return;
     }
+
+    // Collect all subjects with marks
+    bool hasMarks = false;
+    for (var subject in _subjects) {
+      if (_subjectMarksControllers[subject]!.text.trim().isNotEmpty) {
+        hasMarks = true;
+        break;
+      }
+    }
+
+    if (!hasMarks) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter marks for at least one subject')));
+      return;
+    }
+
     setState(() => _isSubmittingPerf = true);
+
+    // Build data with all subjects and their marks
     final data = {
       'Student Name': _perfStudent!.name,
       'Assessment': _perfAssessment.text.trim(),
-      'Subject name': _perfSubject.text.trim(),
-      'Marks': _perfMarks.text.trim(),
-      'Grade': _perfGrade.text.trim(),
     };
+
+    // Add subject columns and marks
+    for (var subject in _subjects) {
+      final marks = _subjectMarksControllers[subject]!.text.trim();
+      if (marks.isNotEmpty) {
+        data[subject] = 'Yes'; // Subject taken
+        data['$subject Marks'] = marks; // Subject marks
+      }
+    }
+
     final ok = await SupabaseService.insertPerformance(data);
     setState(() => _isSubmittingPerf = false);
+    
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Performance record added successfully')));
-      _perfAssessment.clear(); _perfSubject.clear(); _perfMarks.clear(); _perfGrade.clear(); _perfRemarks.clear();
+      _perfAssessment.clear();
+      for (var controller in _subjectMarksControllers.values) {
+        controller.clear();
+      }
       setState(() { _perfStudent = null; _perfClass = null; _currentPage = 0; });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to add performance')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to add performance record')));
     }
   }
 
@@ -729,22 +767,83 @@ class _RegisterTabState extends State<RegisterTab> {
             ),
           ],
           const SizedBox(height: 16),
-          TextField(controller: _perfAssessment, decoration: const InputDecoration(labelText: 'Assessment', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _perfSubject, decoration: const InputDecoration(labelText: 'Subject Name', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _perfMarks, decoration: const InputDecoration(labelText: 'Marks', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _perfGrade, decoration: const InputDecoration(labelText: 'Grade', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _perfRemarks, decoration: const InputDecoration(labelText: 'Remarks', border: OutlineInputBorder())),
+          TextField(
+            controller: _perfAssessment,
+            decoration: const InputDecoration(
+              labelText: 'Assessment Name',
+              border: OutlineInputBorder(),
+              hintText: 'e.g., Mid-term, Final Exam',
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Enter Marks for Each Subject',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange[900],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ..._subjects.map((subject) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            subject,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: TextField(
+                            controller: _subjectMarksControllers[subject],
+                            decoration: InputDecoration(
+                              hintText: 'Marks',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
               onPressed: _isSubmittingPerf ? null : _submitPerformance,
-              child: _isSubmittingPerf ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Add Performance'),
+              child: _isSubmittingPerf
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Add Performance'),
             ),
           ),
         ],

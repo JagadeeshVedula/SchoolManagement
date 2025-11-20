@@ -117,8 +117,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
           children: [
             // Logo from assets
             Container(
-              width: 70,
-              height: 70,
+              width: 85,
+              height: 85,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
@@ -132,7 +132,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
               child: ClipOval(
                 child: Image.asset(
                   'assets/images/logo.png',
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
+                  scale: 0.8,
                 ),
               ),
             ),

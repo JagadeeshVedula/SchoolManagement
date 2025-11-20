@@ -63,6 +63,21 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   _buildInfoRow('Father Name:', widget.student.fatherName),
                   _buildInfoRow('Mother Name:', widget.student.motherName),
                   _buildInfoRow('Parent Mobile:', widget.student.parentMobile),
+                  _buildInfoRow('Address:', widget.student.address ?? 'N/A'),
+                  if (widget.student.gender != null && widget.student.gender!.isNotEmpty)
+                    _buildInfoRow('Gender:', widget.student.gender!),
+                  if (widget.student.schoolFeeConcession > 0)
+                    _buildInfoRow('School Fee Concession:', '₹${widget.student.schoolFeeConcession.toStringAsFixed(2)}'),
+                  if (widget.student.tuitionFeeConcession > 0)
+                    _buildInfoRow('Tuition Fee Concession:', '₹${widget.student.tuitionFeeConcession.toStringAsFixed(2)}'),
+                  if (widget.student.busRoute != null && widget.student.busRoute!.isNotEmpty)
+                    _buildInfoRow('Bus Route:', widget.student.busRoute!),
+                  if (widget.student.busNo != null && widget.student.busNo!.isNotEmpty)
+                    _buildInfoRow('Bus Number:', widget.student.busNo!),
+                  if (widget.student.busFeeFacility != null && widget.student.busFeeFacility!.isNotEmpty)
+                    _buildInfoRow('Bus Facility:', widget.student.busFeeFacility!),
+                  if (widget.student.hostelFacility != null && widget.student.hostelFacility!.isNotEmpty)
+                    _buildInfoRow('Hostel Facility:', widget.student.hostelFacility!),
                 ],
               ),
             ),
@@ -183,34 +198,52 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     itemCount: performances.length,
                     itemBuilder: (context, index) {
                       final perf = performances[index];
+                      final subjectMarks = [
+                        if (perf.teluguMarks != null && perf.teluguMarks!.isNotEmpty) 'Telugu: ${perf.teluguMarks}',
+                        if (perf.englishMarks != null && perf.englishMarks!.isNotEmpty) 'English: ${perf.englishMarks}',
+                        if (perf.hindiMarks != null && perf.hindiMarks!.isNotEmpty) 'Hindi: ${perf.hindiMarks}',
+                        if (perf.mathsMarks != null && perf.mathsMarks!.isNotEmpty) 'Maths: ${perf.mathsMarks}',
+                        if (perf.scienceMarks != null && perf.scienceMarks!.isNotEmpty) 'Science: ${perf.scienceMarks}',
+                        if (perf.socialMarks != null && perf.socialMarks!.isNotEmpty) 'Social: ${perf.socialMarks}',
+                        if (perf.computersMarks != null && perf.computersMarks!.isNotEmpty) 'Computers: ${perf.computersMarks}',
+                      ];
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          title: Text(
-                            perf.subject.isNotEmpty ? perf.subject : 'Subject',
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Column(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 6),
-                              Text('Marks: ${perf.marks}', style: GoogleFonts.inter(color: Colors.grey[700])),
-                              if (perf.remarks.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text('Remarks: ${perf.remarks}', style: GoogleFonts.inter(color: Colors.grey[600])),
-                              ],
+                              Text(
+                                'Assessment: ${perf.assessment}',
+                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue[800]),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: subjectMarks.map((mark) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green[50],
+                                      border: Border.all(color: Colors.green[300]!),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      mark,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.green[800],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
                             ],
                           ),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _getGradeColor(perf.grade),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(perf.grade.isNotEmpty ? perf.grade : '-', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
-                          ),
-                          isThreeLine: perf.remarks.isNotEmpty,
                         ),
                       );
                     },
@@ -252,22 +285,5 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         ],
       ),
     );
-  }
-
-  Color _getGradeColor(String grade) {
-    switch (grade.toUpperCase()) {
-      case 'A':
-        return Colors.green;
-      case 'B':
-        return Colors.blue;
-      case 'C':
-        return Colors.orange;
-      case 'D':
-        return Colors.red;
-      case 'F':
-        return Colors.redAccent;
-      default:
-        return Colors.grey;
-    }
   }
 }

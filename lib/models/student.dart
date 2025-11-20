@@ -7,9 +7,11 @@ class Student {
   final String parentMobile;
   final double schoolFeeConcession;
   final double tuitionFeeConcession;
+  final String? address;
+  final String? gender;
   final String? busRoute;
   final String? busNo;
-  final String? gender;
+  final String? busFeeFacility;
   final String? hostelFacility;
 
   Student({
@@ -21,9 +23,11 @@ class Student {
     required this.parentMobile,
     this.schoolFeeConcession = 0.0,
     this.tuitionFeeConcession = 0.0,
+    this.address,
+    this.gender,
     this.busRoute,
     this.busNo,
-    this.gender,
+    this.busFeeFacility,
     this.hostelFacility,
   });
 
@@ -38,9 +42,11 @@ class Student {
       parentMobile: json['Parent Mobile'] as String? ?? '',
       schoolFeeConcession: double.tryParse((json['School Fee Concession'] as dynamic).toString()) ?? 0.0,
       tuitionFeeConcession: double.tryParse((json['Tuition Fee Concession'] as dynamic).toString()) ?? 0.0,
+      address: json['ADDRESS'] as String?,
+      gender: json['GENDER'] as String?,
       busRoute: json['Route'] as String?,
       busNo: json['BusNo'] as String?,
-      gender: json['GENDER'] as String?,
+      busFeeFacility: json['Bus Facility'] as String?,
       hostelFacility: json['Hostel Facility'] as String?,
     );
   }
@@ -56,9 +62,11 @@ class Student {
       'Parent Mobile': parentMobile,
       'School Fee Concession': schoolFeeConcession,
       'Tuition Fee Concession': tuitionFeeConcession,
+      'ADDRESS': address,
+      'GENDER': gender,
       'Route': busRoute,
       'BusNo': busNo,
-      'GENDER': gender,
+      'Bus Facility': busFeeFacility,
       'Hostel Facility': hostelFacility,
     };
   }
