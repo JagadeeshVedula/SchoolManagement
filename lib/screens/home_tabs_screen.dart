@@ -8,7 +8,7 @@ import 'package:school_management/screens/register_tab.dart';
 import 'package:school_management/screens/fees_tab.dart';
 import 'package:school_management/screens/report_tab.dart';
 
-class HomeTabsScreen extends StatelessWidget {
+class HomeTabsScreen extends StatefulWidget {
   final String role;
   final String username;
   final String? parentMobile;
@@ -19,6 +19,72 @@ class HomeTabsScreen extends StatelessWidget {
     required this.username,
     this.parentMobile,
   });
+
+  @override
+  State<HomeTabsScreen> createState() => _HomeTabsScreenState();
+}
+
+class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProviderStateMixin {
+  bool _sidebarOpen = true;
+  late TabController _tabController;
+  late DateTime _currentDateTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 6, vsync: this);
+    _currentDateTime = DateTime.now();
+    _startTimeUpdater();
+  }
+
+  void _startTimeUpdater() {
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        setState(() {
+          _currentDateTime = DateTime.now();
+        });
+      }
+      return mounted;
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _logout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year}';
+  }
+
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +98,7 @@ class HomeTabsScreen extends StatelessWidget {
     ];
 
     final views = <Widget>[
-      StudentDataWidget(parentMobile: null),
+      StudentDataWidget(parentMobile: widget.parentMobile),
       const RegisterTab(),
       const Center(child: StaffDataWidget()),
       const Center(child: TransportDataWidget()),
@@ -40,42 +106,203 @@ class HomeTabsScreen extends StatelessWidget {
       const Center(child: ReportTab()),
     ];
 
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Admin Dashboard',
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          centerTitle: true,
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue[800]!, Colors.blue[600]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 120,
+        leading: IconButton(
+          icon: Icon(_sidebarOpen ? Icons.menu_open : Icons.menu),
+          onPressed: () => setState(() => _sidebarOpen = !_sidebarOpen),
+        ),
+        title: Row(
+          children: [
+            // Logo from assets
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-          bottom: TabBar(
-            tabs: tabs,
-            isScrollable: true,
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-          ),
+            const SizedBox(width: 16),
+            // School info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'NALANDA IIT OLYMPIAD SCHOOL',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'NARSIPATNAM (1004)',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Date: ${_formatDateTime(_currentDateTime)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  Text(
+                    'Time: ${_formatTime(_currentDateTime)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        body: TabBarView(
-          children: views,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+          const SizedBox(width: 8),
+        ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue[800]!, Colors.blue[600]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
       ),
+      body: Row(
+        children: [
+          // Sidebar Navigation
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: _sidebarOpen ? 250 : 0,
+            color: Colors.indigo[50],
+            child: _sidebarOpen
+                ? SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.blue[800]!, Colors.blue[600]!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.school,
+                                size: 40,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Navigation',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ..._buildSidebarItems(tabs),
+                      ],
+                    ),
+                  )
+                : null,
+          ),
+          // Main Content Area
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: views,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  List<Widget> _buildSidebarItems(List<Tab> tabs) {
+    return tabs.asMap().entries.map((entry) {
+      int idx = entry.key;
+      Tab tab = entry.value;
+      final isActive = _tabController.index == idx;
+
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.blue[100] : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: isActive ? Border.all(color: Colors.blue[600]!, width: 2) : null,
+        ),
+        child: ListTile(
+          title: Text(
+            tab.text ?? '',
+            style: GoogleFonts.poppins(
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? Colors.blue[900] : Colors.grey[700],
+              fontSize: 14,
+            ),
+          ),
+          leading: Icon(
+            _getTabIcon(idx),
+            color: isActive ? Colors.blue[600] : Colors.grey[600],
+          ),
+          onTap: () {
+            _tabController.animateTo(idx);
+            setState(() {});
+          },
+        ),
+      );
+    }).toList();
+  }
+
+  IconData _getTabIcon(int index) {
+    const icons = [
+      Icons.person,
+      Icons.app_registration,
+      Icons.people,
+      Icons.directions_bus,
+      Icons.payment,
+      Icons.assessment,
+    ];
+    return icons[index];
   }
 }
 
@@ -461,41 +688,255 @@ class TransportDataWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.orange[50]!, Colors.deepOrange[50]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.directions_bus, size: 64, color: Colors.deepOrange[600]),
-            const SizedBox(height: 20),
-            Text(
-              'Transport Details',
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: Colors.deepOrange[900],
+    return FutureBuilder<Map<String, List<String>>>(
+      future: SupabaseService.getAllTransportData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange[50]!, Colors.deepOrange[50]!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Routes, vehicles and driver info appear here.',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: Colors.grey[700],
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Colors.deepOrange[600]),
               ),
-              textAlign: TextAlign.center,
             ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange[50]!, Colors.deepOrange[50]!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                'Error loading transport data',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.red[600],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final transportData = snapshot.data ?? {};
+
+        if (transportData.isEmpty) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange[50]!, Colors.deepOrange[50]!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.directions_bus, size: 64, color: Colors.deepOrange[600]),
+                  const SizedBox(height: 20),
+                  Text(
+                    'No Transport Data Available',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.deepOrange[900],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No buses or routes configured yet.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange[50]!, Colors.deepOrange[50]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.directions_bus, size: 28, color: Colors.deepOrange[600]),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Transport Details',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.deepOrange[900],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: transportData.length,
+                    itemBuilder: (context, index) {
+                      final busNumber = transportData.keys.elementAt(index);
+                      final routes = transportData[busNumber]!;
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              colors: [Colors.white, Colors.orange[50]!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.deepOrange[100],
+                                      ),
+                                      child: Icon(
+                                        Icons.directions_bus,
+                                        color: Colors.deepOrange[700],
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Bus Number',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            busNumber,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.deepOrange[800],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.deepOrange[100],
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        '${routes.length} route${routes.length != 1 ? 's' : ''}',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.deepOrange[700],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Routes:',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: routes.map((route) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange[200],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.deepOrange[400]!,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.location_on,
+                                            size: 14,
+                                            color: Colors.deepOrange[700],
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            route,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.deepOrange[900],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

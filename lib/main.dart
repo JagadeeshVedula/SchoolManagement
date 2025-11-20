@@ -38,8 +38,15 @@ class SchoolManagementApp extends StatelessWidget {
           final args = settings.arguments as Map<String, dynamic>?;
           final role = args != null && args['role'] is String ? args['role'] as String : 'student';
           final username = args != null && args['username'] is String ? args['username'] as String : '';
+          final parentMobile = args != null && args['parentMobile'] is String ? args['parentMobile'] as String : null;
           return MaterialPageRoute(
-            builder: (_) => HomeTabsScreen(role: role, username: username),
+            builder: (_) => HomeTabsScreen(role: role, username: username, parentMobile: parentMobile),
+            settings: settings,
+          );
+        }
+        if (settings.name == '/') {
+          return MaterialPageRoute(
+            builder: (_) => const RoleSelectionScreen(),
             settings: settings,
           );
         }

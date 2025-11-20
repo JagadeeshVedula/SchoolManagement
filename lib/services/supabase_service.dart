@@ -802,7 +802,67 @@ class SupabaseService {
       return [];
     }
   }
+
+  // Get all transport data grouped by bus number
+  static Future<Map<String, List<String>>> getAllTransportData() async {
+    try {
+      final response = await client
+          .from('TRANSPORT')
+          .select('BusNumber, Route')
+          .neq('BusNumber', null);
+      
+      final busRoutes = <String, Set<String>>{};
+      for (var item in response as List) {
+        final busNumber = item['BusNumber']?.toString();
+        final route = item['Route']?.toString();
+        if (busNumber != null && busNumber.isNotEmpty && route != null && route.isNotEmpty) {
+          if (!busRoutes.containsKey(busNumber)) {
+            busRoutes[busNumber] = {};
+          }
+          busRoutes[busNumber]!.add(route);
+        }
+      }
+      
+      
+      // Convert Set to List for each bus
+      final result = <String, List<String>>{};
+      busRoutes.forEach((bus, routes) {
+        result[bus] = routes.toList();
+      });
+      
+      return result;
+    } catch (e) {
+      print('Error fetching transport data: $e');
+      return {};
+    }
+  }
+
+  // Get bus numbers for a specific route
+  static Future<List<String>> getBusNumbersByRoute(String route) async {
+    try {
+      final response = await client
+          .from('TRANSPORT')
+          .select('BusNumber')
+          .eq('Route', route)
+          .neq('BusNumber', null);
+      
+      final busNumbers = <String>{};
+      for (var item in response as List) {
+        final busNumber = item['BusNumber']?.toString();
+        if (busNumber != null && busNumber.isNotEmpty) {
+          busNumbers.add(busNumber);
+        }
+      }
+      return busNumbers.toList();
+    } catch (e) {
+      print('Error fetching bus numbers for route: $e');
+      return [];
+    }
+  }
 }
+
+
+
 
 
 

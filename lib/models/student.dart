@@ -8,6 +8,7 @@ class Student {
   final double schoolFeeConcession;
   final double tuitionFeeConcession;
   final String? busRoute;
+  final String? busNo;
   final String? gender;
   final String? hostelFacility;
 
@@ -21,6 +22,7 @@ class Student {
     this.schoolFeeConcession = 0.0,
     this.tuitionFeeConcession = 0.0,
     this.busRoute,
+    this.busNo,
     this.gender,
     this.hostelFacility,
   });
@@ -37,6 +39,7 @@ class Student {
       schoolFeeConcession: double.tryParse((json['School Fee Concession'] as dynamic).toString()) ?? 0.0,
       tuitionFeeConcession: double.tryParse((json['Tuition Fee Concession'] as dynamic).toString()) ?? 0.0,
       busRoute: json['Route'] as String?,
+      busNo: json['BusNo'] as String?,
       gender: json['GENDER'] as String?,
       hostelFacility: json['Hostel Facility'] as String?,
     );
@@ -54,6 +57,7 @@ class Student {
       'School Fee Concession': schoolFeeConcession,
       'Tuition Fee Concession': tuitionFeeConcession,
       'Route': busRoute,
+      'BusNo': busNo,
       'GENDER': gender,
       'Hostel Facility': hostelFacility,
     };

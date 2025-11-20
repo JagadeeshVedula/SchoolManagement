@@ -23,6 +23,7 @@ class _RegisterTabState extends State<RegisterTab> {
   String? _sGender;
   bool _sBusFacility = false;
   String? _sBusRoute;
+  String? _sBusNo;
   bool _sHostelFacility = false;
   double _sHostelFee = 0;
 
@@ -53,6 +54,7 @@ class _RegisterTabState extends State<RegisterTab> {
 
   List<String> _classes = [];
   List<String> _busRoutes = [];
+  List<String> _busNumbers = [];
   Map<String, double> _hostelFeesByClass = {};
 
   @override
@@ -78,6 +80,18 @@ class _RegisterTabState extends State<RegisterTab> {
       setState(() => _busRoutes = routes);
     } catch (e) {
       print('Error loading bus routes: $e');
+    }
+  }
+
+  Future<void> _loadBusNumbersByRoute(String route) async {
+    try {
+      final busNumbers = await SupabaseService.getBusNumbersByRoute(route);
+      setState(() {
+        _busNumbers = busNumbers;
+        _sBusNo = null; // Reset bus number selection when route changes
+      });
+    } catch (e) {
+      print('Error loading bus numbers for route: $e');
     }
   }
 
@@ -190,6 +204,10 @@ class _RegisterTabState extends State<RegisterTab> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a bus route')));
       return;
     }
+    if (_sBusFacility && _sBusNo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a bus number')));
+      return;
+    }
     setState(() => _isSubmittingStudent = true);
     final data = {
       'Name': _sName.text.trim(),
@@ -200,6 +218,7 @@ class _RegisterTabState extends State<RegisterTab> {
       'ADDRESS': _sAddress.text.trim(),
       'GENDER': _sGender,
       'Route': _sBusRoute,
+      'BusNo': _sBusNo,
       'Bus Facility': _sBusFacility ? 'Yes' : null,
       'Hostel Facility': _sHostelFacility ? 'Yes' : null,
     };
@@ -213,6 +232,8 @@ class _RegisterTabState extends State<RegisterTab> {
         _sClass = null;
         _sBusFacility = false;
         _sBusRoute = null;
+        _sBusNo = null;
+        _busNumbers = [];
         _sHostelFacility = false;
         _sHostelFee = 0;
         _loadClasses(); 
@@ -535,7 +556,12 @@ class _RegisterTabState extends State<RegisterTab> {
                     DropdownButtonFormField<String>(
                       value: _sBusRoute,
                       items: _busRoutes.map((route) => DropdownMenuItem(value: route, child: Text(route))).toList(),
-                      onChanged: (v) => setState(() => _sBusRoute = v),
+                      onChanged: (v) {
+                        setState(() => _sBusRoute = v);
+                        if (v != null) {
+                          _loadBusNumbersByRoute(v);
+                        }
+                      },
                       decoration: InputDecoration(
                         labelText: 'Select Bus Route',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -544,6 +570,28 @@ class _RegisterTabState extends State<RegisterTab> {
                         prefixIcon: const Icon(Icons.directions_bus, color: Colors.blue),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    if (_busNumbers.isNotEmpty)
+                      DropdownButtonFormField<String>(
+                        value: _sBusNo,
+                        items: _busNumbers.map((busNo) => DropdownMenuItem(value: busNo, child: Text(busNo))).toList(),
+                        onChanged: (v) => setState(() => _sBusNo = v),
+                        decoration: InputDecoration(
+                          labelText: 'Select Bus Number',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Colors.blue[50],
+                          prefixIcon: const Icon(Icons.confirmation_number, color: Colors.blue),
+                        ),
+                      )
+                    else if (_sBusRoute != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          'Loading bus numbers...',
+                          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+                        ),
+                      ),
                   ],
                   const SizedBox(height: 16),
                   // Hostel Facility

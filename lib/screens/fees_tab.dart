@@ -73,6 +73,8 @@ class _FeesTabState extends State<FeesTab> {
     setState(() {
       _students = students;
       _selectedStudent = null;
+      _paymentHistory = [];
+      _showPaymentHistory = false;
     });
   }
 
@@ -410,6 +412,13 @@ class _FeesTabState extends State<FeesTab> {
         _paymentHistory = filteredPayments;
         _showPaymentHistory = true;
       });
+      
+      // Show message if no payment history found
+      if (filteredPayments.isEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No payment history found for ${_selectedStudent!.name}'), backgroundColor: Colors.orange),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -762,21 +771,13 @@ class _FeesTabState extends State<FeesTab> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Term(s):'),
-            Text(payment['TERM NO'] as String),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
             Text('Amount Paid (This Payment):', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
             Text('₹${paidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
           ],
         ),
-        // For School Fee payments, always show term fee breakdown
+        // For School Fee payments, always show total fee breakdown
         if ((payment['FEE TYPE'] as String? ?? '').contains('School Fee')) ...[
-          // Show term fee info if available
+          // Show total fee info if available
           if (totalTermFee > 0) ...[
             const SizedBox(height: 6),
             Row(
@@ -1173,26 +1174,86 @@ class _FeesTabState extends State<FeesTab> {
                     if (_selectedPaymentType == 'School Fee') ...[
                       Text('Select Term No', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12)),
                       const SizedBox(height: 8),
-                      CheckboxListTile(
-                        value: termSelections[1],
-                        onChanged: (v) => setDialogState(() => termSelections[1] = v ?? false),
-                        title: const Text('Term 1'),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                      ),
-                      CheckboxListTile(
-                        value: termSelections[2],
-                        onChanged: (v) => setDialogState(() => termSelections[2] = v ?? false),
-                        title: const Text('Term 2'),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                      ),
-                      CheckboxListTile(
-                        value: termSelections[3],
-                        onChanged: (v) => setDialogState(() => termSelections[3] = v ?? false),
-                        title: const Text('Term 3'),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
+                      FutureBuilder<Map<String, dynamic>?>(
+                        future: SupabaseService.getFeeStructureByClass(_selectedStudent!.className),
+                        builder: (context, structureSnap) {
+                          if (structureSnap.connectionState == ConnectionState.waiting) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                            );
+                          }
+                          
+                          final structure = structureSnap.data;
+                          final totalFee = structure != null ? double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0.0 : 0.0;
+                          final concession = _selectedStudent!.schoolFeeConcession;
+                          final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                          
+                          return FutureBuilder<List<Map<String, dynamic>>>(
+                            future: _selectedStudent != null ? SupabaseService.getFeesByStudent(_selectedStudent!.name) : Future.value([]),
+                            builder: (context, feesSnap) {
+                              final allFees = feesSnap.data ?? [];
+                              
+                              return Column(
+                                children: List.generate(3, (index) {
+                                  final termNum = index + 1;
+                                  final termFee = termFees[termNum] ?? 0;
+                                  
+                                  // Calculate paid amount for this term
+                                  double paidForTerm = 0;
+                                  for (final fee in allFees) {
+                                    final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
+                                    final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
+                                    if (feeType.contains('school fee') && termNo.contains('term $termNum')) {
+                                      paidForTerm += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+                                    }
+                                  }
+                                  
+                                  final pendingForTerm = (termFee - paidForTerm).clamp(0, double.infinity);
+                                  
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: termSelections[termNum]! ? Colors.blue[400]! : Colors.grey[300]!,
+                                          width: termSelections[termNum]! ? 2 : 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                        color: termSelections[termNum]! ? Colors.blue[50] : Colors.transparent,
+                                      ),
+                                      child: CheckboxListTile(
+                                        value: termSelections[termNum],
+                                        onChanged: (v) => setDialogState(() => termSelections[termNum] = v ?? false),
+                                        title: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Term $termNum'),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                Text(
+                                                  'Pending: ₹${pendingForTerm.toStringAsFixed(2)}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: pendingForTerm > 0 ? Colors.red : Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        controlAffinity: ListTileControlAffinity.leading,
+                                        dense: true,
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              );
+                            },
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       // Hostel Fee Section - Only for School Fee
@@ -1700,7 +1761,7 @@ class _FeesTabState extends State<FeesTab> {
                 ),
               ),
             ),
-            if (_showPaymentHistory && _paymentHistory.isNotEmpty) ...[
+            if (_showPaymentHistory) ...[
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -1712,30 +1773,60 @@ class _FeesTabState extends State<FeesTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Payment History', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.indigo[900])),
-                    const SizedBox(height: 16),
-                    ..._paymentHistory.map((payment) => Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      color: Colors.amber[50],
-                      child: ListTile(
-                        leading: Icon(Icons.receipt_long, color: Colors.deepOrange),
-                        title: Text(
-                          payment['FEE TYPE'] as String,
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.indigo[900]),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Payment History', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.indigo[900])),
+                        IconButton(
+                          onPressed: () => setState(() {
+                            _showPaymentHistory = false;
+                            _paymentHistory = [];
+                          }),
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Close',
                         ),
-                        subtitle: Text('₹${payment['AMOUNT']} - ${payment['TERM NO']}', style: const TextStyle(color: Colors.grey)),
-                        trailing: ElevatedButton.icon(
-                          onPressed: () => _showPaymentInvoiceDialog(payment),
-                          icon: const Icon(Icons.preview),
-                          label: const Text('View', style: TextStyle(fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (_paymentHistory.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Column(
+                            children: [
+                              Icon(Icons.receipt_long, size: 48, color: Colors.grey[400]),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No payment history',
+                                style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    )).toList(),
+                      )
+                    else
+                      ..._paymentHistory.map((payment) => Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        color: Colors.amber[50],
+                        child: ListTile(
+                          leading: Icon(Icons.receipt_long, color: Colors.deepOrange),
+                          title: Text(
+                            payment['FEE TYPE'] as String,
+                            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.indigo[900]),
+                          ),
+                          subtitle: Text('₹${payment['AMOUNT']} - ${payment['TERM NO']}', style: const TextStyle(color: Colors.grey)),
+                          trailing: ElevatedButton.icon(
+                            onPressed: () => _showPaymentInvoiceDialog(payment),
+                            icon: const Icon(Icons.preview),
+                            label: const Text('View', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                            ),
+                          ),
+                        ),
+                      )).toList(),
                   ],
                 ),
               ),
