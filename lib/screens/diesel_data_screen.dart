@@ -21,6 +21,7 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
   List<String> _busRegistrations = [];
   String? _selectedBusNumber;
   String? _selectedBusReg;
+  double _totalDieselFilled = 0.0;
 
   @override
   void initState() {
@@ -33,8 +34,14 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
     try {
       final transportData = await SupabaseService.getTransportDetails();
       setState(() {
-        _busNumbers = transportData['busNumbers'] ?? [];
-        _busRegistrations = transportData['busRegistrations'] ?? [];
+        _busNumbers = transportData
+            .map((e) => e['BusNumber'] as String)
+            .toSet()
+            .toList();
+        _busRegistrations = transportData
+            .map((e) => e['BusReg'] as String)
+            .toSet()
+            .toList();
       });
     } catch (e) {
       print('Error loading transport data: $e');
@@ -102,6 +109,7 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
         _selectedDate = null;
         _litresFilledController.clear();
         _amountController.clear();
+        _totalDieselFilled = 0.0;
         setState(() {});
       }
     } catch (e) {
@@ -244,10 +252,18 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
                     ),
                   );
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedBusNumber = value;
-                  });
+                onChanged: (value) async {
+                  if (value != null) {
+                    final busReg =
+                        await SupabaseService.getTransportDataByRoute(value);
+                    final totalDiesel =
+                        await SupabaseService.getDieselFilledForRoute(value);
+                    setState(() {
+                      _selectedBusNumber = value;
+                      _selectedBusReg = busReg;
+                      _totalDieselFilled = totalDiesel;
+                    });
+                  }
                 },
               ),
             ),
@@ -290,14 +306,35 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
                     ),
                   );
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedBusReg = value;
-                  });
-                },
+                onChanged: null, // Disabled
               ),
             ),
             const SizedBox(height: 20),
+            // Total Diesel Filled
+            if (_selectedBusNumber != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20.0),
+                child: Row(
+                  children: [
+                    Text(
+                      'Total Diesel Filled for ${_selectedBusNumber}: ',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    Text(
+                      '${_totalDieselFilled.toStringAsFixed(2)} L',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepOrange[900],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // Date Picker
             Text(
               'Date',
@@ -327,7 +364,9 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
                           : DateFormat('yyyy-MM-dd').format(_selectedDate!),
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: _selectedDate == null ? Colors.grey[600] : Colors.black,
+                        color: _selectedDate == null
+                            ? Colors.grey[600]
+                            : Colors.black,
                       ),
                     ),
                   ],
@@ -347,7 +386,8 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
             const SizedBox(height: 8),
             TextField(
               controller: _litresFilledController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 hintText: 'Enter litres',
                 hintStyle: GoogleFonts.poppins(color: Colors.grey[600]),
@@ -355,17 +395,21 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.deepOrange[300]!, width: 1),
+                  borderSide:
+                      BorderSide(color: Colors.deepOrange[300]!, width: 1),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.deepOrange[300]!, width: 1),
+                  borderSide:
+                      BorderSide(color: Colors.deepOrange[300]!, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.deepOrange[700]!, width: 2),
+                  borderSide:
+                      BorderSide(color: Colors.deepOrange[700]!, width: 2),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               style: GoogleFonts.poppins(),
             ),
@@ -382,7 +426,8 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
             const SizedBox(height: 8),
             TextField(
               controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 hintText: 'Enter amount',
                 hintStyle: GoogleFonts.poppins(color: Colors.grey[600]),
@@ -390,17 +435,21 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.deepOrange[300]!, width: 1),
+                  borderSide:
+                      BorderSide(color: Colors.deepOrange[300]!, width: 1),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.deepOrange[300]!, width: 1),
+                  borderSide:
+                      BorderSide(color: Colors.deepOrange[300]!, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.deepOrange[700]!, width: 2),
+                  borderSide:
+                      BorderSide(color: Colors.deepOrange[700]!, width: 2),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               style: GoogleFonts.poppins(),
             ),
@@ -623,7 +672,8 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
                               const SizedBox(height: 4),
                               Text(
                                 DateFormat('dd/MM/yyyy').format(
-                                  DateTime.parse(data['FilledDate'] ?? DateTime.now().toIso8601String()),
+                                  DateTime.parse(data['FilledDate'] ??
+                                      DateTime.now().toIso8601String()),
                                 ),
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,

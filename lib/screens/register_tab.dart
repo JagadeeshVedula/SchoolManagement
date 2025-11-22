@@ -48,6 +48,7 @@ class _RegisterTabState extends State<RegisterTab> {
 
   // Bus/Transport controllers
   final _busNumber = TextEditingController();
+  final _busRegNumber = TextEditingController();
   final _busRoute = TextEditingController();
   final _busFees = TextEditingController();
 
@@ -338,13 +339,19 @@ class _RegisterTabState extends State<RegisterTab> {
       'BusNumber': _busNumber.text.trim(),
       'Route': _busRoute.text.trim(),
       'Fees': _busFees.text.trim(),
+      'BusReg': _busRegNumber.text.trim(),
     };
     final ok = await SupabaseService.insertTransport(data);
     setState(() => _isSubmittingBus = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bus registered successfully')));
-      _busNumber.clear(); _busRoute.clear(); _busFees.clear();
-      setState(() { _currentPage = 0; });
+      _busNumber.clear();
+      _busRoute.clear();
+      _busFees.clear();
+      _busRegNumber.clear();
+      setState(() {
+        _currentPage = 0;
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to register bus')));
     }
@@ -861,6 +868,8 @@ class _RegisterTabState extends State<RegisterTab> {
           Text('Register Bus', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
           const SizedBox(height: 20),
           TextField(controller: _busNumber, decoration: const InputDecoration(labelText: 'Bus Number', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: _busRegNumber, decoration: const InputDecoration(labelText: 'Bus Registration Number', border: OutlineInputBorder())),
           const SizedBox(height: 12),
           TextField(controller: _busRoute, decoration: const InputDecoration(labelText: 'Route', border: OutlineInputBorder())),
           const SizedBox(height: 12),

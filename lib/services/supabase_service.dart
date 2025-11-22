@@ -905,36 +905,54 @@ class SupabaseService {
   }
 
   // Get transport details with BusNumber and BusReg for diesel dropdown
-  static Future<Map<String, List<String>>> getTransportDetails() async {
+  static Future<List<Map<String, dynamic>>> getTransportDetails() async {
+    try {
+      final response = await client.from('TRANSPORT').select();
+      return (response as List).map((e) => e as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error fetching transport details: $e');
+      return [];
+    }
+  }
+
+  // Get total diesel filled for a specific route number
+  static Future<double> getDieselFilledForRoute(String routeNo) async {
+    try {
+      final response = await client
+          .from('DIESEL')
+          .select('FilledLitres')
+          .eq('RouteNo', routeNo);
+
+      double totalLitres = 0;
+      for (var item in response as List) {
+        final filledLitres = item['FilledLitres'];
+        if (filledLitres != null) {
+          totalLitres += double.tryParse(filledLitres.toString()) ?? 0.0;
+        }
+      }
+      return totalLitres;
+    } catch (e) {
+      print('Error fetching diesel filled for route: $e');
+      return 0;
+    }
+  }
+
+  // Get BusReg for a specific route number
+  static Future<String?> getTransportDataByRoute(String routeNo) async {
     try {
       final response = await client
           .from('TRANSPORT')
-          .select('BusNumber, BusReg')
-          .neq('BusNumber', null)
-          .neq('BusReg', null);
+          .select('BusReg')
+          .eq('BusNumber', routeNo)
+          .limit(1);
 
-      final busNumbers = <String>{};
-      final busRegistrations = <String>{};
-
-      for (var item in response as List) {
-        final busNumber = item['BusNumber']?.toString();
-        final busReg = item['BusReg']?.toString();
-
-        if (busNumber != null && busNumber.isNotEmpty) {
-          busNumbers.add(busNumber);
-        }
-        if (busReg != null && busReg.isNotEmpty) {
-          busRegistrations.add(busReg);
-        }
+      if ((response as List).isNotEmpty) {
+        return response[0]['BusReg'] as String?;
       }
-
-      return {
-        'busNumbers': busNumbers.toList(),
-        'busRegistrations': busRegistrations.toList(),
-      };
+      return null;
     } catch (e) {
-      print('Error fetching transport details: $e');
-      return {'busNumbers': [], 'busRegistrations': []};
+      print('Error fetching transport data by route: $e');
+      return null;
     }
   }
 
@@ -950,7 +968,8 @@ class SupabaseService {
   }
 
   // Get diesel data by date
-  static Future<List<Map<String, dynamic>>> getDieselDataByDate(DateTime date) async {
+  static Future<List<Map<String, dynamic>>> getDieselDataByDate(
+      DateTime date) async {
     try {
       final dateStr = date.toIso8601String().split('T')[0];
       final response = await client
@@ -968,22 +987,35 @@ class SupabaseService {
     }
   }
 
-  // Get latest diesel data for a specific route number
-  static Future<Map<String, dynamic>?> getLatestDieselDataForRoute(String routeNo) async {
+  // Get diesel data for a specific route number on a specific date
+  static Future<Map<String, dynamic>?> getDieselDataForRouteByDate(
+      String routeNo, DateTime date) async {
     try {
+      final dateStr = date.toIso8601String().split('T')[0];
       final response = await client
           .from('DIESEL')
-          .select()
+          .select('FilledLitres, FilledDate')
           .eq('RouteNo', routeNo)
-          .order('FilledDate', ascending: false)
-          .limit(1);
+          .eq('FilledDate', dateStr);
 
-      if ((response as List).isNotEmpty) {
-        return response[0] as Map<String, dynamic>;
+      if ((response as List).isEmpty) {
+        return null;
       }
-      return null;
+
+      double totalLitres = 0;
+      for (var item in response as List) {
+        final filledLitres = item['FilledLitres'];
+        if (filledLitres != null) {
+          totalLitres += double.tryParse(filledLitres.toString()) ?? 0.0;
+        }
+      }
+
+      return {
+        'FilledLitres': totalLitres,
+        'FilledDate': dateStr,
+      };
     } catch (e) {
-      print('Error fetching latest diesel data for route: $e');
+      print('Error fetching diesel data for route by date: $e');
       return null;
     }
   }

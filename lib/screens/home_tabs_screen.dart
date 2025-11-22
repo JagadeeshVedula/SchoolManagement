@@ -232,7 +232,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Navigation',
+                                'Menu',
                                 style: GoogleFonts.poppins(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
@@ -852,7 +852,8 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                           ),
                         ),
                         child: FutureBuilder<Map<String, dynamic>?>(
-                          future: SupabaseService.getLatestDieselDataForRoute(busNumber),
+                          future: SupabaseService.getDieselDataForRouteByDate(
+                              busNumber, DateTime.now()),
                           builder: (context, dieselSnapshot) {
                             final latestDiesel = dieselSnapshot.data;
 
@@ -878,7 +879,8 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               'Route No',
@@ -900,10 +902,12 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                                         ),
                                       ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
                                           color: Colors.deepOrange[100],
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                         ),
                                         child: Text(
                                           'Reg: $busReg',
@@ -930,10 +934,12 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                                         ),
                                       ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Last Filled',
@@ -945,7 +951,9 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                latestDiesel['FilledDate']?.toString() ?? 'N/A',
+                                                latestDiesel['FilledDate']
+                                                        ?.toString() ??
+                                                    'N/A',
                                                 style: GoogleFonts.poppins(
                                                   fontSize: 13,
                                                   fontWeight: FontWeight.w600,
@@ -955,10 +963,11 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                                             ],
                                           ),
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
                                             children: [
                                               Text(
-                                                'Last Filled Litres',
+                                                'Today\'s Filled Litres',
                                                 style: GoogleFonts.poppins(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.w500,
@@ -992,7 +1001,9 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                                       ),
                                       child: Row(
                                         children: [
-                                          Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+                                          Icon(Icons.info_outline,
+                                              size: 16,
+                                              color: Colors.grey[600]),
                                           const SizedBox(width: 8),
                                           Text(
                                             'No diesel data recorded yet',
@@ -1019,10 +1030,12 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
                                     runSpacing: 8,
                                     children: routes.map((route) {
                                       return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
                                         decoration: BoxDecoration(
                                           color: Colors.orange[200],
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                           border: Border.all(
                                             color: Colors.deepOrange[400]!,
                                             width: 1,
