@@ -36,17 +36,16 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
     // Simulate API call / auth
     await Future.delayed(const Duration(seconds: 1));
 
-    setState(() {
-      _isLoading = false;
-    });
-
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
     // Admin login - validate credentials against CRED table
     if (widget.userRole.id == 'admin') {
       final isValid = await SupabaseService.validateAdminCredentials(username, password);
-      if (isValid) {
+      if (isValid && mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         // Navigate to admin home with 3 tabs
         Navigator.pushReplacementNamed(context, '/home', arguments: {
           'role': 'admin',
@@ -54,15 +53,89 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
         });
         return;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Invalid admin credentials'),
-            backgroundColor: widget.userRole.color,
-          ),
-        );
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Invalid admin credentials'),
+              backgroundColor: widget.userRole.color,
+            ),
+          );
+        }
         return;
       }
     }
+
+    // Staff login - validate credentials against CRED table with ROLE='STAFF'
+    if (widget.userRole.id == 'staff') {
+      try {
+        final staffCred = await SupabaseService.staffLogin(username, password);
+        print('DEBUG: staffCred = $staffCred');
+        if (staffCred != null && mounted) {
+          // Get staff details from STAFF table using Mobile Number from CRED
+          final mobileNumber = staffCred['Mobile Number'] ?? '';
+          print('DEBUG: Extracted Mobile Number from staffCred = $mobileNumber');
+          
+          if (mobileNumber.isEmpty) {
+            print('DEBUG: Mobile Number is empty! Available keys in staffCred: ${staffCred.keys}');
+          }
+          
+          final staffDetails = await SupabaseService.getStaffByMobile(mobileNumber);
+          print('DEBUG: staffDetails = $staffDetails');
+          
+          if (staffDetails == null) {
+            print('DEBUG: staffDetails is NULL! Mobile lookup failed for mobile: $mobileNumber');
+          }
+          
+          setState(() {
+            _isLoading = false;
+          });
+
+          if (mounted) {
+            // Navigate to staff dashboard
+            Navigator.pushReplacementNamed(
+              context,
+              '/staff-dashboard',
+              arguments: {
+                'staffCred': staffCred,
+                'staffDetails': staffDetails ?? {},
+              },
+            );
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Invalid staff credentials'),
+                backgroundColor: widget.userRole.color,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login error: $e'),
+              backgroundColor: Colors.red[600],
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override

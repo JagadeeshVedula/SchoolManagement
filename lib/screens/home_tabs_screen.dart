@@ -8,6 +8,8 @@ import 'package:school_management/screens/register_tab.dart';
 import 'package:school_management/screens/fees_tab.dart';
 import 'package:school_management/screens/report_tab.dart';
 import 'package:school_management/screens/diesel_data_screen.dart';
+import 'package:school_management/screens/leave_requests_approval_screen.dart';
+import 'package:school_management/screens/salary_slips_screen.dart';
 
 class HomeTabsScreen extends StatefulWidget {
   final String role;
@@ -29,11 +31,24 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
   bool _sidebarOpen = true;
   late TabController _tabController;
   late DateTime _currentDateTime;
+  int _lastTabCount = 6;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    // HomeTabsScreen is only used by admin, always 8 tabs
+    _lastTabCount = 8;
+    // Initialize with index 0 to avoid RangeError
+    _tabController = TabController(length: _lastTabCount, initialIndex: 0, vsync: this);
+    
+    // Monitor for unexpected index changes
+    _tabController.addListener(() {
+      if (_tabController.index >= _tabController.length) {
+        print('WARNING: TabController index ${_tabController.index} >= length ${_tabController.length}');
+        _tabController.index = 0;
+      }
+    });
+    
     _currentDateTime = DateTime.now();
     _startTimeUpdater();
   }
@@ -89,7 +104,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final tabs = <Tab>[
+    // HomeTabsScreen is only used by admin with 8 tabs
+    final baseTabs = <Tab>[
       const Tab(text: 'Student Data'),
       const Tab(text: 'Register'),
       const Tab(text: 'Staff Data'),
@@ -98,13 +114,26 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
       const Tab(text: 'Reports'),
     ];
 
-    final views = <Widget>[
+    final baseViews = <Widget>[
       StudentDataWidget(parentMobile: widget.parentMobile),
       const RegisterTab(),
       const Center(child: StaffDataWidget()),
       const Center(child: TransportDataWidget()),
       const Center(child: FeesTab()),
       const Center(child: ReportTab()),
+    ];
+
+    // Always add Salary Slips and Pending Requests tabs for admin
+    final tabs = [
+      ...baseTabs,
+      const Tab(text: 'Salary Slips'),
+      const Tab(text: 'Pending Requests'),
+    ];
+
+    final views = [
+      ...baseViews,
+      const Center(child: SalarySlipsScreen()),
+      const Center(child: LeaveRequestsApprovalScreen()),
     ];
 
     return Scaffold(
@@ -261,6 +290,11 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
   }
 
   List<Widget> _buildSidebarItems(List<Tab> tabs) {
+    // Safety check: ensure TabController index is valid
+    if (_tabController.index >= tabs.length) {
+      _tabController.index = 0;
+    }
+    
     return tabs.asMap().entries.map((entry) {
       int idx = entry.key;
       Tab tab = entry.value;
@@ -303,6 +337,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
       Icons.directions_bus,
       Icons.payment,
       Icons.assessment,
+      Icons.receipt_long,
+      Icons.pending_actions,
     ];
     return icons[index];
   }

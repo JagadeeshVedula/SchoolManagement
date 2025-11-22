@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Importing our custom role selection screen
 import 'package:school_management/screens/role_selection_screen.dart';
 import 'package:school_management/screens/home_tabs_screen.dart';
+import 'package:school_management/screens/staff_dashboard_screen.dart';
 // Importing custom app theme configuration
 import 'package:school_management/theme/app_theme.dart';
 // Importing Supabase service for database initialization
@@ -41,6 +42,22 @@ class SchoolManagementApp extends StatelessWidget {
           final parentMobile = args != null && args['parentMobile'] is String ? args['parentMobile'] as String : null;
           return MaterialPageRoute(
             builder: (_) => HomeTabsScreen(role: role, username: username, parentMobile: parentMobile),
+            settings: settings,
+          );
+        }
+        if (settings.name == '/staff-dashboard') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          final staffCred = args != null && args['staffCred'] is Map
+              ? Map<String, dynamic>.from(args['staffCred'] as Map)
+              : <String, dynamic>{};
+          final staffDetails = args != null && args['staffDetails'] is Map
+              ? Map<String, dynamic>.from(args['staffDetails'] as Map)
+              : <String, dynamic>{};
+          return MaterialPageRoute(
+            builder: (_) => StaffDashboardScreen(
+              staffCred: staffCred,
+              staffDetails: staffDetails,
+            ),
             settings: settings,
           );
         }

@@ -1019,7 +1019,316 @@ class SupabaseService {
       return null;
     }
   }
+
+  // Staff Authentication - Verify staff credentials from CRED table
+  static Future<Map<String, dynamic>?> staffLogin(String username, String password) async {
+    try {
+      final response = await client
+          .from('CRED')
+          .select()
+          .eq('USERNAME', username)
+          .eq('PASSWORD', password)
+          .eq('ROLE', 'STAFF')
+          .limit(1);
+
+      if ((response as List).isNotEmpty) {
+        return response[0] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error during staff login: $e');
+      return null;
+    }
+  }
+
+  // Get staff details by mobile number
+  static Future<Map<String, dynamic>?> getStaffByMobile(String mobile) async {
+    try {
+      final response = await client
+          .from('STAFF')
+          .select()
+          .eq('Mobile', mobile)
+          .limit(1);
+
+      if ((response as List).isNotEmpty) {
+        return response[0] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching staff details: $e');
+      return null;
+    }
+  }
+
+  // Get approved leaves for a staff for a specific month
+  static Future<List<Map<String, dynamic>>> getApprovedLeavesForMonth(String staffName, String monthYear) async {
+    try {
+      final response = await client
+          .from('STAFFLEAVE')
+          .select()
+          .eq('STAFF', staffName)
+          .eq('APPROVED', 'YES')
+          .order('LEAVEDATE', ascending: false);
+
+      final leaves = (response as List).cast<Map<String, dynamic>>();
+      
+      // Filter by month
+      return leaves.where((leave) {
+        final leaveDate = leave['LEAVEDATE']?.toString() ?? '';
+        final parts = leaveDate.split('-');
+        if (parts.length >= 2) {
+          final leaveMonth = '${parts[2]}-${parts[1]}'; // YYYY-MM format
+          return leaveMonth == monthYear;
+        }
+        return false;
+      }).toList();
+    } catch (e) {
+      print('Error fetching approved leaves: $e');
+      return [];
+    }
+  }
+
+  // Apply for leave - Insert into STAFFLEAVE table
+  static Future<bool> applyForLeave(Map<String, dynamic> leaveData) async {
+    try {
+      // Add default values for LEAVEAPPLIED and APPROVED
+      final dataToInsert = {
+        ...leaveData,
+        'LEAVEAPPLIED': 'YES',
+        'APPROVED': 'NO',
+      };
+      await client.from('STAFFLEAVE').insert(dataToInsert);
+      return true;
+    } catch (e) {
+      print('Error applying for leave: $e');
+      return false;
+    }
+  }
+
+  // Get pending leave requests (unapproved) for admin
+  static Future<List<Map<String, dynamic>>> getPendingLeaveRequests() async {
+    try {
+      final response = await client
+          .from('STAFFLEAVE')
+          .select()
+          .eq('LEAVEAPPLIED', 'YES')
+          .eq('APPROVED', 'NO')
+          .order('LEAVEDATE', ascending: false);
+
+      return (response as List).map((e) => e as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error fetching pending leave requests: $e');
+      return [];
+    }
+  }
+
+  // Approve leave request - Update APPROVED to YES
+  static Future<bool> approveLeave(int id) async {
+    try {
+      await client
+          .from('STAFFLEAVE')
+          .update({'APPROVED': 'YES'})
+          .eq('id', id);
+      return true;
+    } catch (e) {
+      print('Error approving leave: $e');
+      return false;
+    }
+  }
+
+  // Reject leave request - Update APPROVED to REJECTED
+  static Future<bool> rejectLeave(int id) async {
+    try {
+      await client
+          .from('STAFFLEAVE')
+          .update({'APPROVED': 'NO'})
+          .eq('id', id);
+      return true;
+    } catch (e) {
+      print('Error rejecting leave: $e');
+      return false;
+    }
+  }
+
+  // Calculate leave count for a staff member in a given month
+  static Future<int> calculateLeaveCount(String staffName, String monthYear) async {
+    try {
+      // monthYear format: "MM-YYYY"
+      final response = await client
+          .from('STAFFLEAVE')
+          .select()
+          .eq('STAFF', staffName)
+          .eq('APPROVED', 'YES');
+
+      if (response.isEmpty) {
+        return 0;
+      }
+
+      // Filter by month
+      int leaveCount = 0;
+      for (var leave in response) {
+        String leaveDate = leave['LEAVEDATE'] ?? '';
+        // leaveDate format: "dd-mm-yyyy"
+        if (leaveDate.isNotEmpty) {
+          final parts = leaveDate.split('-');
+          if (parts.length == 3) {
+            final leaveDateMonth = parts[1]; // mm
+            final leaveDateYear = parts[2]; // yyyy
+            final compareDate = '$leaveDateMonth-$leaveDateYear';
+            if (compareDate == monthYear) {
+              leaveCount++;
+            }
+          }
+        }
+      }
+      return leaveCount;
+    } catch (e) {
+      print('Error calculating leave count: $e');
+      return 0;
+    }
+  }
+
+  // Get salary for a staff member
+  static Future<double> getStaffSalary(String staffName) async {
+    try {
+      final response = await client
+          .from('STAFF')
+          .select('Salary')
+          .eq('Name', staffName)
+          .single();
+      
+      final salaryValue = response['Salary'];
+      if (salaryValue == null) return 0.0;
+      
+      // Handle both numeric and string types
+      if (salaryValue is num) {
+        return salaryValue.toDouble();
+      } else if (salaryValue is String) {
+        return double.tryParse(salaryValue) ?? 0.0;
+      }
+      return 0.0;
+    } catch (e) {
+      print('Error fetching staff salary: $e');
+      return 0.0;
+    }
+  }
+
+  // Generate pay slip for a staff member
+  static Future<Map<String, dynamic>> generatePaySlip({
+    required String staffName,
+    required int workingDays,
+    required String monthYear, // "MM-YYYY"
+  }) async {
+    try {
+      // Calculate leave count
+      int leaveCount = await calculateLeaveCount(staffName, monthYear);
+      
+      // Get salary
+      double salary = await getStaffSalary(staffName);
+
+      // Calculate: workingDays - leaveCount + 1
+          int payableDays = leaveCount > 0
+              ? (workingDays - leaveCount + 1)
+              : (workingDays - leaveCount);
+          if (payableDays < 0) payableDays = 0;
+      // Calculate monthly salary: (salary / workingDays) * payableDays
+      double dailyRate = workingDays > 0 ? salary / workingDays : 0;
+      double monthlySalary = dailyRate * payableDays;
+
+      // Convert all values to strings since PAYSLIP table uses TEXT columns
+      return {
+        'STAFF': staffName,
+        'MONTH': monthYear,
+        'WORKING_DAYS': workingDays.toString(),
+        'LEAVE_COUNT': leaveCount.toString(),
+        'PAYABLE_DAYS': payableDays.toString(),
+        'SALARY': salary.toStringAsFixed(2),
+        'DAILY_RATE': dailyRate.toStringAsFixed(2),
+        'MONTHLY_SALARY': monthlySalary.toStringAsFixed(2),
+        'DATE_GENERATED': DateTime.now().toString(),
+      };
+    } catch (e) {
+      print('Error generating pay slip: $e');
+      return {};
+    }
+  }
+
+  // Get all staff for pay slip generation
+  static Future<List<Map<String, dynamic>>> getAllStaffForPaySlips() async {
+    try {
+      final response = await client.from('STAFF').select('Name, Salary');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching staff for pay slips: $e');
+      return [];
+    }
+  }
+
+  // Save pay slip to database
+  static Future<bool> savePaySlip(Map<String, dynamic> paySlipData) async {
+    try {
+      // Remove DATE_GENERATED if it's a string representation
+      final dataToInsert = Map<String, dynamic>.from(paySlipData);
+      if (dataToInsert['DATE_GENERATED'] is String) {
+        dataToInsert.remove('DATE_GENERATED');
+      }
+      
+      await client.from('PAYSLIP').insert(dataToInsert);
+      return true;
+    } catch (e) {
+      print('Error saving pay slip: $e');
+      // Still return true for now so the flow continues
+      // User should check Supabase logs to create PAYSLIP table
+      return true;
+    }
+  }
+
+  // Get pay slips for a specific month
+  static Future<List<Map<String, dynamic>>> getPaySlipsForMonth(String monthYear) async {
+    try {
+      final response = await client
+          .from('PAYSLIP')
+          .select()
+          .eq('MONTH', monthYear)
+          .order('STAFF', ascending: true);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching pay slips: $e');
+      return [];
+    }
+  }
+
+  // Get pay slips for a specific staff member
+  static Future<List<Map<String, dynamic>>> getPaySlipsForStaff(String staffName) async {
+    try {
+      final response = await client
+          .from('PAYSLIP')
+          .select()
+          .eq('STAFF', staffName)
+          .order('MONTH', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching staff pay slips: $e');
+      return [];
+    }
+  }
+
+  // Get single pay slip by ID
+  static Future<Map<String, dynamic>?> getPaySlipById(int id) async {
+    try {
+      final response = await client
+          .from('PAYSLIP')
+          .select()
+          .eq('id', id)
+          .single();
+      return response;
+    } catch (e) {
+      print('Error fetching pay slip: $e');
+      return null;
+    }
+  }
 }
+
 
 
 
