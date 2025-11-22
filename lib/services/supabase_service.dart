@@ -859,6 +859,134 @@ class SupabaseService {
       return [];
     }
   }
+
+  // Get all transport data grouped by bus registration with BusNumber as Route No
+  static Future<Map<String, Map<String, dynamic>>> getAllTransportDataWithBusReg() async {
+    try {
+      final response = await client
+          .from('TRANSPORT')
+          .select('BusReg, BusNumber, Route')
+          .neq('BusReg', null)
+          .neq('BusNumber', null);
+      
+      final busData = <String, Map<String, dynamic>>{};
+      for (var item in response as List) {
+        final busReg = item['BusReg']?.toString();
+        final busNumber = item['BusNumber']?.toString();
+        final route = item['Route']?.toString();
+
+        if (busReg != null && busReg.isNotEmpty && busNumber != null && busNumber.isNotEmpty) {
+          if (!busData.containsKey(busReg)) {
+            busData[busReg] = {
+              'busNumber': busNumber,
+              'routes': <String>{},
+            };
+          }
+          if (route != null && route.isNotEmpty) {
+            (busData[busReg]!['routes'] as Set<String>).add(route);
+          }
+        }
+      }
+      
+      // Convert Set to List for each bus
+      final result = <String, Map<String, dynamic>>{};
+      busData.forEach((busReg, data) {
+        result[busReg] = {
+          'busNumber': data['busNumber'],
+          'routes': (data['routes'] as Set<String>).toList(),
+        };
+      });
+      
+      return result;
+    } catch (e) {
+      print('Error fetching transport data with bus registration: $e');
+      return {};
+    }
+  }
+
+  // Get transport details with BusNumber and BusReg for diesel dropdown
+  static Future<Map<String, List<String>>> getTransportDetails() async {
+    try {
+      final response = await client
+          .from('TRANSPORT')
+          .select('BusNumber, BusReg')
+          .neq('BusNumber', null)
+          .neq('BusReg', null);
+
+      final busNumbers = <String>{};
+      final busRegistrations = <String>{};
+
+      for (var item in response as List) {
+        final busNumber = item['BusNumber']?.toString();
+        final busReg = item['BusReg']?.toString();
+
+        if (busNumber != null && busNumber.isNotEmpty) {
+          busNumbers.add(busNumber);
+        }
+        if (busReg != null && busReg.isNotEmpty) {
+          busRegistrations.add(busReg);
+        }
+      }
+
+      return {
+        'busNumbers': busNumbers.toList(),
+        'busRegistrations': busRegistrations.toList(),
+      };
+    } catch (e) {
+      print('Error fetching transport details: $e');
+      return {'busNumbers': [], 'busRegistrations': []};
+    }
+  }
+
+  // Insert diesel data into DIESEL table
+  static Future<bool> insertDieselData(Map<String, dynamic> dieselData) async {
+    try {
+      await client.from('DIESEL').insert(dieselData);
+      return true;
+    } catch (e) {
+      print('Error inserting diesel data: $e');
+      rethrow;
+    }
+  }
+
+  // Get diesel data by date
+  static Future<List<Map<String, dynamic>>> getDieselDataByDate(DateTime date) async {
+    try {
+      final dateStr = date.toIso8601String().split('T')[0];
+      final response = await client
+          .from('DIESEL')
+          .select()
+          .eq('FilledDate', dateStr)
+          .order('FilledDate', ascending: false);
+
+      return (response as List)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      print('Error fetching diesel data by date: $e');
+      return [];
+    }
+  }
+
+  // Get latest diesel data for a specific route number
+  static Future<Map<String, dynamic>?> getLatestDieselDataForRoute(String routeNo) async {
+    try {
+      final response = await client
+          .from('DIESEL')
+          .select()
+          .eq('RouteNo', routeNo)
+          .order('FilledDate', ascending: false)
+          .limit(1);
+
+      if ((response as List).isNotEmpty) {
+        return response[0] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching latest diesel data for route: $e');
+      return null;
+    }
+  }
 }
 
 
