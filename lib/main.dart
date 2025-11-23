@@ -31,6 +31,8 @@ class SchoolManagementApp extends StatelessWidget {
   // Constructor with const keyword for better performance
   const SchoolManagementApp({super.key});
 
+  static final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
   // Build method required for all StatelessWidget, defines the UI
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class SchoolManagementApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme, // Custom dark theme for the app
       themeMode: ThemeMode.light, // Default to light theme
       debugShowCheckedModeBanner: false, // Remove debug banner in corner
+      navigatorObservers: [routeObserver],
       home: const RoleSelectionScreen(), // First screen shown when app launches
       // Handle /home route so we can pass role/username via arguments
       onGenerateRoute: (settings) {

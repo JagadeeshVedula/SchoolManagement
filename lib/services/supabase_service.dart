@@ -1455,6 +1455,60 @@ class SupabaseService {
       return null;
     }
   }
+
+  // Get all accounts from ACCOUNTS table
+  static Future<List<String>> getAccounts() async {
+    try {
+      final response = await client.from('ACCOUNTS').select('ACCOUNT');
+      final accounts = <String>{};
+      for (var item in response as List) {
+        final accountName = item['ACCOUNT'] as String?;
+        if (accountName != null && accountName.isNotEmpty) {
+          accounts.add(accountName);
+        }
+      }
+      return accounts.toList()..sort();
+    } catch (e) {
+      print('Error fetching accounts: $e');
+      return [];
+    }
+  }
+
+  // Get transactions with optional filters
+  static Future<List<Map<String, dynamic>>> getTransactions({
+    String? account,
+    DateTime? date,
+  }) async {
+    try {
+      var query = client.from('TRANSACTIONS').select();
+
+      if (account != null && account.isNotEmpty) {
+        query = query.eq('ACCOUNT', account);
+      }
+
+      if (date != null) {
+        query = query.eq('DATE', date.toIso8601String().split('T')[0]);
+      }
+
+      final response = await query.order('DATE', ascending: false);
+
+      return (response as List).map((e) => e as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error fetching transactions: $e');
+      return [];
+    }
+  }
+
+  // Add a new transaction
+  static Future<bool> addTransaction(Map<String, dynamic> transactionData) async {
+    try {
+      await client.from('TRANSACTIONS').insert(transactionData);
+      return true;
+    } catch (e) {
+      print('Error adding transaction: $e');
+      return false;
+    }
+  }
 }
 
 

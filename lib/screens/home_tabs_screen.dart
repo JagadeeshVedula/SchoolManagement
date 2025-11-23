@@ -12,12 +12,13 @@ import 'package:school_management/screens/leave_requests_approval_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:html' as html;
 import 'package:school_management/screens/salary_slips_screen.dart';
+import 'package:school_management/models/user_role.dart';
+import 'package:school_management/screens/miscellaneous_screen.dart';
 
 class HomeTabsScreen extends StatefulWidget {
   final String role;
   final String username;
   final String? parentMobile;
-
   const HomeTabsScreen({
     super.key,
     required this.role,
@@ -29,72 +30,33 @@ class HomeTabsScreen extends StatefulWidget {
   State<HomeTabsScreen> createState() => _HomeTabsScreenState();
 }
 
-class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProviderStateMixin {
+class _HomeTabsScreenState extends State<HomeTabsScreen>
+    with SingleTickerProviderStateMixin {
   bool _sidebarOpen = true;
   late TabController _tabController;
   late DateTime _currentDateTime;
-  int _lastTabCount = 6;
-  html.EventListener? _popStateListener;
+  int _lastTabCount = 9;
 
   @override
   void initState() {
     super.initState();
-    // HomeTabsScreen is only used by admin, always 8 tabs
-    _lastTabCount = 8;
+    // HomeTabsScreen is only used by admin, always 9 tabs
+    _lastTabCount = 9;
     // Initialize with index 0 to avoid RangeError
-    _tabController = TabController(length: _lastTabCount, initialIndex: 0, vsync: this);
-    
+    _tabController =
+        TabController(length: _lastTabCount, initialIndex: 0, vsync: this);
+
     // Monitor for unexpected index changes
     _tabController.addListener(() {
       if (_tabController.index >= _tabController.length) {
-        print('WARNING: TabController index ${_tabController.index} >= length ${_tabController.length}');
+        print(
+            'WARNING: TabController index ${_tabController.index} >= length ${_tabController.length}');
         _tabController.index = 0;
       }
     });
-    
+
     _currentDateTime = DateTime.now();
     _startTimeUpdater();
-
-    if (kIsWeb) {
-      _setupPopStateListener();
-    }
-  }
-
-  void _setupPopStateListener() {
-    html.window.history.pushState(null, 'Home', html.window.location.href);
-    _popStateListener = (html.Event event) {
-      _showLogoutConfirmationDialog();
-    };
-    html.window.addEventListener('popstate', _popStateListener);
-  }
-
-  Future<void> _showLogoutConfirmationDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Do you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              html.window.history.pushState(null, 'Home', html.window.location.href);
-              Navigator.pop(context, false);
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, true);
-            },
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-    }
   }
 
   void _startTimeUpdater() {
@@ -111,9 +73,6 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
 
   @override
   void dispose() {
-    if (kIsWeb && _popStateListener != null) {
-      html.window.removeEventListener('popstate', _popStateListener);
-    }
     _tabController.dispose();
     super.dispose();
   }
@@ -151,7 +110,9 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    // HomeTabsScreen is only used by admin with 8 tabs
+    final userRole =
+        UserRole.roles.firstWhere((role) => role.id == widget.role);
+    // HomeTabsScreen is only used by admin with 9 tabs
     final baseTabs = <Tab>[
       const Tab(text: 'Student Data'),
       const Tab(text: 'Register'),
@@ -175,12 +136,14 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
       ...baseTabs,
       const Tab(text: 'Salary Slips'),
       const Tab(text: 'Pending Requests'),
+      const Tab(text: 'Miscellaneous'),
     ];
 
     final views = [
       ...baseViews,
       const Center(child: SalarySlipsScreen()),
       const Center(child: LeaveRequestsApprovalScreen()),
+      Center(child: MiscellaneousScreen(userRole: userRole)),
     ];
 
     return Scaffold(
@@ -346,26 +309,27 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
       int idx = entry.key;
       Tab tab = entry.value;
       final isActive = _tabController.index == idx;
+      final isMiscellaneous = tab.text == 'Miscellaneous';
 
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isActive ? Colors.blue[100] : Colors.transparent,
+          color: isActive ? (isMiscellaneous ? Colors.green[100] : Colors.blue[100]) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: isActive ? Border.all(color: Colors.blue[600]!, width: 2) : null,
+          border: isActive ? Border.all(color: isMiscellaneous ? Colors.green[600]! : Colors.blue[600]!, width: 2) : null,
         ),
         child: ListTile(
           title: Text(
             tab.text ?? '',
             style: GoogleFonts.poppins(
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: isActive ? Colors.blue[900] : Colors.grey[700],
+              color: isActive ? (isMiscellaneous ? Colors.green[900] : Colors.blue[900]) : Colors.grey[700],
               fontSize: 14,
             ),
           ),
           leading: Icon(
             _getTabIcon(idx),
-            color: isActive ? Colors.blue[600] : Colors.grey[600],
+            color: isActive ? (isMiscellaneous ? Colors.green[600] : Colors.blue[600]) : Colors.grey[600],
           ),
           onTap: () {
             _tabController.animateTo(idx);
@@ -386,6 +350,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
       Icons.assessment,
       Icons.receipt_long,
       Icons.pending_actions,
+      Icons.category,
     ];
     return icons[index];
   }
