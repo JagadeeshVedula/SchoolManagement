@@ -1060,6 +1060,33 @@ class SupabaseService {
     }
   }
 
+  // Get all leaves for a staff for a specific month
+  static Future<List<Map<String, dynamic>>> getLeavesForStaffForMonth(String staffName, String monthYear) async {
+    try {
+      final response = await client
+          .from('STAFFLEAVE')
+          .select()
+          .eq('STAFF', staffName)
+          .order('LEAVEDATE', ascending: false);
+
+      final leaves = (response as List).cast<Map<String, dynamic>>();
+      
+      // Filter by month
+      return leaves.where((leave) {
+        final leaveDate = leave['LEAVEDATE']?.toString() ?? '';
+        final parts = leaveDate.split('-');
+        if (parts.length >= 2) {
+          final leaveMonth = '${parts[2]}-${parts[1]}'; // YYYY-MM format
+          return leaveMonth == monthYear;
+        }
+        return false;
+      }).toList();
+    } catch (e) {
+      print('Error fetching leaves for month: $e');
+      return [];
+    }
+  }
+
   // Get approved leaves for a staff for a specific month
   static Future<List<Map<String, dynamic>>> getApprovedLeavesForMonth(String staffName, String monthYear) async {
     try {
@@ -1113,6 +1140,7 @@ class SupabaseService {
           .select()
           .eq('LEAVEAPPLIED', 'YES')
           .eq('APPROVED', 'NO')
+          .neq('REJECTED', 'YES')
           .order('LEAVEDATE', ascending: false);
 
       return (response as List).map((e) => e as Map<String, dynamic>).toList();
@@ -1136,17 +1164,86 @@ class SupabaseService {
     }
   }
 
-  // Reject leave request - Update APPROVED to REJECTED
+  // Reject leave request - Update APPROVED to NO and REJECTED to YES
   static Future<bool> rejectLeave(int id) async {
     try {
       await client
           .from('STAFFLEAVE')
-          .update({'APPROVED': 'NO'})
+          .update({'APPROVED': 'NO', 'REJECTED': 'YES'})
           .eq('id', id);
       return true;
     } catch (e) {
       print('Error rejecting leave: $e');
       return false;
+    }
+  }
+
+  // Get completed leaves with optional filters
+  static Future<List<Map<String, dynamic>>> getCompletedLeaves({
+    required String monthYear,
+    String? staffName,
+    String status = 'All',
+  }) async {
+    try {
+      var query = client.from('STAFFLEAVE').select().or('APPROVED.eq.YES,REJECTED.eq.YES');
+
+      if (staffName != null && staffName.isNotEmpty) {
+        query = query.eq('STAFF', staffName);
+      }
+
+      if (status != 'All') {
+        if (status == 'Approved') {
+          query = query.eq('APPROVED', 'YES');
+        } else if (status == 'Rejected') {
+          query = query.eq('REJECTED', 'YES');
+        }
+      }
+
+      final response = await query.order('LEAVEDATE', ascending: false);
+
+      final leaves = (response as List).cast<Map<String, dynamic>>();
+
+      // Filter by month
+      return leaves.where((leave) {
+        final leaveDate = leave['LEAVEDATE']?.toString() ?? '';
+        final parts = leaveDate.split('-');
+        if (parts.length >= 2) {
+          final leaveMonth = '${parts[2]}-${parts[1]}'; // YYYY-MM format
+          return leaveMonth == monthYear;
+        }
+        return false;
+      }).toList();
+    } catch (e) {
+      print('Error fetching completed leaves: $e');
+      return [];
+    }
+  }
+
+  // Get completed leaves for a specific month
+  @Deprecated('Use getCompletedLeaves instead')
+  static Future<List<Map<String, dynamic>>> getCompletedLeavesForMonth(String monthYear) async {
+    try {
+      final response = await client
+          .from('STAFFLEAVE')
+          .select()
+          .or('APPROVED.eq.YES,REJECTED.eq.YES')
+          .order('LEAVEDATE', ascending: false);
+
+      final leaves = (response as List).cast<Map<String, dynamic>>();
+      
+      // Filter by month
+      return leaves.where((leave) {
+        final leaveDate = leave['LEAVEDATE']?.toString() ?? '';
+        final parts = leaveDate.split('-');
+        if (parts.length >= 2) {
+          final leaveMonth = '${parts[2]}-${parts[1]}'; // YYYY-MM format
+          return leaveMonth == monthYear;
+        }
+        return false;
+      }).toList();
+    } catch (e) {
+      print('Error fetching completed leaves for month: $e');
+      return [];
     }
   }
 
@@ -1267,19 +1364,50 @@ class SupabaseService {
   // Save pay slip to database
   static Future<bool> savePaySlip(Map<String, dynamic> paySlipData) async {
     try {
-      // Remove DATE_GENERATED if it's a string representation
       final dataToInsert = Map<String, dynamic>.from(paySlipData);
       if (dataToInsert['DATE_GENERATED'] is String) {
         dataToInsert.remove('DATE_GENERATED');
       }
-      
-      await client.from('PAYSLIP').insert(dataToInsert);
+
+      final staffName = dataToInsert['STAFF'] as String;
+      final month = dataToInsert['MONTH'] as String;
+
+      final existingPaySlip = await getPaySlipByStaffAndMonth(staffName, month);
+
+      if (existingPaySlip != null) {
+        await client
+            .from('PAYSLIP')
+            .update(dataToInsert)
+            .eq('STAFF', staffName)
+            .eq('MONTH', month);
+      } else {
+        await client.from('PAYSLIP').insert(dataToInsert);
+      }
       return true;
     } catch (e) {
       print('Error saving pay slip: $e');
-      // Still return true for now so the flow continues
-      // User should check Supabase logs to create PAYSLIP table
-      return true;
+      return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getPaySlipByStaffAndMonth(
+      String staffName, String month) async {
+    try {
+      final response = await client
+          .from('PAYSLIP')
+          .select()
+          .eq('STAFF', staffName)
+          .eq('MONTH', month)
+          .limit(1);
+
+      if (response.isNotEmpty) {
+        return response.first as Map<String, dynamic>;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching pay slip by staff and month: $e');
+      return null;
     }
   }
 

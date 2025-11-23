@@ -17,19 +17,19 @@ class ApplyLeaveScreen extends StatefulWidget {
 
 class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _reasonController;
+  String? _leaveType;
+  final _otherReasonController = TextEditingController();
   DateTime? _selectedDate;
   bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    _reasonController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _reasonController.dispose();
+    _otherReasonController.dispose();
     super.dispose();
   }
 
@@ -79,11 +79,12 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
 
     try {
       final formattedDate = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+      final reason = _leaveType == 'Others' ? _otherReasonController.text.trim() : _leaveType;
       
       await SupabaseService.applyForLeave({
         'STAFF': widget.staffName,
         'LEAVEDATE': formattedDate,
-        'REASON': _reasonController.text.trim(),
+        'REASON': reason,
       });
 
       if (mounted) {
@@ -233,11 +234,21 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _reasonController,
-                  maxLines: 5,
+                DropdownButtonFormField<String>(
+                  value: _leaveType,
+                  items: const [
+                    DropdownMenuItem(value: 'Casual Leave', child: Text('Casual Leave')),
+                    DropdownMenuItem(value: 'Earned Leave', child: Text('Earned Leave')),
+                    DropdownMenuItem(value: 'Sick Leave', child: Text('Sick Leave')),
+                    DropdownMenuItem(value: 'Others', child: Text('Others')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _leaveType = value;
+                    });
+                  },
                   decoration: InputDecoration(
-                    hintText: 'Enter reason for leave...',
+                    hintText: 'Select a reason',
                     hintStyle: GoogleFonts.poppins(
                       color: Colors.grey[500],
                       fontSize: 14,
@@ -258,17 +269,48 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
-                  style: GoogleFonts.poppins(fontSize: 14),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter a reason for leave';
-                    }
-                    if (value.length < 5) {
-                      return 'Reason must be at least 5 characters';
+                      return 'Please select a reason';
                     }
                     return null;
                   },
                 ),
+                if (_leaveType == 'Others') ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _otherReasonController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Please specify the reason',
+                      hintStyle: GoogleFonts.poppins(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[400]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.green[600]!, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[400]!),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    validator: (value) {
+                      if (_leaveType == 'Others' && (value == null || value.isEmpty)) {
+                        return 'Please specify the reason';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 const SizedBox(height: 32),
 
                 // Submit Button

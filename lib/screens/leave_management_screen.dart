@@ -32,7 +32,7 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
   }
 
   void _loadLeaves() {
-    _leavesFuture = SupabaseService.getApprovedLeavesForMonth(
+    _leavesFuture = SupabaseService.getLeavesForStaffForMonth(
       widget.staffName,
       _selectedMonth,
     );
@@ -147,7 +147,7 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No approved leaves for this month',
+                            'No leaves found for this month',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -164,6 +164,23 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
                     itemCount: leaves.length,
                     itemBuilder: (context, index) {
                       final leave = leaves[index];
+                      final isApproved = leave['APPROVED'] == 'YES';
+                      final isRejected = leave['REJECTED'] == 'YES';
+
+                      String statusText;
+                      Color statusColor;
+
+                      if (isApproved) {
+                        statusText = 'Approved';
+                        statusColor = Colors.green;
+                      } else if (isRejected) {
+                        statusText = 'Rejected';
+                        statusColor = Colors.red;
+                      } else {
+                        statusText = 'Pending';
+                        statusColor = Colors.orange;
+                      }
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 4,
@@ -174,7 +191,7 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             gradient: LinearGradient(
-                              colors: [Colors.white, Colors.green[50]!],
+                              colors: [Colors.white, statusColor.withOpacity(0.1)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -187,7 +204,7 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
                                 children: [
                                   Icon(
                                     Icons.event,
-                                    color: Colors.green[600],
+                                    color: statusColor,
                                     size: 24,
                                   ),
                                   const SizedBox(width: 12),
@@ -208,7 +225,7 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
                                           style: GoogleFonts.poppins(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.green[800],
+                                            color: Colors.grey[800],
                                           ),
                                         ),
                                       ],
@@ -217,15 +234,15 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: Colors.green[100],
+                                      color: statusColor.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
-                                      'Approved',
+                                      statusText,
                                       style: GoogleFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.green[700],
+                                        color: statusColor,
                                       ),
                                     ),
                                   ),

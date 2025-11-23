@@ -45,6 +45,8 @@ class _RegisterTabState extends State<RegisterTab> {
   final _staffName = TextEditingController();
   final _staffQualification = TextEditingController();
   final _staffMobile = TextEditingController();
+  final _staffSalary = TextEditingController();
+  String? _staffType;
 
   // Bus/Transport controllers
   final _busNumber = TextEditingController();
@@ -200,6 +202,7 @@ class _RegisterTabState extends State<RegisterTab> {
     _staffName.dispose();
     _staffQualification.dispose();
     _staffMobile.dispose();
+    _staffSalary.dispose();
     _busNumber.dispose();
     _busRoute.dispose();
     _busFees.dispose();
@@ -317,13 +320,15 @@ class _RegisterTabState extends State<RegisterTab> {
       'Name': _staffName.text.trim(),
       'Qualification': _staffQualification.text.trim(),
       'Mobile': _staffMobile.text.trim(),
+      'Salary': _staffSalary.text.trim(),
+      'StaffType': _staffType,
     };
     final ok = await SupabaseService.insertStaff(data);
     setState(() => _isSubmittingStaff = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Staff registered successfully')));
-      _staffName.clear(); _staffQualification.clear(); _staffMobile.clear();
-      setState(() { _currentPage = 0; });
+      _staffName.clear(); _staffQualification.clear(); _staffMobile.clear(); _staffSalary.clear();
+      setState(() { _staffType = null; _currentPage = 0; });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to register staff')));
     }
@@ -711,6 +716,25 @@ class _RegisterTabState extends State<RegisterTab> {
           TextField(controller: _staffQualification, decoration: const InputDecoration(labelText: 'Qualification', border: OutlineInputBorder())),
           const SizedBox(height: 12),
           TextField(controller: _staffMobile, decoration: const InputDecoration(labelText: 'Mobile', border: OutlineInputBorder()), keyboardType: TextInputType.phone),
+          const SizedBox(height: 12),
+          TextField(controller: _staffSalary, decoration: const InputDecoration(labelText: 'Salary', border: OutlineInputBorder()), keyboardType: TextInputType.number),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _staffType,
+            items: const [
+              DropdownMenuItem(value: 'Teaching', child: Text('Teaching')),
+              DropdownMenuItem(value: 'Non-Teaching', child: Text('Non-Teaching')),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _staffType = value;
+              });
+            },
+            decoration: const InputDecoration(
+              labelText: 'Staff Type',
+              border: OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,

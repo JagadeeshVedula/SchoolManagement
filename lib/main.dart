@@ -9,8 +9,17 @@ import 'package:school_management/theme/app_theme.dart';
 // Importing Supabase service for database initialization
 import 'package:school_management/services/supabase_service.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
 // Main function - entry point of the Flutter application
 void main() async {
+  // Ensure Flutter widgets are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  // Set URL strategy for web to have clean URLs
+  if (kIsWeb) {
+    setUrlStrategy(PathUrlStrategy());
+  }
   // Initialize Supabase before running the app
   await SupabaseService.initialize();
   // runApp function initializes the Flutter framework and runs the app

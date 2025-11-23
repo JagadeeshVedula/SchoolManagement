@@ -9,6 +9,8 @@ import 'package:school_management/screens/fees_tab.dart';
 import 'package:school_management/screens/report_tab.dart';
 import 'package:school_management/screens/diesel_data_screen.dart';
 import 'package:school_management/screens/leave_requests_approval_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html;
 import 'package:school_management/screens/salary_slips_screen.dart';
 
 class HomeTabsScreen extends StatefulWidget {
@@ -32,6 +34,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
   late TabController _tabController;
   late DateTime _currentDateTime;
   int _lastTabCount = 6;
+  html.EventListener? _popStateListener;
 
   @override
   void initState() {
@@ -51,6 +54,47 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
     
     _currentDateTime = DateTime.now();
     _startTimeUpdater();
+
+    if (kIsWeb) {
+      _setupPopStateListener();
+    }
+  }
+
+  void _setupPopStateListener() {
+    html.window.history.pushState(null, 'Home', html.window.location.href);
+    _popStateListener = (html.Event event) {
+      _showLogoutConfirmationDialog();
+    };
+    html.window.addEventListener('popstate', _popStateListener);
+  }
+
+  Future<void> _showLogoutConfirmationDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Do you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              html.window.history.pushState(null, 'Home', html.window.location.href);
+              Navigator.pop(context, false);
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    }
   }
 
   void _startTimeUpdater() {
@@ -67,6 +111,9 @@ class _HomeTabsScreenState extends State<HomeTabsScreen> with SingleTickerProvid
 
   @override
   void dispose() {
+    if (kIsWeb && _popStateListener != null) {
+      html.window.removeEventListener('popstate', _popStateListener);
+    }
     _tabController.dispose();
     super.dispose();
   }
