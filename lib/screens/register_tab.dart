@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:school_management/services/supabase_service.dart';
 import 'package:school_management/models/student.dart';
+import 'package:intl/intl.dart';
 
 class RegisterTab extends StatefulWidget {
   const RegisterTab({super.key});
@@ -25,6 +26,7 @@ class _RegisterTabState extends State<RegisterTab> {
   String? _sBusRoute;
   String? _sBusNo;
   bool _sHostelFacility = false;
+  DateTime? _selectedJoiningDate;
   double _sHostelFee = 0;
 
   // Performance controllers
@@ -236,6 +238,7 @@ class _RegisterTabState extends State<RegisterTab> {
       'Bus Facility': _sBusFacility ? 'Yes' : null,
       'Hostel Facility': _sHostelFacility ? 'Yes' : null,
     };
+    data['DOJ'] = _selectedJoiningDate != null ? DateFormat('dd-MM-yyyy').format(_selectedJoiningDate!) : null;
     final ok = await SupabaseService.insertStudent(data);
     setState(() => _isSubmittingStudent = false);
     if (ok) {
@@ -249,6 +252,7 @@ class _RegisterTabState extends State<RegisterTab> {
         _sBusNo = null;
         _busNumbers = [];
         _sHostelFacility = false;
+        _selectedJoiningDate = null;
         _sHostelFee = 0;
         _loadClasses(); 
         _currentPage = 0; 
@@ -592,6 +596,30 @@ class _RegisterTabState extends State<RegisterTab> {
                       fillColor: Colors.blue[50],
                       prefixIcon: const Icon(Icons.wc, color: Colors.blue),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Joining Date
+                  ListTile(
+                    leading: const Icon(Icons.calendar_today, color: Colors.blue),
+                    title: Text(
+                      _selectedJoiningDate == null
+                          ? 'Select Joining Date'
+                          : 'Joining Date: ${DateFormat('dd-MM-yyyy').format(_selectedJoiningDate!)}',
+                    ),
+                    trailing: const Icon(Icons.edit, color: Colors.blue),
+                    onTap: () async {
+                      final pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedJoiningDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (pickedDate != null) {
+                        setState(() {
+                          _selectedJoiningDate = pickedDate;
+                        });
+                      }
+                    },
                   ),
                   const SizedBox(height: 16),
                   // Bus Facility

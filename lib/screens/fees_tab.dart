@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:school_management/services/supabase_service.dart';
+import 'package:intl/intl.dart';
 import 'package:school_management/models/student.dart';
 import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
@@ -56,6 +57,7 @@ class _FeesTabState extends State<FeesTab> {
   bool _hostelFeeAlreadyPaid = false;
 
   bool _isSubmitting = false;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -1050,6 +1052,33 @@ class _FeesTabState extends State<FeesTab> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: InkWell(
+                          onTap: () async {
+                            final pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (pickedDate != null) {
+                              setDialogState(() {
+                                _selectedDate = pickedDate;
+                              });
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: const InputDecoration(labelText: 'Payment Date', border: OutlineInputBorder()),
+                            child: Text(DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now())),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
                           color: Colors.indigo[600],
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -1461,6 +1490,7 @@ class _FeesTabState extends State<FeesTab> {
                               'TERM YEAR': _selectedPaymentType == 'School Fee' ? termYearController.text.trim() : currentYear,
                               'TERM MONTH': _selectedPaymentType == 'School Fee' ? termMonthController.value : '',
                               'TERM NO': selectedTermNos,
+                              'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now()),
                             };
                             await SupabaseService.insertFee(feeData);
                             
@@ -1478,6 +1508,7 @@ class _FeesTabState extends State<FeesTab> {
                                 'TERM YEAR': termYearController.text.trim(),
                                 'TERM MONTH': termMonthController.value ?? '',
                                 'TERM NO': 'N/A',
+                                'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now()),
                               };
                               await SupabaseService.insertFee(hostelFeeData);
                             }

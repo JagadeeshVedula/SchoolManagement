@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:school_management/models/staff.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:school_management/services/supabase_service.dart';
 import 'package:excel/excel.dart' as excel_pkg;
@@ -16,17 +17,67 @@ class ReportTab extends StatefulWidget {
   State<ReportTab> createState() => _ReportTabState();
 }
 
-class _ReportTabState extends State<ReportTab> {
+class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  // Fee Report State
   String? _selectedFeeType = 'School Fee'; // Only 'School Fee' now
-  String? _selectedClass;
+  String? _selectedFeeClass;
   List<String> _classes = [];
-  List<Map<String, dynamic>> _reportData = [];
-  bool _isLoading = false;
+  List<Map<String, dynamic>> _feeReportData = [];
+  bool _isFeeLoading = false;
+
+  // Diesel Report State
+  DateTimeRange? _dieselDateRange;
+  List<Map<String, dynamic>> _dieselReportData = [];
+  bool _isDieselLoading = false;
+
+  // Transactions Report State
+  DateTimeRange? _transactionsDateRange;
+  List<Map<String, dynamic>> _transactionsReportData = [];
+  bool _isTransactionsLoading = false;
+
+  // Staff Leave Report State
+  List<Staff> _staffList = [];
+  Staff? _selectedStaff;
+  String _selectedLeaveMonth = DateFormat('yyyy-MM').format(DateTime.now());
+  List<Map<String, dynamic>> _staffLeaveReportData = [];
+  bool _isStaffLeaveLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 4, vsync: this);
     _loadClasses();
+    _loadStaff();
+    _dieselDateRange = DateTimeRange(
+      start: DateTime.now().subtract(const Duration(days: 7)),
+      end: DateTime.now(),
+    );
+    _transactionsDateRange = DateTimeRange(
+      start: DateTime.now().subtract(const Duration(days: 7)),
+      end: DateTime.now(),
+    );
+
+    // Add a listener to the TabController to load data when a tab is selected.
+    _tabController.addListener(() {
+      // Rebuild the widget to update tab colors
+      setState(() {});
+
+      if (_tabController.indexIsChanging) {
+        switch (_tabController.index) {
+          case 1: // Diesel Report
+            if (_dieselReportData.isEmpty) _loadDieselReportData();
+            break;
+          case 2: // Transactions Report
+            if (_transactionsReportData.isEmpty) _loadTransactionsReportData();
+            break;
+          case 3: // Staff Leave Report
+            if (_staffLeaveReportData.isEmpty && _selectedStaff != null) _loadStaffLeaveReportData();
+            break;
+        }
+      }
+    });
   }
 
   Future<void> _loadClasses() async {
@@ -34,13 +85,26 @@ class _ReportTabState extends State<ReportTab> {
     setState(() => _classes = classes);
   }
 
-  Future<void> _loadReportData() async {
-    if (_selectedFeeType == null || _selectedClass == null) return;
+  Future<void> _loadStaff() async {
+    final staff = await SupabaseService.getAllStaff();
+    setState(() => _staffList = staff);
+  }
 
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  // #region Data Loading Methods
+
+  Future<void> _loadFeeReportData() async {
+    if (_selectedFeeType == null || _selectedFeeClass == null) return;
+
+    setState(() => _isFeeLoading = true);
 
     try {
-      final students = await SupabaseService.getStudentsByClass(_selectedClass!);
+      final students = await SupabaseService.getStudentsByClass(_selectedFeeClass!);
       final reportData = <Map<String, dynamic>>[];
 
       for (final student in students) {
@@ -135,19 +199,62 @@ class _ReportTabState extends State<ReportTab> {
       }
 
       setState(() {
-        _reportData = reportData;
-        _isLoading = false;
+        _feeReportData = reportData;
+        _isFeeLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() => _isFeeLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading report: $e')),
       );
     }
   }
 
-  Future<void> _downloadExcel() async {
-    if (_reportData.isEmpty) {
+  Future<void> _loadDieselReportData() async {
+    if (_dieselDateRange == null) return;
+    setState(() => _isDieselLoading = true);
+    final data = await SupabaseService.getDieselDataForReport(
+      _dieselDateRange!.start,
+      _dieselDateRange!.end,
+    );
+    setState(() {
+      _dieselReportData = data;
+      _isDieselLoading = false;
+    });
+  }
+
+  Future<void> _loadTransactionsReportData() async {
+    if (_transactionsDateRange == null) return;
+    setState(() => _isTransactionsLoading = true);
+    final data = await SupabaseService.getTransactionsForReport(
+      _transactionsDateRange!.start,
+      _transactionsDateRange!.end,
+    );
+    setState(() {
+      _transactionsReportData = data;
+      _isTransactionsLoading = false;
+    });
+  }
+
+  Future<void> _loadStaffLeaveReportData() async {
+    if (_selectedStaff == null) return;
+    setState(() => _isStaffLeaveLoading = true);
+    final data = await SupabaseService.getStaffLeaveForReport(
+      staffName: _selectedStaff!.name,
+      monthYear: _selectedLeaveMonth,
+    );
+    setState(() {
+      _staffLeaveReportData = data;
+      _isStaffLeaveLoading = false;
+    });
+  }
+
+  // #endregion
+
+  // #region Excel Export Methods
+
+  Future<void> _downloadFeeExcel() async {
+    if (_feeReportData.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No data to download')),
       );
@@ -175,8 +282,8 @@ class _ReportTabState extends State<ReportTab> {
       }
 
       // Add data rows (one row per student)
-      for (int rowIndex = 0; rowIndex < _reportData.length; rowIndex++) {
-        final data = _reportData[rowIndex];
+      for (int rowIndex = 0; rowIndex < _feeReportData.length; rowIndex++) {
+        final data = _feeReportData[rowIndex];
         int colIndex = 0;
         
         // Student info
@@ -257,6 +364,51 @@ class _ReportTabState extends State<ReportTab> {
     }
   }
 
+  Future<void> _downloadGenericExcel(List<Map<String, dynamic>> data, String fileNamePrefix) async {
+    if (data.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No data to download')),
+      );
+      return;
+    }
+
+    try {
+      final excel = excel_pkg.Excel.createExcel();
+      final sheet = excel['Sheet1'];
+
+      // Headers from the keys of the first map
+      final headers = data.first.keys.toList();
+      sheet.appendRow(headers);
+
+      // Data rows
+      for (final rowData in data) {
+        final row = headers.map((header) => rowData[header]).toList();
+        sheet.appendRow(row);
+      }
+
+      final bytes = excel.encode();
+      if (bytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error encoding Excel file')),
+        );
+        return;
+      }
+
+      final fileName = '${fileNamePrefix}_${DateFormat('yyyy-MM-dd').format(DateTime.now())}.xlsx';
+      await _downloadFile(bytes, fileName);
+
+    } catch (e) {
+      print('Error downloading generic excel: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error downloading report: $e')),
+      );
+    }
+  }
+
+  // #endregion
+
+  // #region Helper and Build Methods
+
   void _downloadFileWeb(List<int> bytes, String fileName) {
     // Web download using Blob and download link
     try {
@@ -284,12 +436,30 @@ class _ReportTabState extends State<ReportTab> {
     }
   }
 
+  Future<void> _downloadFile(List<int> bytes, String fileName) async {
+    if (kIsWeb) {
+      _downloadFileWeb(bytes, fileName);
+    } else {
+      try {
+        final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/$fileName');
+        await file.writeAsBytes(bytes);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Downloaded: $fileName')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving file: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return DefaultTabController(
+      length: 4,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with gradient background
           Container(
@@ -324,6 +494,42 @@ class _ReportTabState extends State<ReportTab> {
               ],
             ),
           ),
+          TabBar(
+            controller: _tabController,
+            indicatorColor: _getTabColor(_tabController.index),
+            indicatorWeight: 4.0,
+            labelColor: _getTabColor(_tabController.index),
+            unselectedLabelColor: Colors.grey[600],
+            isScrollable: true,
+            tabs: const [
+              Tab(text: 'Fee Report'),
+              Tab(text: 'Diesel Report'),
+              Tab(text: 'Transactions Report'),
+              Tab(text: 'Staff Leave Report'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildFeeReportTab(),
+                _buildDieselReportTab(),
+                _buildTransactionsReportTab(),
+                _buildStaffLeaveReportTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeeReportTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const SizedBox(height: 24),
 
           // Fee Type Selection
@@ -365,7 +571,7 @@ class _ReportTabState extends State<ReportTab> {
               ),
               child: DropdownButton<String>(
                 isExpanded: true,
-                value: _selectedClass,
+                value: _selectedFeeClass,
                 hint: Text(
                   'Choose a class',
                   style: GoogleFonts.poppins(color: Colors.grey),
@@ -382,11 +588,11 @@ class _ReportTabState extends State<ReportTab> {
                     .toList(),
                 onChanged: (className) {
                   setState(() {
-                    _selectedClass = className;
-                    _reportData = [];
+                    _selectedFeeClass = className;
+                    _feeReportData = [];
                   });
                   if (className != null) {
-                    _loadReportData();
+                    _loadFeeReportData();
                   }
                 },
               ),
@@ -394,14 +600,14 @@ class _ReportTabState extends State<ReportTab> {
             const SizedBox(height: 24),
 
             // Report Data Display
-            if (_isLoading)
+            if (_isFeeLoading)
               const Center(child: CircularProgressIndicator())
-            else if (_reportData.isNotEmpty) ...[
+            else if (_feeReportData.isNotEmpty) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Report Data (${_reportData.length} records)',
+                    'Report Data (${_feeReportData.length} records)',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -409,7 +615,7 @@ class _ReportTabState extends State<ReportTab> {
                     ),
                   ),
                   ElevatedButton.icon(
-                    onPressed: _downloadExcel,
+                    onPressed: _downloadFeeExcel,
                     icon: const Icon(Icons.download),
                     label: const Text('Download Excel'),
                     style: ElevatedButton.styleFrom(
@@ -422,8 +628,8 @@ class _ReportTabState extends State<ReportTab> {
               ),
               const SizedBox(height: 16),
               // Report Table
-              _buildReportTable(),
-            ] else if (_selectedClass != null && !_isLoading)
+              _buildFeeReportTable(),
+            ] else if (_selectedFeeClass != null && !_isFeeLoading)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
@@ -448,6 +654,190 @@ class _ReportTabState extends State<ReportTab> {
     );
   }
 
+  Widget _buildDieselReportTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          ListTile(
+            title: const Text('Select Date Range'),
+            subtitle: Text(
+              '${DateFormat.yMMMd().format(_dieselDateRange!.start)} - ${DateFormat.yMMMd().format(_dieselDateRange!.end)}',
+            ),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: () async {
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                initialDateRange: _dieselDateRange,
+              );
+              if (picked != null) {
+                setState(() => _dieselDateRange = picked);
+                _loadDieselReportData();
+              }
+            },
+          ),
+          ElevatedButton.icon(
+            onPressed: () => _downloadGenericExcel(_dieselReportData, 'Diesel_Report'),
+            icon: const Icon(Icons.download),
+            label: const Text('Export to Excel'),
+          ),
+          Expanded(
+            child: _isDieselLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
+                    children: [
+                      DataTable(
+                        columns: const [
+                          DataColumn(label: Text('Date')),
+                          DataColumn(label: Text('Route No')),
+                          DataColumn(label: Text('Litres')),
+                          DataColumn(label: Text('Amount')),
+                        ],
+                        rows: _dieselReportData
+                            .map((row) => DataRow(cells: [
+                                  DataCell(Text(row['FilledDate']?.toString() ?? '')),
+                                  DataCell(Text(row['RouteNo']?.toString() ?? '')),
+                                  DataCell(Text(row['FilledLitres']?.toString() ?? '')),
+                                  DataCell(Text(row['Amount']?.toString() ?? '')),
+                                ]))
+                            .toList(),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionsReportTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          ListTile(
+            title: const Text('Select Date Range'),
+            subtitle: Text(
+              '${DateFormat.yMMMd().format(_transactionsDateRange!.start)} - ${DateFormat.yMMMd().format(_transactionsDateRange!.end)}',
+            ),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: () async {
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                initialDateRange: _transactionsDateRange,
+              );
+              if (picked != null) {
+                setState(() => _transactionsDateRange = picked);
+                _loadTransactionsReportData();
+              }
+            },
+          ),
+          ElevatedButton.icon(
+            onPressed: () => _downloadGenericExcel(_transactionsReportData, 'Transactions_Report'),
+            icon: const Icon(Icons.download),
+            label: const Text('Export to Excel'),
+          ),
+          Expanded(
+            child: _isTransactionsLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
+                    children: [
+                      DataTable(
+                        columns: const [
+                          DataColumn(label: Text('Date')),
+                          DataColumn(label: Text('Account')),
+                          DataColumn(label: Text('Description')),
+                          DataColumn(label: Text('Type')),
+                          DataColumn(label: Text('Amount')),
+                        ],
+                        rows: _transactionsReportData
+                            .map((row) => DataRow(cells: [
+                                  DataCell(Text(row['DATE']?.toString() ?? '')),
+                                  DataCell(Text(row['ACCOUNT']?.toString() ?? '')),
+                                  DataCell(Text(row['DESCRIPTION']?.toString() ?? '')),
+                                  DataCell(Text(row['TYPE']?.toString() ?? '')),
+                                  DataCell(Text(row['AMOUNT']?.toString() ?? '')),
+                                ]))
+                            .toList(),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaffLeaveReportTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          DropdownButtonFormField<Staff>(
+            value: _selectedStaff,
+            hint: const Text('Select Staff'),
+            items: _staffList.map((staff) => DropdownMenuItem(value: staff, child: Text(staff.name))).toList(),
+            onChanged: (staff) {
+              setState(() => _selectedStaff = staff);
+              if (staff != null) _loadStaffLeaveReportData();
+            },
+          ),
+          DropdownButtonFormField<String>(
+            value: _selectedLeaveMonth,
+            hint: const Text('Select Month'),
+            items: List.generate(12, (i) {
+              final date = DateTime(DateTime.now().year, DateTime.now().month - i, 1);
+              return DateFormat('yyyy-MM').format(date);
+            }).map((month) => DropdownMenuItem(value: month, child: Text(month))).toList(),
+            onChanged: (month) {
+              setState(() => _selectedLeaveMonth = month!);
+              if (_selectedStaff != null) _loadStaffLeaveReportData();
+            },
+          ),
+          ElevatedButton.icon(
+            onPressed: () => _downloadGenericExcel(_staffLeaveReportData, 'Staff_Leave_Report'),
+            icon: const Icon(Icons.download),
+            label: const Text('Export to Excel'),
+          ),
+          Expanded(
+            child: _isStaffLeaveLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
+                    children: [
+                      DataTable(
+                        columns: const [
+                          DataColumn(label: Text('Staff Name')),
+                          DataColumn(label: Text('Leave Date')),
+                          DataColumn(label: Text('Reason')),
+                          DataColumn(label: Text('Status')),
+                        ],
+                        rows: _staffLeaveReportData
+                            .map((row) => DataRow(cells: [
+                                  DataCell(Text(row['LEAVEDATE']?.toString() ?? '')),
+                                  DataCell(Text(row['STAFF']?.toString() ?? '')),
+                                  DataCell(Text(row['REASON']?.toString() ?? '')),
+                                  DataCell(
+                                    Text(
+                                      (row['APPROVED'] == 'YES')
+                                          ? 'Approved'
+                                          : (row['REJECTED'] == 'YES' ? 'Rejected' : 'Pending'),
+                                    ),
+                                  ),
+                                ]))
+                            .toList(),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFeeTypeChip(String label, Color color) {
     final isSelected = _selectedFeeType == label;
     return ChoiceChip(
@@ -462,8 +852,8 @@ class _ReportTabState extends State<ReportTab> {
       onSelected: (selected) {
         setState(() {
           _selectedFeeType = selected ? label : null;
-          _selectedClass = null;
-          _reportData = [];
+          _selectedFeeClass = null;
+          _feeReportData = [];
         });
       },
       backgroundColor: Colors.white,
@@ -476,7 +866,7 @@ class _ReportTabState extends State<ReportTab> {
     );
   }
 
-  Widget _buildReportTable() {
+  Widget _buildFeeReportTable() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SingleChildScrollView(
@@ -661,7 +1051,7 @@ class _ReportTabState extends State<ReportTab> {
               ),
             ],
             rows: [
-              for (final data in _reportData)
+              for (final data in _feeReportData)
                 DataRow(
                   color: MaterialStateProperty.all(
                     data['Overall Status'] == 'PAID'
@@ -803,5 +1193,20 @@ class _ReportTabState extends State<ReportTab> {
     if (amount == null) return '0';
     return amount.toStringAsFixed(2);
   }
-}
+  // #endregion
 
+  Color _getTabColor(int index) {
+    switch (index) {
+      case 0:
+        return Colors.blue[700]!;
+      case 1:
+        return Colors.orange[700]!;
+      case 2:
+        return Colors.purple[700]!;
+      case 3:
+        return Colors.teal[700]!;
+      default:
+        return Colors.blue[700]!;
+    }
+  }
+}

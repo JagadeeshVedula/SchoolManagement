@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:school_management/models/student.dart';
 import 'package:school_management/models/performance.dart';
 import 'package:school_management/services/supabase_service.dart';
@@ -16,6 +17,7 @@ class StudentDetailScreen extends StatefulWidget {
 class _StudentDetailScreenState extends State<StudentDetailScreen> {
   late Future<List<String>> _assessmentsFuture;
   String? _selectedAssessment;
+  bool _isAbsent = false;
   late Future<List<Performance>> _performanceFuture;
 
   @override
@@ -63,6 +65,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   _buildInfoRow('Father Name:', widget.student.fatherName),
                   _buildInfoRow('Mother Name:', widget.student.motherName),
                   _buildInfoRow('Parent Mobile:', widget.student.parentMobile),
+                  if (widget.student.doj != null && widget.student.doj!.isNotEmpty)
+                    _buildInfoRow('Joining Date:', widget.student.doj!),
                   _buildInfoRow('Address:', widget.student.address ?? 'N/A'),
                   if (widget.student.gender != null && widget.student.gender!.isNotEmpty)
                     _buildInfoRow('Gender:', widget.student.gender!),
@@ -79,6 +83,33 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   if (widget.student.hostelFacility != null && widget.student.hostelFacility!.isNotEmpty)
                     _buildInfoRow('Hostel Facility:', widget.student.hostelFacility!),
                 ],
+              ),
+            ),
+            // Absent Checkbox
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: CheckboxListTile(
+                  title: Text('Is Absent Today', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  value: _isAbsent,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      _isAbsent = value ?? false;
+                    });
+                    if (_isAbsent) {
+                      _sendAbsenceNotification();
+                    }
+                  },
+                  activeColor: Colors.orange,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  secondary: const Icon(Icons.sms),
+                ),
               ),
             ),
 
@@ -283,6 +314,27 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _sendAbsenceNotification() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final mobileNumber = widget.student.parentMobile;
+    if (mobileNumber.isEmpty) {
+      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Parent mobile number is not available.'), backgroundColor: Colors.red));
+      return;
+    }
+
+    final currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    final message = "your ward is abscent for school on '$currentDate' thanks from Nalanda school";
+
+    final success = await SupabaseService.sendSms(mobileNumber, message);
+
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text(success ? 'Absence notification sent successfully.' : 'Failed to send SMS.'),
+        backgroundColor: success ? Colors.green : Colors.red,
       ),
     );
   }

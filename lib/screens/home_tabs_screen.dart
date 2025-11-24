@@ -12,6 +12,7 @@ import 'package:school_management/screens/leave_requests_approval_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:html' as html;
 import 'package:school_management/screens/salary_slips_screen.dart';
+import 'package:school_management/screens/accounts_tab.dart';
 import 'package:school_management/models/user_role.dart';
 import 'package:school_management/screens/miscellaneous_screen.dart';
 
@@ -35,13 +36,13 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
   bool _sidebarOpen = true;
   late TabController _tabController;
   late DateTime _currentDateTime;
-  int _lastTabCount = 9;
+  int _lastTabCount = 10;
 
   @override
   void initState() {
     super.initState();
-    // HomeTabsScreen is only used by admin, always 9 tabs
-    _lastTabCount = 9;
+    // HomeTabsScreen is only used by admin, always 10 tabs
+    _lastTabCount = 10;
     // Initialize with index 0 to avoid RangeError
     _tabController =
         TabController(length: _lastTabCount, initialIndex: 0, vsync: this);
@@ -136,6 +137,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       ...baseTabs,
       const Tab(text: 'Salary Slips'),
       const Tab(text: 'Pending Requests'),
+      const Tab(text: 'Accounts'),
       const Tab(text: 'Miscellaneous'),
     ];
 
@@ -143,6 +145,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       ...baseViews,
       const Center(child: SalarySlipsScreen()),
       const Center(child: LeaveRequestsApprovalScreen()),
+      const Center(child: AccountsTab()),
       Center(child: MiscellaneousScreen(userRole: userRole)),
     ];
 
@@ -351,6 +354,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       Icons.receipt_long,
       Icons.pending_actions,
       Icons.category,
+      Icons.account_balance_wallet,
     ];
     return icons[index];
   }

@@ -13,6 +13,7 @@ class Student {
   final String? busNo;
   final String? busFeeFacility;
   final String? hostelFacility;
+  final String? doj;
 
   Student({
     this.id,
@@ -29,6 +30,7 @@ class Student {
     this.busNo,
     this.busFeeFacility,
     this.hostelFacility,
+    this.doj,
   });
 
   // Convert JSON from Supabase to Student object
@@ -48,6 +50,7 @@ class Student {
       busNo: json['BusNo'] as String?,
       busFeeFacility: json['Bus Facility'] as String?,
       hostelFacility: json['Hostel Facility'] as String?,
+      doj: json['DOJ'] as String?,
     );
   }
 
@@ -68,6 +71,7 @@ class Student {
       'BusNo': busNo,
       'Bus Facility': busFeeFacility,
       'Hostel Facility': hostelFacility,
+      'DOJ': doj,
     };
   }
 }

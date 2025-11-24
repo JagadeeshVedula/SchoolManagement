@@ -1,4 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 import 'package:school_management/models/student.dart';
 import 'package:school_management/models/performance.dart';
 import 'package:school_management/models/staff.dart';
@@ -1502,18 +1504,221 @@ class SupabaseService {
   // Add a new transaction
   static Future<bool> addTransaction(Map<String, dynamic> transactionData) async {
     try {
-      await client.from('TRANSACTIONS').insert(transactionData);
+      // Ensure the date is correctly formatted before insertion.
+      final dataToInsert = Map<String, dynamic>.from(transactionData);
+      if (dataToInsert.containsKey('DATE')) {
+        final dateValue = dataToInsert['DATE'];
+        if (dateValue is DateTime) {
+          dataToInsert['DATE'] = DateFormat('dd-MM-yyyy').format(dateValue);
+        }
+      }
+
+      await client.from('TRANSACTIONS').insert(dataToInsert);
       return true;
     } catch (e) {
       print('Error adding transaction: $e');
       return false;
     }
   }
+
+  // Get transactions from FEES and DIESEL tables by date
+  static Future<List<Map<String, dynamic>>> getTransactionsByDate(DateTime date) async {
+    final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+    final isoDate = DateFormat('yyyy-MM-dd').format(date);
+    final transactions = <Map<String, dynamic>>[];
+
+    try {
+      // Fetch from FEES table
+      final feesResponse = await client
+          .from('FEES')
+          .select('"STUDENT NAME", AMOUNT')
+          .eq('DATE', formattedDate);
+
+      for (final fee in feesResponse) {
+        transactions.add({
+          'description': 'Fee from ${fee['STUDENT NAME']}',
+          'amount': double.tryParse(fee['AMOUNT'].toString()) ?? 0.0,
+          'type': 'credit',
+        });
+      }
+
+      // Fetch from DIESEL table
+      final dieselResponse = await client
+          .from('DIESEL')
+          .select('RouteNo, Amount')
+          .eq('FilledDate', isoDate);
+
+      for (final diesel in dieselResponse) {
+        transactions.add({
+          'description': 'Diesel for Route ${diesel['RouteNo']}',
+          'amount': double.tryParse(diesel['Amount'].toString()) ?? 0.0,
+          'type': 'debit',
+        });
+      }
+
+      // Fetch from TRANSACTIONS table
+      final generalTransactionsResponse = await client
+          .from('TRANSACTIONS')
+          .select('ACCOUNT, AMOUNT, TYPE')
+          .eq('DATE', formattedDate);
+
+      for (final transaction in generalTransactionsResponse) {
+        final type = (transaction['TYPE'] as String? ?? '').toLowerCase();
+        if (type == 'credit' || type == 'debit') {
+          transactions.add({
+            'description': transaction['ACCOUNT'] ?? 'N/A',
+            'amount': double.tryParse(transaction['AMOUNT'].toString()) ?? 0.0,
+            'type': type,
+          });
+        }
+      }
+
+      return transactions;
+    } catch (e) {
+      print('Error fetching transactions by date: $e');
+      return [];
+    }
+  }
+
+  // Save closing balance to CB table
+  static Future<bool> saveClosingBalance(DateTime date, double amount) async {
+    final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+    try {
+      // Check if a record for the date already exists
+      final existing = await client.from('CB').select().eq('DATE', formattedDate).limit(1);
+
+      if (existing.isNotEmpty) {
+        // Update existing record
+        await client.from('CB').update({'AMOUNT': amount}).eq('DATE', formattedDate);
+      } else {
+        // Insert new record
+        await client.from('CB').insert({'DATE': formattedDate, 'AMOUNT': amount});
+      }
+      return true;
+    } catch (e) {
+      print('Error saving closing balance: $e');
+      return false;
+    }
+  }
+
+  // Get closing balance for a specific date from CB table
+  static Future<double> getClosingBalanceForDate(DateTime date) async {
+    final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+    try {
+      final response = await client
+          .from('CB')
+          .select('AMOUNT')
+          .eq('DATE', formattedDate)
+          .limit(1);
+
+      if (response.isNotEmpty) {
+        return double.tryParse(response.first['AMOUNT'].toString()) ?? 0.0;
+      }
+      return 0.0;
+    } catch (e) {
+      print('Error fetching closing balance for date: $e');
+      return 0.0;
+    }
+  }
+
+  // Get diesel data for report within a date range
+  static Future<List<Map<String, dynamic>>> getDieselDataForReport(DateTime startDate, DateTime endDate) async {
+    final formattedStartDate = DateFormat('yyyy-MM-dd').format(startDate);
+    final formattedEndDate = DateFormat('yyyy-MM-dd').format(endDate);
+    try {
+      final response = await client
+          .from('DIESEL')
+          .select('FilledDate, RouteNo, FilledLitres, Amount')
+          .gte('FilledDate', formattedStartDate)
+          .lte('FilledDate', formattedEndDate)
+          .order('FilledDate', ascending: false);
+      print(response);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching diesel report data: $e');
+      return [];
+    }
+  }
+
+  // Get transactions for report within a date range
+  static Future<List<Map<String, dynamic>>> getTransactionsForReport(DateTime startDate, DateTime endDate) async {
+    try {
+      // Fetch all records and filter in Dart, as the DATE column is text.
+      // This is reliable for mixed or inconsistent text date formats.
+      final response = await client
+          .from('TRANSACTIONS')
+          .select('DATE, ACCOUNT, COMMENT, TYPE, AMOUNT')
+          .order('DATE', ascending: false);
+
+      final transactions = (response as List).cast<Map<String, dynamic>>();
+      final dateFormat = DateFormat('dd-MM-yyyy');
+
+      // Normalize start and end dates to ignore time component
+      final normalizedStartDate = DateTime(startDate.year, startDate.month, startDate.day);
+      final normalizedEndDate = DateTime(endDate.year, endDate.month, endDate.day);
+
+      return transactions.where((t) {
+        try {
+          final transactionDate = dateFormat.parse(t['DATE']);
+          return !transactionDate.isBefore(normalizedStartDate) && !transactionDate.isAfter(normalizedEndDate);
+        } catch (e) {
+          // Ignore records with invalid date format
+          return false;
+        }
+      }).toList();
+    } catch (e) {
+      print('Error fetching transactions report data: $e');
+      return [];
+    }
+  }
+
+  // Get staff leave data for report with filters
+  static Future<List<Map<String, dynamic>>> getStaffLeaveForReport({
+    required String staffName,
+    required String monthYear, // Format: "yyyy-MM"
+  }) async {
+    try {
+      // The monthYear is in "yyyy-MM" format. We need to convert it to "-MM-yyyy"
+      // to match the LEAVEDATE format "dd-MM-yyyy".
+      final parts = monthYear.split('-');
+      final year = parts[0];
+      final month = parts[1];
+      final pattern = '%-$month-$year';
+
+      final response = await client
+          .from('STAFFLEAVE')
+          .select('STAFF, LEAVEDATE, REASON, APPROVED, REJECTED')
+          .eq('STAFF', staffName)
+          .like('LEAVEDATE', pattern)
+          .order('LEAVEDATE', ascending: false);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching staff leave report data: $e');
+      return [];
+    }
+  
+  }
+
+  // Send SMS via a gateway
+  static Future<bool> sendSms(String mobileNumber, String message) async {
+    // IMPORTANT: Replace this with your actual SMS gateway API URL and parameters.
+    // This is a placeholder example.
+    const String smsGatewayUrl = "YOUR_SMS_GATEWAY_URL_HERE";
+    final Uri uri = Uri.parse(smsGatewayUrl).replace(queryParameters: {
+      'apikey': 'YOUR_API_KEY', // Replace with your API key
+      'sender': 'NALANDA', // Replace with your Sender ID
+      'numbers': mobileNumber,
+      'message': message,
+    });
+
+    try {
+      // final response = await http.get(uri);
+      // return response.statusCode == 200;
+      print('SMS to $mobileNumber: "$message"'); // For testing without a real gateway
+      return true; // Assume success for now
+    } catch (e) {
+      print('Error sending SMS: $e');
+      return false;
+    }
+  }
 }
-
-
-
-
-
-
-
