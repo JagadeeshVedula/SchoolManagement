@@ -24,7 +24,10 @@ class _FeesTabState extends State<FeesTab> {
 
   // Payments
   String? _selectedPaymentType; // 'School Fee', 'Books Fee', 'Uniform Fee'
+  Map<String, List<String>> _classSections = {};
   String? _selectedClass;
+  String? _selectedSection;
+  List<String> _sections = [];
   List<String> _classes = [];
   List<Student> _students = [];
   Student? _selectedStudent;
@@ -58,20 +61,39 @@ class _FeesTabState extends State<FeesTab> {
 
   bool _isSubmitting = false;
   DateTime? _selectedDate;
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   @override
   void initState() {
     super.initState();
-    _loadClasses();
+    _loadClassSections();
   }
 
-  Future<void> _loadClasses() async {
-    final classes = await SupabaseService.getUniqueClasses();
-    setState(() => _classes = classes);
+  Future<void> _loadClassSections() async {
+    final classSections = await SupabaseService.getUniqueClassesAndSections();
+    setState(() {
+      _classSections = classSections;
+      _classes = classSections.keys.toList()..sort();
+    });
   }
 
-  Future<void> _loadStudentsForClass(String className) async {
-    final students = await SupabaseService.getStudentsByClass(className);
+  Future<void> _onClassSelectedInFees(String? className) async {
+    setState(() {
+      _selectedClass = className;
+      _selectedSection = null;
+      _students = [];
+      _selectedStudent = null;
+      _sections = _classSections[className] ?? [];
+    });
+  }
+
+  Future<void> _onSectionSelectedInFees(String? sectionName) async {
+    setState(() {
+      _selectedSection = sectionName;
+    });
+    if (_selectedClass == null || sectionName == null) return;
+    final students = await SupabaseService.getStudentsByClass('$_selectedClass-$sectionName');
     setState(() {
       _students = students;
       _selectedStudent = null;
@@ -134,27 +156,33 @@ class _FeesTabState extends State<FeesTab> {
     
     if (ok) {
       // Update local student object to reflect new concession
-      setState(() {
-        _selectedStudent = Student(
-          id: _selectedStudent!.id,
-          name: _selectedStudent!.name,
-          className: _selectedStudent!.className,
-          fatherName: _selectedStudent!.fatherName,
-          motherName: _selectedStudent!.motherName,
-          parentMobile: _selectedStudent!.parentMobile,
-          schoolFeeConcession: newSchoolFeeConcession,
-          tuitionFeeConcession: newTuitionFeeConcession,
-        );
+      if (mounted) {
+        setState(() {
+          _selectedStudent = Student(
+            id: _selectedStudent!.id,
+            name: _selectedStudent!.name,
+            className: _selectedStudent!.className,
+            fatherName: _selectedStudent!.fatherName,
+            motherName: _selectedStudent!.motherName,
+            parentMobile: _selectedStudent!.parentMobile,
+            schoolFeeConcession: newSchoolFeeConcession,
+            tuitionFeeConcession: newTuitionFeeConcession,
+          );
+        });
         _concession.clear();
-      });
+      }
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Concession saved successfully'), backgroundColor: Colors.green),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Concession saved successfully'), backgroundColor: Colors.green),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save concession'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save concession'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -321,7 +349,7 @@ class _FeesTabState extends State<FeesTab> {
         
         final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
         final concession = s.schoolFeeConcession;
-        final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+        final termFees = SupabaseService.calculateTermFees(totalFee, concession.toDouble());
         
         final fees = await SupabaseService.getFeesByStudent(s.name);
         
@@ -440,26 +468,32 @@ class _FeesTabState extends State<FeesTab> {
       
       // Calculate balance amount
       double balanceAmount = 0;
-      if (_selectedStudent != null && (payment['FEE TYPE'] as String? ?? '').contains('School Fee')) {
-        final structure = await SupabaseService.getFeeStructureByClass(_selectedStudent!.className);
+      if (_selectedStudent != null &&
+          (payment['FEE TYPE'] as String? ?? '').contains('School Fee')) {
+        final classNameOnly = _selectedStudent!.className.split('-').first;
+        final structure =
+            await SupabaseService.getFeeStructureByClass(classNameOnly);
         if (structure != null) {
-          final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
+          final totalFee =
+              double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
           final concession = _selectedStudent!.schoolFeeConcession;
-          final termFees = SupabaseService.calculateTermFees(totalFee, concession);
-          
-          // Extract term numbers from payment
+          final termFees =
+              SupabaseService.calculateTermFees(totalFee, concession.toDouble());
+
           final termNoStr = payment['TERM NO'] as String? ?? '';
-          final termNos = termNoStr.split(',').map((t) => int.tryParse(t.trim().replaceAll('Term ', '')) ?? 0).where((t) => t > 0).toList();
-          
+          final termNos = termNoStr
+              .split(',')
+              .map((t) => int.tryParse(t.trim().replaceAll('Term ', '')) ?? 0)
+              .where((t) => t > 0)
+              .toList();
+
           double totalTermFee = 0;
           for (final term in termNos) {
             totalTermFee += termFees[term] ?? 0;
           }
-          
-          // Fetch all payments to calculate total paid for these terms
+
           final fees = await SupabaseService.getFeesByStudent(_selectedStudent!.name);
           double totalPaidForTerms = 0;
-          
           for (final term in termNos) {
             final termKeyFull = 'Term $term';
             for (final fee in fees) {
@@ -640,12 +674,15 @@ class _FeesTabState extends State<FeesTab> {
                       
                       if (structureSnap.hasData && structureSnap.data != null && _selectedStudent != null) {
                         final structure = structureSnap.data!;
-                        final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
+                        final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0.0;
                         final concession = _selectedStudent!.schoolFeeConcession;
-                        final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                        final termFees = SupabaseService.calculateTermFees(totalFee, concession.toDouble());
                         
                         final termNoStr = payment['TERM NO'] as String? ?? '';
-                        final termNos = termNoStr.split(',').map((t) => int.tryParse(t.trim().replaceAll('Term ', '')) ?? 0).where((t) => t > 0).toList();
+                        final termNos = termNoStr
+                            .split(',')
+                            .map((t) => int.tryParse(t.trim().replaceAll('Term ', '')) ?? 0)
+                            .where((t) => t > 0).toList();
                         
                         for (final term in termNos) {
                           totalTermFee += termFees[term] ?? 0;
@@ -1205,26 +1242,31 @@ class _FeesTabState extends State<FeesTab> {
                       const SizedBox(height: 8),
                       FutureBuilder<Map<String, dynamic>?>(
                         future: SupabaseService.getFeeStructureByClass(_selectedStudent!.className),
-                        builder: (context, structureSnap) {
-                          if (structureSnap.connectionState == ConnectionState.waiting) {
+                        builder: (context, _) { // We ignore the result of the first future
+                          final classNameOnly = _selectedStudent!.className.split('-').first;
+                          return FutureBuilder<Map<String, dynamic>?>(
+                            future: SupabaseService.getFeeStructureByClass(classNameOnly),
+                            builder: (context, finalStructureSnap) {
+                          if (finalStructureSnap.connectionState == ConnectionState.waiting) {
                             return const Padding(
                               padding: EdgeInsets.symmetric(vertical: 8),
                               child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                             );
                           }
-                          
-                          final structure = structureSnap.data;
+                          final structure = finalStructureSnap.data;
                           final totalFee = structure != null ? double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0.0 : 0.0;
                           final concession = _selectedStudent!.schoolFeeConcession;
-                          final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                          final termFees = SupabaseService.calculateTermFees(totalFee, concession.toDouble());
                           
                           return FutureBuilder<List<Map<String, dynamic>>>(
                             future: _selectedStudent != null ? SupabaseService.getFeesByStudent(_selectedStudent!.name) : Future.value([]),
                             builder: (context, feesSnap) {
                               final allFees = feesSnap.data ?? [];
                               
-                              return Column(
-                                children: List.generate(3, (index) {
+                              return AnimatedSize(
+                                duration: const Duration(milliseconds: 300),
+                                child: Column(
+                                  children: List.generate(3, (index) {
                                   final termNum = index + 1;
                                   final termFee = termFees[termNum] ?? 0;
                                   
@@ -1279,11 +1321,11 @@ class _FeesTabState extends State<FeesTab> {
                                     ),
                                   );
                                 }),
-                              );
+                               ));
                             },
                           );
-                        },
-                      ),
+                        });
+                        }),
                       const SizedBox(height: 16),
                       // Hostel Fee Section - Only for School Fee
                       if (hasHostelFacility)
@@ -1711,28 +1753,42 @@ class _FeesTabState extends State<FeesTab> {
                 children: [
                   Text('Select Class', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.indigo[800])), 
                   const SizedBox(height: 12), 
-                  DropdownButtonFormField<String>( 
-                    value: _selectedClass, 
-                    items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(), 
-                    onChanged: (v) { 
-                      setState(() { 
-                        _selectedClass = v; 
-                        _selectedStudent = null; 
-                        _students = []; 
-                      }); 
-                      if (v != null) _loadStudentsForClass(v); 
-                    }, 
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                    ), 
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedClass,
+                          items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                          onChanged: _onClassSelectedInFees,
+                          decoration: InputDecoration(
+                            labelText: 'Class',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedSection,
+                          items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                          onChanged: _selectedClass == null ? null : _onSectionSelectedInFees,
+                          decoration: InputDecoration(
+                            labelText: 'Section',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: _selectedClass == null ? Colors.grey[200] : Colors.grey[100],
+                          ),
+                        ),
+                      ),
+                    ],
                   ), 
                   const SizedBox(height: 16), 
                   SizedBox( 
                     width: double.infinity, 
                     child: ElevatedButton.icon( 
-                      onPressed: _openStudentSearchDialog, 
+                      onPressed: (_selectedClass != null && _selectedSection != null) ? _openStudentSearchDialog : null,
                       icon: const Icon(Icons.search), 
                       label: const Text('Search & Select Student', style: TextStyle(fontWeight: FontWeight.w600)), 
                       style: ElevatedButton.styleFrom( 
@@ -1931,9 +1987,9 @@ class _FeesTabState extends State<FeesTab> {
                   DropdownButtonFormField<String>(
                     value: _selectedClass,
                     items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                    onChanged: (v) {
-                      setState(() { _selectedClass = v; _students = []; _selectedStudent = null; });
-                      if (v != null) _loadStudentsForClass(v);
+                    onChanged: (className) {
+                      setState(() { _selectedClass = className; _students = []; _selectedStudent = null; });
+                      if (className != null) _onClassSelectedInFees(className);
                     },
                     decoration: InputDecoration(
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -1946,39 +2002,40 @@ class _FeesTabState extends State<FeesTab> {
             ),
             const SizedBox(height: 16),
             // Term Selection Checkboxes
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+            if (_selectedClass != null)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Filter by Terms', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.orange[800])),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      title: const Text('Term 1', style: TextStyle(fontWeight: FontWeight.w600)),
+                      value: _dueTerms['Term1'],
+                      activeColor: Colors.deepOrange,
+                      onChanged: (v) => setState(() => _dueTerms['Term1'] = v ?? false),
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Term 2', style: TextStyle(fontWeight: FontWeight.w600)),
+                      value: _dueTerms['Term2'],
+                      activeColor: Colors.deepOrange,
+                      onChanged: (v) => setState(() => _dueTerms['Term2'] = v ?? false),
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Term 3', style: TextStyle(fontWeight: FontWeight.w600)),
+                      value: _dueTerms['Term3'],
+                      activeColor: Colors.deepOrange,
+                      onChanged: (v) => setState(() => _dueTerms['Term3'] = v ?? false),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Filter by Terms', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.orange[800])),
-                  const SizedBox(height: 12),
-                  CheckboxListTile(
-                    title: const Text('Term 1', style: TextStyle(fontWeight: FontWeight.w600)),
-                    value: _dueTerms['Term1'],
-                    activeColor: Colors.deepOrange,
-                    onChanged: (v) => setState(() => _dueTerms['Term1'] = v ?? false),
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Term 2', style: TextStyle(fontWeight: FontWeight.w600)),
-                    value: _dueTerms['Term2'],
-                    activeColor: Colors.deepOrange,
-                    onChanged: (v) => setState(() => _dueTerms['Term2'] = v ?? false),
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Term 3', style: TextStyle(fontWeight: FontWeight.w600)),
-                    value: _dueTerms['Term3'],
-                    activeColor: Colors.deepOrange,
-                    onChanged: (v) => setState(() => _dueTerms['Term3'] = v ?? false),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 16),
             // Excel Export Button
             if (_selectedClass != null && _students.isNotEmpty)
@@ -2004,6 +2061,7 @@ class _FeesTabState extends State<FeesTab> {
                 FutureBuilder<Map<String, dynamic>?>(
                   future: SupabaseService.getFeeStructureByClass(s.className),
                   builder: (context, structureSnap) {
+                    final classNameOnly = s.className.split('-').first;
                     if (structureSnap.connectionState == ConnectionState.waiting) {
                       return const SizedBox();
                     }
@@ -2011,9 +2069,12 @@ class _FeesTabState extends State<FeesTab> {
                     if (structure == null) return const SizedBox();
                     
                     // Get the fee structure amount and calculate term fees with 40/40/20 split
-                    final structureFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
+                    return FutureBuilder<Map<String, dynamic>?>(
+                      future: SupabaseService.getFeeStructureByClass(classNameOnly),
+                      builder: (context, finalStructureSnap) {
+                    final structureFee = finalStructureSnap.data != null ? double.tryParse((finalStructureSnap.data!['FEE'] as dynamic).toString()) ?? 0 : 0;
                     final concession = s.schoolFeeConcession;
-                    final termFees = SupabaseService.calculateTermFees(structureFee, concession);
+                    final termFees = SupabaseService.calculateTermFees(structureFee.toDouble(), concession.toDouble());
                     
                     return FutureBuilder<List<Map<String, dynamic>>>(
                       future: SupabaseService.getFeesByStudent(s.name),
@@ -2215,12 +2276,13 @@ class _FeesTabState extends State<FeesTab> {
                         );
                       },
                     );
+                      }
+                    );
                   },
                 ),
             ],
-          ],]
-        ),
-  
+          ],
+        ]),
       ),
     );
   }

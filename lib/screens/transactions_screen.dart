@@ -199,7 +199,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 Text(
                                   transaction['DATE'] != null
                                       ? DateFormat('dd MMM yyyy')
-                                          .format(DateTime.parse(transaction['DATE']))
+                                          .format(DateFormat('dd-MM-yyyy').parse(transaction['DATE']))
                                       : '',
                                   style: GoogleFonts.poppins(fontSize: 12),
                                 ),

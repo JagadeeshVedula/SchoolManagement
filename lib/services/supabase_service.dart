@@ -109,6 +109,30 @@ class SupabaseService {
     }
   }
 
+  // Fetch unique classes and sections from STUDENTS table
+  static Future<Map<String, List<String>>> getUniqueClassesAndSections() async {
+    try {
+      final response = await client.from('STUDENTS').select('Class');
+      final classSections = <String, Set<String>>{};
+      for (var item in response as List) {
+        final className = item['Class'] as String?;
+        if (className != null && className.contains('-')) {
+          final parts = className.split('-');
+          final classPart = parts[0];
+          final sectionPart = parts[1];
+          if (classPart.isNotEmpty && sectionPart.isNotEmpty) {
+            classSections.putIfAbsent(classPart, () => <String>{}).add(sectionPart);
+          }
+        }
+      }
+      // Convert the Set to a sorted List for consistent ordering
+      return classSections.map((key, value) => MapEntry(key, value.toList()..sort()));
+    } catch (e) {
+      print('Error fetching classes and sections: $e');
+      return {};
+    }
+  }
+
   // Fetch students by class
   static Future<List<Student>> getStudentsByClass(String className) async {
     try {
@@ -123,6 +147,24 @@ class SupabaseService {
       return students;
     } catch (e) {
       print('Error fetching students by class: $e');
+      return [];
+    }
+  }
+
+  // Fetch students by class prefix (e.g., "V" to get "V-A", "V-B")
+  static Future<List<Student>> getStudentsByClassPrefix(String classPrefix) async {
+    try {
+      final response = await client
+          .from('STUDENTS')
+          .select()
+          .like('Class', '$classPrefix-%');
+
+      final students = (response as List)
+          .map((e) => Student.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return students;
+    } catch (e) {
+      print('Error fetching students by class prefix: $e');
       return [];
     }
   }
@@ -293,6 +335,26 @@ class SupabaseService {
     } catch (e) {
       print('Error fetching fees for student: $e');
       return [];
+    }
+  }
+
+  // Fetch fees for a list of students (optimized for reports)
+  static Future<Map<String, List<Map<String, dynamic>>>> getFeesForStudents(List<String> studentNames) async {
+    try {
+      final response = await client
+          .from('FEES')
+          .select()
+          .in_('STUDENT NAME', studentNames);
+      
+      final feesByStudent = <String, List<Map<String, dynamic>>>{};
+      for (final fee in response as List) {
+        final studentName = fee['STUDENT NAME'] as String;
+        feesByStudent.putIfAbsent(studentName, () => []).add(fee as Map<String, dynamic>);
+      }
+      return feesByStudent;
+    } catch (e) {
+      print('Error fetching fees for students: $e');
+      return {};
     }
   }
 
@@ -1484,17 +1546,46 @@ class SupabaseService {
     try {
       var query = client.from('TRANSACTIONS').select();
 
-      if (account != null && account.isNotEmpty) {
-        query = query.eq('ACCOUNT', account);
-      }
-
-      if (date != null) {
-        query = query.eq('DATE', date.toIso8601String().split('T')[0]);
-      }
-
+      // Fetch all transactions
       final response = await query.order('DATE', ascending: false);
+      final transactions = (response as List).map((e) => e as Map<String, dynamic>).toList();
 
-      return (response as List).map((e) => e as Map<String, dynamic>).toList();
+      final dateFormat = DateFormat('dd-MM-yyyy');
+      final isoFormat = DateFormat('yyyy-MM-dd');
+
+      // Sanitize dates first
+      for (var transaction in transactions) {
+        if (transaction['DATE'] is String) {
+          final dateString = transaction['DATE'] as String;
+          var parsedDate = dateFormat.tryParse(dateString);
+          parsedDate ??= isoFormat.tryParse(dateString);
+
+          if (parsedDate != null) {
+            transaction['DATE'] = dateFormat.format(parsedDate);
+          }
+        }
+      }
+
+      // Now filter
+      return transactions.where((t) {
+        bool accountMatch = true;
+        if (account != null && account.isNotEmpty) {
+          accountMatch = t['ACCOUNT'] == account;
+        }
+
+        bool dateMatch = true;
+        if (date != null) {
+          final dateString = t['DATE'] as String?;
+          if (dateString == null) {
+            dateMatch = false;
+          } else {
+            dateMatch = dateString == dateFormat.format(date);
+          }
+        }
+        
+        return accountMatch && dateMatch;
+      }).toList();
+
     } catch (e) {
       print('Error fetching transactions: $e');
       return [];
@@ -1510,6 +1601,15 @@ class SupabaseService {
         final dateValue = dataToInsert['DATE'];
         if (dateValue is DateTime) {
           dataToInsert['DATE'] = DateFormat('dd-MM-yyyy').format(dateValue);
+        } else if (dateValue is String && dateValue.isNotEmpty) {
+            var parsedDate = DateFormat('dd-MM-yyyy').tryParse(dateValue);
+            parsedDate ??= DateFormat('yyyy-MM-dd').tryParse(dateValue);
+            
+            if (parsedDate != null) {
+              dataToInsert['DATE'] = DateFormat('dd-MM-yyyy').format(parsedDate);
+            } else {
+              print('Warning: Unrecognized date format string in addTransaction: "$dateValue". Inserting as is.');
+            }
         }
       }
 
@@ -1559,10 +1659,29 @@ class SupabaseService {
       // Fetch from TRANSACTIONS table
       final generalTransactionsResponse = await client
           .from('TRANSACTIONS')
-          .select('ACCOUNT, AMOUNT, TYPE')
-          .eq('DATE', formattedDate);
+          .select('ACCOUNT, AMOUNT, TYPE, DATE');
 
-      for (final transaction in generalTransactionsResponse) {
+      // Client-side filtering to handle multiple date formats ('dd-MM-yyyy' and 'yyyy-MM-dd')
+      final filteredGeneralTransactions = generalTransactionsResponse.where((t) {
+        final dateString = t['DATE'] as String?;
+        if (dateString == null) return false;
+
+        try {
+          // Try parsing as 'dd-MM-yyyy'
+          final parsedDate1 = DateFormat('dd-MM-yyyy').parse(dateString);
+          if (parsedDate1.year == date.year && parsedDate1.month == date.month && parsedDate1.day == date.day) return true;
+        } catch (_) {}
+
+        try {
+          // Try parsing as 'yyyy-MM-dd'
+          final parsedDate2 = DateFormat('yyyy-MM-dd').parse(dateString);
+          if (parsedDate2.year == date.year && parsedDate2.month == date.month && parsedDate2.day == date.day) return true;
+        } catch (_) {}
+
+        return false;
+      }).toList();
+
+      for (final transaction in filteredGeneralTransactions) {
         final type = (transaction['TYPE'] as String? ?? '').toLowerCase();
         if (type == 'credit' || type == 'debit') {
           transactions.add({
@@ -1658,13 +1777,22 @@ class SupabaseService {
       final normalizedEndDate = DateTime(endDate.year, endDate.month, endDate.day);
 
       return transactions.where((t) {
-        try {
-          final transactionDate = dateFormat.parse(t['DATE']);
-          return !transactionDate.isBefore(normalizedStartDate) && !transactionDate.isAfter(normalizedEndDate);
-        } catch (e) {
-          // Ignore records with invalid date format
+        if (t['DATE'] is! String) {
           return false;
         }
+        final dateString = t['DATE'] as String;
+        var dateFormat = DateFormat('dd-MM-yyyy');
+        var transactionDate = dateFormat.tryParse(dateString);
+        
+        if (transactionDate == null) {
+          dateFormat = DateFormat('yyyy-MM-dd');
+          transactionDate = dateFormat.tryParse(dateString);
+        }
+
+        if (transactionDate == null) {
+          return false;
+        }
+        return !transactionDate.isBefore(normalizedStartDate) && !transactionDate.isAfter(normalizedEndDate);
       }).toList();
     } catch (e) {
       print('Error fetching transactions report data: $e');

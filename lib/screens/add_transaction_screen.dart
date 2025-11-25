@@ -62,7 +62,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       setState(() => _isLoading = true);
       final success = await SupabaseService.addTransaction({
         'ACCOUNT': _selectedAccount,
-        'DATE': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+        'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate!),
         'TYPE': _selectedType,
         'AMOUNT': double.parse(_amountController.text),
         'COMMENT': _commentController.text,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:school_management/models/staff.dart';
+import 'package:school_management/models/student.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:school_management/services/supabase_service.dart';
 import 'package:excel/excel.dart' as excel_pkg;
@@ -22,6 +23,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
 
   // Fee Report State
   String? _selectedFeeType = 'School Fee'; // Only 'School Fee' now
+  Map<String, List<String>> _classSections = {};
+  String? _selectedFeeSection;
+  List<String> _sections = [];
   String? _selectedFeeClass;
   List<String> _classes = [];
   List<Map<String, dynamic>> _feeReportData = [];
@@ -81,8 +85,13 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   }
 
   Future<void> _loadClasses() async {
-    final classes = await SupabaseService.getUniqueClasses();
-    setState(() => _classes = classes);
+    final classSections = await SupabaseService.getUniqueClassesAndSections();
+    if (mounted) {
+      setState(() {
+        _classSections = classSections;
+        _classes = classSections.keys.toList()..sort();
+      });
+    }
   }
 
   Future<void> _loadStaff() async {
@@ -99,52 +108,68 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   // #region Data Loading Methods
 
   Future<void> _loadFeeReportData() async {
-    if (_selectedFeeType == null || _selectedFeeClass == null) return;
+    if (_selectedFeeType == null || _selectedFeeClass == null) {
+      setState(() => _feeReportData = []);
+      return;
+    }
 
     setState(() => _isFeeLoading = true);
 
     try {
-      final students = await SupabaseService.getStudentsByClass(_selectedFeeClass!);
+      final List<Student> students;
+      if (_selectedFeeSection != null) {
+        // Fetch for a specific section
+        students = await SupabaseService.getStudentsByClass('$_selectedFeeClass-$_selectedFeeSection');
+      } else {
+        // Fetch for all sections of a class
+        students = await SupabaseService.getStudentsByClassPrefix(_selectedFeeClass!);
+      }
       final reportData = <Map<String, dynamic>>[];
+      
+      // --- OPTIMIZATION START ---
+      // 1. Batch fetch all fees for the selected students
+      final studentNames = students.map((s) => s.name).toList();
+      final allFeesByStudent = await SupabaseService.getFeesForStudents(studentNames);
+
+      // 2. Pre-fetch and cache fee structures, books fees, and uniform fees to avoid loops
+      final feeStructureCache = <String, Map<String, dynamic>>{};
+      final booksFeeCache = <String, double>{};
+      final uniformFeeCache = <String, double>{}; // Key: "ClassName-Gender"
 
       for (final student in students) {
-        final fees = await SupabaseService.getFeesByStudent(student.name);
-        final feeStructure = await SupabaseService.getFeeStructureByClass(student.className);
-        if (feeStructure == null) continue;
+        final classNameOnly = student.className.split('-').first;
+        if (!feeStructureCache.containsKey(classNameOnly)) {
+          feeStructureCache[classNameOnly] = await SupabaseService.getFeeStructureByClass(classNameOnly) ?? {};
+          booksFeeCache[classNameOnly] = await SupabaseService.getBooksFeeByClass(classNameOnly);
+        }
+        final genderKey = '${classNameOnly}-${student.gender ?? 'Male'}';
+        if (!uniformFeeCache.containsKey(genderKey)) {
+          uniformFeeCache[genderKey] = await SupabaseService.getUniformFeeByClassAndGender(classNameOnly, student.gender ?? 'Male');
+        }
+      }
+      // --- OPTIMIZATION END ---
+      
+      for (final student in students) {
+        final fees = allFeesByStudent[student.name] ?? []; // Use pre-fetched fees
+        final classNameOnly = student.className.split('-').first;
+        final feeStructure = feeStructureCache[classNameOnly]!;
+        if (feeStructure.isEmpty) continue;
 
-        final totalFee = double.tryParse((feeStructure['FEE'] as dynamic).toString()) ?? 0;
+        final totalFee = double.tryParse(feeStructure['FEE']?.toString() ?? '0') ?? 0;
         final concession = student.schoolFeeConcession;
         
-        // Calculate term fees
         final termFees = SupabaseService.calculateTermFees(totalFee, concession);
 
-        // Calculate bus fee info
         final busFee = await SupabaseService.getStudentBusFee(student.name);
-        double busFeeCheckPaid = 0;
-        for (final fee in fees) {
-          if ((fee['FEE TYPE'] as String? ?? '') == 'Bus Fee') {
-            busFeeCheckPaid += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
-          }
-        }
+        final busFeeCheckPaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').contains('Bus Fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
         final busFeedue = busFee > 0 ? (busFee - busFeeCheckPaid).clamp(0, double.infinity) : 0;
 
-        // Get Books Fee and Uniform Fee
-        final booksFeeFull = await SupabaseService.getBooksFeeByClass(student.className);
-        double booksFeePaid = 0;
-        for (final fee in fees) {
-          if ((fee['FEE TYPE'] as String? ?? '').contains('Books Fee')) {
-            booksFeePaid += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
-          }
-        }
+        final booksFeeFull = booksFeeCache[classNameOnly]!;
+        final booksFeePaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').contains('Books Fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
         final booksFeedue = booksFeeFull > 0 ? (booksFeeFull - booksFeePaid).clamp(0, double.infinity) : 0;
 
-        final uniformFeeFull = await SupabaseService.getUniformFeeByClassAndGender(student.className, student.gender ?? 'Male');
-        double uniformFeePaid = 0;
-        for (final fee in fees) {
-          if ((fee['FEE TYPE'] as String? ?? '').contains('Uniform Fee')) {
-            uniformFeePaid += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
-          }
-        }
+        final uniformFeeFull = uniformFeeCache['${classNameOnly}-${student.gender ?? 'Male'}']!;
+        final uniformFeePaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').contains('Uniform Fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
         final uniformFeedue = uniformFeeFull > 0 ? (uniformFeeFull - uniformFeePaid).clamp(0, double.infinity) : 0;
 
         // Build term data for each term (single row per student with term1, term2, term3 columns)
@@ -563,38 +588,62 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue[300]!, width: 2),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                color: Colors.blue[50],
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 5)],
               ),
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: _selectedFeeClass,
-                hint: Text(
-                  'Choose a class',
-                  style: GoogleFonts.poppins(color: Colors.grey),
-                ),
-                underline: const SizedBox(),
-                items: _classes
-                    .map((className) => DropdownMenuItem<String>(
-                          value: className,
-                          child: Text(
-                            className,
-                            style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (className) {
-                  setState(() {
-                    _selectedFeeClass = className;
-                    _feeReportData = [];
-                  });
-                  if (className != null) {
-                    _loadFeeReportData();
-                  }
-                },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedFeeClass,
+                      hint: const Text('Select Class'),
+                      items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedFeeClass = value;
+                          _selectedFeeSection = null;
+                          _sections = _classSections[value] ?? [];
+                          _feeReportData = [];
+                        });
+                        _loadFeeReportData();
+                      },
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Class',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedFeeSection,
+                      hint: const Text('All Sections'),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('All Sections'),
+                        ),
+                        ..._sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                      ],
+                      onChanged: _selectedFeeClass == null
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _selectedFeeSection = value;
+                                _feeReportData = [];
+                              });
+                              _loadFeeReportData();
+                            },
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Section',
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),

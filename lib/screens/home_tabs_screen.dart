@@ -371,29 +371,46 @@ class StudentDataWidget extends StatefulWidget {
 }
 
 class _StudentDataWidgetState extends State<StudentDataWidget> {
-  late Future<List<String>> _classesFuture;
+  late Future<Map<String, List<String>>> _classSectionsFuture;
   String? _selectedClass;
+  String? _selectedSection;
+  List<String> _sections = [];
   late Future<List<Student>> _studentsFuture;
 
   @override
   void initState() {
     super.initState();
-    _classesFuture = SupabaseService.getUniqueClasses();
+    _classSectionsFuture = SupabaseService.getUniqueClassesAndSections();
     _studentsFuture = Future.value([]);
   }
 
   void _onClassSelected(String? className) {
     setState(() {
       _selectedClass = className;
-      if (className != null && className.isNotEmpty) {
-        // Fetch students for this class
+      _selectedSection = null;
+      _sections = [];
+      _studentsFuture = Future.value([]);
+
+      if (className != null) {
+        _classSectionsFuture.then((classSections) {
+          setState(() {
+            _sections = classSections[className] ?? [];
+          });
+        });
+      }
+    });
+  }
+
+  void _onSectionSelected(String? sectionName) {
+    setState(() {
+      _selectedSection = sectionName;
+      if (_selectedClass != null && sectionName != null) {
+        final fullClassName = '$_selectedClass-$sectionName';
         if (widget.parentMobile != null && widget.parentMobile!.isNotEmpty) {
-          // Parent: fetch their children in the selected class
           _studentsFuture = SupabaseService.getStudentsByClassAndParentMobile(
-              className, widget.parentMobile!);
+              fullClassName, widget.parentMobile!);
         } else {
-          // Admin/Staff: fetch all students in the selected class
-          _studentsFuture = SupabaseService.getStudentsByClass(className);
+          _studentsFuture = SupabaseService.getStudentsByClass(fullClassName);
         }
       } else {
         _studentsFuture = Future.value([]);
@@ -415,8 +432,8 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
             ),
           ),
           padding: const EdgeInsets.all(16.0),
-          child: FutureBuilder<List<String>>(
-            future: _classesFuture,
+          child: FutureBuilder<Map<String, List<String>>>(
+            future: _classSectionsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
@@ -429,45 +446,71 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                 return Text('Error loading classes: ${snapshot.error}');
               }
 
-              final classes = snapshot.data ?? [];
+              final classes = snapshot.data?.keys.toList() ?? [];
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Filter by Class',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.cyan[300]!, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      value: _selectedClass,
-                      hint: Text(
-                        'Select a class',
-                        style: GoogleFonts.inter(color: Colors.grey),
-                      ),
-                      underline: const SizedBox(),
-                      items: classes
-                          .map(
-                            (className) => DropdownMenuItem<String>(
-                              value: className,
-                              child: Text(className),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Class', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(color: Colors.cyan[300]!, width: 2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: _selectedClass,
+                                hint: Text('Select', style: GoogleFonts.inter(color: Colors.grey)),
+                                underline: const SizedBox(),
+                                items: classes.map((className) => DropdownMenuItem<String>(
+                                  value: className,
+                                  child: Text(className),
+                                )).toList(),
+                                onChanged: _onClassSelected,
+                              ),
                             ),
-                          )
-                          .toList(),
-                      onChanged: _onClassSelected,
-                    ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Section', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: _selectedClass == null ? Colors.grey[200] : Colors.white,
+                                border: Border.all(color: Colors.cyan[300]!, width: 2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: _selectedSection,
+                                hint: Text('Select', style: GoogleFonts.inter(color: Colors.grey)),
+                                underline: const SizedBox(),
+                                items: _sections.map((section) => DropdownMenuItem<String>(
+                                  value: section,
+                                  child: Text(section),
+                                )).toList(),
+                                onChanged: _selectedClass == null ? null : _onSectionSelected,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               );
@@ -476,7 +519,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
         ),
 
         // Student List
-        if (_selectedClass != null && _selectedClass!.isNotEmpty)
+        if (_selectedClass != null && _selectedSection != null)
           Expanded(
             child: FutureBuilder<List<Student>>(
               future: _studentsFuture,
@@ -591,7 +634,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
           Expanded(
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -599,7 +642,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                         size: 48, color: Colors.cyan[600]),
                     const SizedBox(height: 12),
                     Text(
-                      'Select a class to view students',
+                      'Select a class and section to view students',
                       style: GoogleFonts.inter(
                         color: Colors.grey[600],
                         fontSize: 16,
