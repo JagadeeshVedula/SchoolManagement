@@ -646,6 +646,21 @@ class SupabaseService {
     }
   }
 
+  // Get total bus fee paid by a student
+  static Future<double> getBusFeePaid(String studentName) async {
+    try {
+      final fees = await getFeesByStudent(studentName);
+      final busFeePayments = fees.where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('bus fee'));
+      
+      final totalPaid = busFeePayments.fold<double>(
+        0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+      return totalPaid;
+    } catch (e) {
+      print('Error getting bus fee paid: $e');
+      return 0;
+    }
+  }
+
   // Fetch books fee by class from BOOKS table
   static Future<double> getBooksFeeByClass(String className) async {
     try {

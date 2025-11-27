@@ -466,6 +466,17 @@ class _FeesTabState extends State<FeesTab> {
       final receiptNo = 'REC${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 8)}';
       final paidAmount = double.tryParse((payment['AMOUNT'] as dynamic).toString()) ?? 0;
       
+      // Pre-fetch asynchronous data for the PDF
+      double busFeeAmount = 0;
+      double busPaidAmount = 0;
+      if ((payment['FEE TYPE'] as String? ?? '').contains('School Fee') &&
+          _selectedStudent != null &&
+          (_selectedStudent!.busRoute?.isNotEmpty ?? false)) {
+        busFeeAmount = await SupabaseService.getBusFeeByRoute(_selectedStudent!.busRoute!);
+        busPaidAmount = await SupabaseService.getBusFeePaid(_selectedStudent!.name);
+      }
+
+
       // Calculate balance amount
       double balanceAmount = 0;
       if (_selectedStudent != null &&
@@ -624,6 +635,31 @@ class _FeesTabState extends State<FeesTab> {
                   ],
                 ),
               ],
+              // Bus Fee Details in PDF
+              if ((payment['FEE TYPE'] as String? ?? '').contains('School Fee') &&
+                  _selectedStudent != null &&
+                  (_selectedStudent!.busRoute?.isNotEmpty ?? false)) ...[
+                pw.SizedBox(height: 16),
+                pw.Divider(),
+                pw.SizedBox(height: 12),
+                pw.Text('BUS FEE DETAILS', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 8),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Total Bus Fee:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Rs. ${busFeeAmount.toStringAsFixed(2)}'),
+                  ],
+                ),
+                pw.SizedBox(height: 6),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Bus Fee Paid:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Rs. ${busPaidAmount.toStringAsFixed(2)}', style: pw.TextStyle(color: PdfColors.green)),
+                  ],
+                ),
+              ],
               pw.SizedBox(height: 16),
               pw.Divider(),
               pw.SizedBox(height: 12),
@@ -662,7 +698,8 @@ class _FeesTabState extends State<FeesTab> {
             width: 400,
             child: isSchoolFee && _selectedStudent != null
                 ? FutureBuilder<Map<String, dynamic>?>(
-                    future: SupabaseService.getFeeStructureByClass(_selectedStudent!.className),
+                    // Use only the class part (e.g., "V" from "V-A") to get the fee structure
+                    future: SupabaseService.getFeeStructureByClass(_selectedStudent!.className.split('-').first),
                     builder: (context, structureSnap) {
                       if (structureSnap.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -945,6 +982,58 @@ class _FeesTabState extends State<FeesTab> {
               );
             },
           ),
+        // Bus Fee Section in Dialog
+        if ((payment['FEE TYPE'] as String? ?? '').contains('School Fee') &&
+            _selectedStudent != null &&
+            (_selectedStudent!.busRoute?.isNotEmpty ?? false)) ...[
+          const SizedBox(height: 16),
+          const Divider(),
+          FutureBuilder<double>(
+            future: SupabaseService.getBusFeeByRoute(_selectedStudent!.busRoute!),
+            builder: (context, busFeeSnap) {
+              final busFeeAmount = busFeeSnap.data ?? 0;
+
+              return FutureBuilder<double>(
+                future: SupabaseService.getBusFeePaid(_selectedStudent!.name),
+                builder: (context, paidSnap) {
+                  final busPaidAmount = paidSnap.data ?? 0;
+                  final busDueAmount = (busFeeAmount - busPaidAmount).clamp(0, double.infinity);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('BUS FEE DETAILS', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Bus Fee:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                          Text('₹${busFeeAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Bus Fee Paid:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                          Text('₹${busPaidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Bus Fee Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                          Text('₹${busDueAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
         const SizedBox(height: 16),
         const Divider(),
         Center(
@@ -1052,6 +1141,10 @@ class _FeesTabState extends State<FeesTab> {
     final hostelPaymentController = TextEditingController();
     final termSelections = Map<int, bool>.from(_termSelections);
     
+    // Bus Fee state
+    final hasBusRoute = _selectedStudent!.busRoute != null && _selectedStudent!.busRoute!.isNotEmpty;
+    bool payBusFee = false;
+    final busFeePaymentController = TextEditingController();
     // Extract class without section (e.g., "V-A" -> "V")
     final classWithoutSection = _selectedStudent!.className.split('-')[0];
     
@@ -1477,6 +1570,115 @@ class _FeesTabState extends State<FeesTab> {
                           },
                         ),
                     ],
+                    // Bus Fee Section
+                    if (_selectedPaymentType == 'School Fee' && hasBusRoute) ...[
+                      const SizedBox(height: 16),
+                      FutureBuilder<double>(
+                        future: SupabaseService.getBusFeeByRoute(_selectedStudent!.busRoute!),
+                        builder: (context, busFeeSnap) {
+                          if (busFeeSnap.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final busFeeAmount = busFeeSnap.data ?? 0;
+
+                          return FutureBuilder<double>(
+                            future: SupabaseService.getBusFeePaid(_selectedStudent!.name),
+                            builder: (context, paidSnap) {
+                              final busPaidAmount = paidSnap.data ?? 0;
+                              final busFeeDue = (busFeeAmount - busPaidAmount).clamp(0, double.infinity);
+                              final isBusFeeFullyPaid = busFeeDue == 0 && busFeeAmount > 0;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange[50],
+                                      border: Border.all(color: Colors.orange[200]!, width: 1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Bus Fee (Route: ${_selectedStudent!.busRoute})', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Total Fee:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                                            Text('₹${busFeeAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          ],
+                                        ),
+                                        if (busPaidAmount > 0) ...[
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text('Already Paid:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                                              Text('₹${busPaidAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
+                                            ],
+                                          ),
+                                        ],
+                                        if (busFeeDue > 0) ...[
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text('Remaining Due:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                                              Text('₹${busFeeDue.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red)),
+                                            ],
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  if (!isBusFeeFullyPaid)
+                                    StatefulBuilder(
+                                      builder: (context, setPaymentState) => Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          CheckboxListTile(
+                                            value: payBusFee,
+                                            onChanged: (v) {
+                                              setDialogState(() => payBusFee = v ?? false);
+                                              if (!payBusFee) {
+                                                busFeePaymentController.clear();
+                                              }
+                                            },
+                                            title: const Text('Pay Bus Fee', style: TextStyle(fontWeight: FontWeight.w600)),
+                                            subtitle: Text('₹${busFeeDue.toStringAsFixed(2)} due'),
+                                            controlAffinity: ListTileControlAffinity.leading,
+                                          ),
+                                          if (payBusFee) ...[
+                                            const SizedBox(height: 8),
+                                            TextField(
+                                              controller: busFeePaymentController,
+                                              decoration: InputDecoration(
+                                                labelText: 'Amount to Pay (Max: ₹${busFeeDue.toStringAsFixed(2)})',
+                                                hintText: 'Enter bus fee amount',
+                                                border: const OutlineInputBorder(),
+                                              ),
+                                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    )
+                                  else
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(color: Colors.green[100], border: Border.all(color: Colors.green), borderRadius: BorderRadius.circular(8)),
+                                      child: Row(children: [Icon(Icons.check_circle, color: Colors.green[700]), const SizedBox(width: 8), Text('Bus Fee Paid Completely', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.green[700]))]),
+                                    ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -1535,6 +1737,23 @@ class _FeesTabState extends State<FeesTab> {
                               'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now()),
                             };
                             await SupabaseService.insertFee(feeData);
+
+                            // Submit bus fee if selected
+                            if (_selectedPaymentType == 'School Fee' && payBusFee && hasBusRoute) {
+                              final busPaymentAmount = busFeePaymentController.text.trim();
+                              if (busPaymentAmount.isNotEmpty) {
+                                final busFeeData = {
+                                  'STUDENT NAME': _selectedStudent!.name,
+                                  'FEE TYPE': 'Bus Fee',
+                                  'AMOUNT': busPaymentAmount,
+                                  'TERM YEAR': termYearController.text.trim().isNotEmpty ? termYearController.text.trim() : currentYear,
+                                  'TERM MONTH': termMonthController.value ?? '',
+                                  'TERM NO': 'N/A',
+                                  'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now()),
+                                };
+                                await SupabaseService.insertFee(busFeeData);
+                              }
+                            }
                             
                             // Submit hostel fee if selected
                             if (_selectedPaymentType == 'School Fee' && payHostelFee && hasHostelFacility) {
@@ -1557,7 +1776,11 @@ class _FeesTabState extends State<FeesTab> {
                             
                             if (mounted) {
                               Navigator.pop(dialogContext);
-                              final feeMessage = payHostelFee && hasHostelFacility ? 'School Fee and Hostel Fee paid successfully' : '${_selectedPaymentType!.trim()} paid successfully';
+                              List<String> paidItems = [_selectedPaymentType!.trim()];
+                              if (payHostelFee && hasHostelFacility) paidItems.add('Hostel Fee');
+                              if (payBusFee && hasBusRoute && busFeePaymentController.text.isNotEmpty) paidItems.add('Bus Fee');
+
+                              final feeMessage = '${paidItems.join(' and ')} paid successfully';
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(feeMessage), backgroundColor: Colors.green),
                               );
