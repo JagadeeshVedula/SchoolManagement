@@ -14,6 +14,7 @@ import 'dart:html' as html;
 import 'package:school_management/screens/salary_slips_screen.dart';
 import 'package:school_management/screens/accounts_tab.dart';
 import 'package:school_management/models/user_role.dart';
+import 'package:school_management/screens/student_data_tab.dart';
 import 'package:school_management/screens/miscellaneous_screen.dart';
 
 class HomeTabsScreen extends StatefulWidget {
@@ -124,7 +125,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
     ];
 
     final baseViews = <Widget>[
-      StudentDataWidget(parentMobile: widget.parentMobile),
+      const StudentDataTab(),
       const RegisterTab(),
       const Center(child: StaffDataWidget()),
       const Center(child: TransportDataWidget()),
