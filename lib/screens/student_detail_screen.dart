@@ -78,8 +78,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     _buildInfoRow('Bus Route:', widget.student.busRoute!),
                   if (widget.student.busNo != null && widget.student.busNo!.isNotEmpty)
                     _buildInfoRow('Bus Number:', widget.student.busNo!),
-                  if (widget.student.busFeeFacility != null && widget.student.busFeeFacility!.isNotEmpty)
-                    _buildInfoRow('Bus Facility:', widget.student.busFeeFacility!),
+                  if (widget.student.busFacility != null && widget.student.busFacility!.isNotEmpty)
+                    _buildInfoRow('Bus Facility:', widget.student.busFacility!),
                   if (widget.student.hostelFacility != null && widget.student.hostelFacility!.isNotEmpty)
                     _buildInfoRow('Hostel Facility:', widget.student.hostelFacility!),
                 ],

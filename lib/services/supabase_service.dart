@@ -598,12 +598,16 @@ class SupabaseService {
   static Future<bool> updateStudentConcession(
     String studentName,
     double schoolFeeConcession,
+    double busFeeConcession,
+    double hostelFeeConcession,
     double tuitionFeeConcession,
   ) async {
     try {
       await client.from('STUDENTS').update({
         'School Fee Concession': schoolFeeConcession,
-        'Tuition Fee Concession': tuitionFeeConcession,
+        'Bus Fee Concession': busFeeConcession,
+        'Hostel Fee Concession': hostelFeeConcession,
+
       }).eq('Name', studentName);
       return true;
     } catch (e) {

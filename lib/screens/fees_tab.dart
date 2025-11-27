@@ -139,17 +139,23 @@ class _FeesTabState extends State<FeesTab> {
     
     // Determine which concession to update
     double newSchoolFeeConcession = _selectedStudent!.schoolFeeConcession;
-    double newTuitionFeeConcession = _selectedStudent!.tuitionFeeConcession;
+    double newBusFeeConcession = _selectedStudent!.busFeeConcession;
+    double newHostelFeeConcession = _selectedStudent!.hostelFeeConcession;
     
     if (_selectedPaymentType == 'School Fee') {
       newSchoolFeeConcession = concessionAmount;
+    } else if (_selectedPaymentType == 'Bus Fee') {
+      newBusFeeConcession = concessionAmount;
+    } else if (_selectedPaymentType == 'Hostel Fee') {
+      newHostelFeeConcession = concessionAmount;
     }
-    
     // Call supabase service to update
     final ok = await SupabaseService.updateStudentConcession(
       _selectedStudent!.name,
       newSchoolFeeConcession,
-      newTuitionFeeConcession,
+      newBusFeeConcession,
+      newHostelFeeConcession,
+      _selectedStudent!.tuitionFeeConcession,
     );
     
     if (!mounted) return;
@@ -158,15 +164,10 @@ class _FeesTabState extends State<FeesTab> {
       // Update local student object to reflect new concession
       if (mounted) {
         setState(() {
-          _selectedStudent = Student(
-            id: _selectedStudent!.id,
-            name: _selectedStudent!.name,
-            className: _selectedStudent!.className,
-            fatherName: _selectedStudent!.fatherName,
-            motherName: _selectedStudent!.motherName,
-            parentMobile: _selectedStudent!.parentMobile,
+          _selectedStudent = _selectedStudent?.copyWith(
             schoolFeeConcession: newSchoolFeeConcession,
-            tuitionFeeConcession: newTuitionFeeConcession,
+            busFeeConcession: newBusFeeConcession,
+            hostelFeeConcession: newHostelFeeConcession,
           );
         });
         _concession.clear();
@@ -1140,16 +1141,19 @@ class _FeesTabState extends State<FeesTab> {
     final amountController = TextEditingController();
     final hostelPaymentController = TextEditingController();
     final termSelections = Map<int, bool>.from(_termSelections);
+    final hostelConcessionController = TextEditingController(text: _selectedStudent!.hostelFeeConcession.toStringAsFixed(2));
+    final busConcessionController = TextEditingController(text: _selectedStudent!.busFeeConcession.toStringAsFixed(2));
     
     // Bus Fee state
     final hasBusRoute = _selectedStudent!.busRoute != null && _selectedStudent!.busRoute!.isNotEmpty;
     bool payBusFee = false;
     final busFeePaymentController = TextEditingController();
     // Extract class without section (e.g., "V-A" -> "V")
+
     final classWithoutSection = _selectedStudent!.className.split('-')[0];
     
     // Check if student has hostel facility
-    final hasHostelFacility = _selectedStudent!.hostelFacility != null && (_selectedStudent!.hostelFacility?.isNotEmpty ?? false);
+    final hasHostelFacility = _selectedStudent!.hostelFacility == 'Yes';
     bool payHostelFee = false;
     
     // Auto-populate amount based on payment type
@@ -1420,7 +1424,7 @@ class _FeesTabState extends State<FeesTab> {
                         });
                         }),
                       const SizedBox(height: 16),
-                      // Hostel Fee Section - Only for School Fee
+                      // Hostel Fee Section - Only for School Fee and if student has the facility
                       if (hasHostelFacility)
                         FutureBuilder<double>(
                           future: SupabaseService.getHostelFeeByClass(classWithoutSection),
@@ -1431,11 +1435,15 @@ class _FeesTabState extends State<FeesTab> {
                             final hostelFeeAmount = hostelFeeSnap.data ?? 0;
                             
                             return FutureBuilder<double>(
+                              // Use the new model field for concession
                               future: _getHostelFeePaid(_selectedStudent!.name),
                               builder: (context, paidSnap) {
-                                final hostelPaidAmount = paidSnap.data ?? 0;
-                                final hostelFeeDue = (hostelFeeAmount - hostelPaidAmount).clamp(0, double.infinity);
-                                final isHostelFullyPaid = hostelFeeDue == 0 && hostelFeeAmount > 0;
+                                final hostelPaidAmount = paidSnap.data ?? 0;                                
+                                  // Use the new model field for concession
+                                  // Apply concession to the total fee
+                                  final effectiveHostelFee = (hostelFeeAmount - _selectedStudent!.hostelFeeConcession).clamp(0, double.infinity);
+                                  final hostelFeeDue = (effectiveHostelFee - hostelPaidAmount).clamp(0, double.infinity);
+                                final isHostelFullyPaid = hostelFeeDue <= 0 && hostelFeeAmount > 0;
                                 
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1456,7 +1464,7 @@ class _FeesTabState extends State<FeesTab> {
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text('Total Amount:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                                              Text('₹${hostelFeeAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                              Text('₹${effectiveHostelFee.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                             ],
                                           ),
                                           if (hostelPaidAmount > 0) ...[
@@ -1480,6 +1488,37 @@ class _FeesTabState extends State<FeesTab> {
                                             ),
                                           ],
                                         ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    // Hostel Fee Concession Input
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                      child: TextField(
+                                        controller: hostelConcessionController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Hostel Fee Concession',
+                                          border: const OutlineInputBorder(),
+                                          suffixIcon: IconButton(
+                                            icon: const Icon(Icons.save, color: Colors.green),
+                                            onPressed: () async {
+                                              final amount = double.tryParse(hostelConcessionController.text) ?? 0.0;
+                                              final success = await SupabaseService.updateStudentConcession(
+                                                _selectedStudent!.name,
+                                                _selectedStudent!.schoolFeeConcession,
+                                                _selectedStudent!.busFeeConcession,
+                                                amount, // New hostel concession
+                                                _selectedStudent!.tuitionFeeConcession,
+                                              );
+                                              if (success) {
+                                                setDialogState(() {
+                                                  _selectedStudent = _selectedStudent!.copyWith(hostelFeeConcession: amount);
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                        keyboardType: TextInputType.number,
                                       ),
                                     ),
                                     const SizedBox(height: 12),
@@ -1571,7 +1610,7 @@ class _FeesTabState extends State<FeesTab> {
                         ),
                     ],
                     // Bus Fee Section
-                    if (_selectedPaymentType == 'School Fee' && hasBusRoute) ...[
+                    if (hasBusRoute) ...[
                       const SizedBox(height: 16),
                       FutureBuilder<double>(
                         future: SupabaseService.getBusFeeByRoute(_selectedStudent!.busRoute!),
@@ -1584,8 +1623,9 @@ class _FeesTabState extends State<FeesTab> {
                           return FutureBuilder<double>(
                             future: SupabaseService.getBusFeePaid(_selectedStudent!.name),
                             builder: (context, paidSnap) {
+                              final effectiveBusFee = (busFeeAmount - _selectedStudent!.busFeeConcession).clamp(0, double.infinity);
                               final busPaidAmount = paidSnap.data ?? 0;
-                              final busFeeDue = (busFeeAmount - busPaidAmount).clamp(0, double.infinity);
+                              final busFeeDue = (effectiveBusFee - busPaidAmount).clamp(0, double.infinity);
                               final isBusFeeFullyPaid = busFeeDue == 0 && busFeeAmount > 0;
 
                               return Column(
@@ -1607,7 +1647,7 @@ class _FeesTabState extends State<FeesTab> {
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text('Total Fee:', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                                            Text('₹${busFeeAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                            Text('₹${effectiveBusFee.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                           ],
                                         ),
                                         if (busPaidAmount > 0) ...[
@@ -1631,6 +1671,37 @@ class _FeesTabState extends State<FeesTab> {
                                           ),
                                         ],
                                       ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Bus Fee Concession Input
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                    child: TextField(
+                                      controller: busConcessionController,
+                                      decoration: InputDecoration(
+                                        labelText: 'Bus Fee Concession',
+                                        border: const OutlineInputBorder(),
+                                        suffixIcon: IconButton(
+                                          icon: const Icon(Icons.save, color: Colors.green),
+                                          onPressed: () async {
+                                            final amount = double.tryParse(busConcessionController.text) ?? 0.0;
+                                            final success = await SupabaseService.updateStudentConcession(
+                                              _selectedStudent!.name,
+                                              _selectedStudent!.schoolFeeConcession,
+                                              amount, // New bus concession
+                                              _selectedStudent!.hostelFeeConcession,
+                                              _selectedStudent!.tuitionFeeConcession,
+                                            );
+                                            if (success) {
+                                              setDialogState(() {
+                                                _selectedStudent = _selectedStudent!.copyWith(busFeeConcession: amount);
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      keyboardType: TextInputType.number,
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -2043,6 +2114,34 @@ class _FeesTabState extends State<FeesTab> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            // School Fee Concession Input
+            if (_selectedPaymentType == 'School Fee')
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+                ),
+                child: TextField(
+                  controller: _concession..text = _selectedStudent!.schoolFeeConcession.toStringAsFixed(2),
+                  decoration: InputDecoration(
+                    labelText: 'School Fee Concession',
+                    hintText: 'Enter concession amount',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    filled: true,
+                    fillColor: Colors.yellow[100],
+                    prefixIcon: const Icon(Icons.money_off, color: Colors.orange),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.save, color: Colors.green),
+                      onPressed: _saveConcession,
+                      tooltip: 'Save Concession',
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
             const SizedBox(height: 16), 
             SizedBox( 
               width: double.infinity, 
@@ -2245,10 +2344,12 @@ class _FeesTabState extends State<FeesTab> {
                       onChanged: (v) => setState(() => _dueTerms['Term1'] = v ?? false),
                     ),
                     CheckboxListTile(
-                      title: const Text('Term 2', style: TextStyle(fontWeight: FontWeight.w600)),
+                      title: const Text('Term 2',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       value: _dueTerms['Term2'],
                       activeColor: Colors.deepOrange,
-                      onChanged: (v) => setState(() => _dueTerms['Term2'] = v ?? false),
+                      onChanged: (v) =>
+                          setState(() => _dueTerms['Term2'] = v ?? false),
                     ),
                     CheckboxListTile(
                       title: const Text('Term 3', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -2296,7 +2397,7 @@ class _FeesTabState extends State<FeesTab> {
                       future: SupabaseService.getFeeStructureByClass(classNameOnly),
                       builder: (context, finalStructureSnap) {
                     final structureFee = finalStructureSnap.data != null ? double.tryParse((finalStructureSnap.data!['FEE'] as dynamic).toString()) ?? 0 : 0;
-                    final concession = s.schoolFeeConcession;
+                    final concession = s.schoolFeeConcession ;
                     final termFees = SupabaseService.calculateTermFees(structureFee.toDouble(), concession.toDouble());
                     
                     return FutureBuilder<List<Map<String, dynamic>>>(
