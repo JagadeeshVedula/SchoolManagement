@@ -1223,7 +1223,7 @@ class SupabaseService {
           .select()
           .eq('LEAVEAPPLIED', 'YES')
           .eq('APPROVED', 'NO')
-          .neq('REJECTED', 'YES')
+          .or('REJECTED.is.null,REJECTED.neq.YES')
           .order('LEAVEDATE', ascending: false);
 
       return (response as List).map((e) => e as Map<String, dynamic>).toList();
@@ -1865,6 +1865,19 @@ class SupabaseService {
       return true; // Assume success for now
     } catch (e) {
       print('Error sending SMS: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> assignClassToTeacher(String staffName, String className) async {
+    try {
+      await client.from('CLASS_TEACHER').insert({
+        'STAFF': staffName,
+        'CLASS': className,
+      });
+      return true;
+    } catch (e) {
+      print('Error assigning class to teacher: $e');
       return false;
     }
   }

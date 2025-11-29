@@ -661,11 +661,111 @@ class StaffDataWidget extends StatefulWidget {
 
 class _StaffDataWidgetState extends State<StaffDataWidget> {
   late Future<List<Staff>> _staffFuture;
+  List<String> _classes = [];
+  List<String> _sections = [];
 
   @override
   void initState() {
     super.initState();
     _staffFuture = SupabaseService.getAllStaff();
+    _loadClasses();
+  }
+
+  Future<void> _loadClasses() async {
+    final classes = await SupabaseService.getClassesFromFeeStructure();
+    final sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
+    if (mounted) {
+      setState(() {
+        _classes = classes..sort();
+        _sections = sections;
+      });
+    }
+  }
+
+  void _showAssignClassDialog(Staff staff) {
+    String? selectedClass;
+    String? selectedSection;
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Assign Class to ${staff.name}'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedClass,
+                    hint: const Text('Select Class'),
+                    items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedClass = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedSection,
+                    hint: const Text('Select Section'),
+                    items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedSection = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (selectedClass == null || selectedSection == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please select both class and section')),
+                            );
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isSubmitting = true;
+                          });
+
+                          final className = '$selectedClass-$selectedSection';
+                          final success = await SupabaseService.assignClassToTeacher(staff.name, className);
+
+                          setDialogState(() {
+                            isSubmitting = false;
+                          });
+
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Assigned ${staff.name} to $className')),
+                            );
+                            Navigator.of(context).pop();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to assign class')),
+                            );
+                          }
+                        },
+                  child: isSubmitting ? const CircularProgressIndicator(strokeWidth: 2) : const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -760,6 +860,14 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                             style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton(
+                          onPressed: () => _showAssignClassDialog(staff),
+                          child: const Text('Assign Class'),
+                        ),
                       ),
                     ],
                   ),
