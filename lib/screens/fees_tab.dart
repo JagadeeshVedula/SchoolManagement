@@ -47,6 +47,8 @@ class _FeesTabState extends State<FeesTab> {
   // Dues
   String? _selectedDueType; // 'School'
   String? _selectedDueClass;
+  String? _selectedDueSection;
+  List<String> _dueSections = [];
   List<Student> _dueStudents = [];
   final Map<String, bool> _dueTerms = {'Term1': false, 'Term2': false, 'Term3': false};
   
@@ -99,6 +101,31 @@ class _FeesTabState extends State<FeesTab> {
       _selectedStudent = null;
       _paymentHistory = [];
       _showPaymentHistory = false;
+    });
+  }
+
+  Future<void> _onClassSelectedInDues(String? className) async {
+    setState(() {
+      _selectedDueClass = className;
+      _selectedDueSection = null;
+      _dueStudents = [];
+      _dueSections = _classSections[className] ?? [];
+    });
+  }
+
+  Future<void> _onSectionSelectedInDues(String? sectionName) async {
+    setState(() {
+      _selectedDueSection = sectionName;
+    });
+    if (_selectedDueClass == null || sectionName == null) {
+      setState(() {
+        _dueStudents = [];
+      });
+      return;
+    }
+    final students = await SupabaseService.getStudentsByClass('$_selectedDueClass-$sectionName');
+    setState(() {
+      _dueStudents = students;
     });
   }
 
@@ -344,8 +371,8 @@ class _FeesTabState extends State<FeesTab> {
       sheetObject.appendRow(['Student Name', 'Class', 'Term 1 Due', 'Term 2 Due', 'Term 3 Due', 'Bus Fee Due', 'Total Due']);
       
       // Add data for each student
-      for (final s in _students) {
-        final structure = await SupabaseService.getFeeStructureByClass(s.className);
+      for (final s in _dueStudents) {
+        final structure = await SupabaseService.getFeeStructureByClass(s.className.split('-').first);
         if (structure == null) continue;
         
         final totalFee = double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0;
@@ -2306,25 +2333,43 @@ class _FeesTabState extends State<FeesTab> {
                 children: [
                   Text('Select Class', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.orange[800])),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _selectedClass,
-                    items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                    onChanged: (className) {
-                      setState(() { _selectedClass = className; _students = []; _selectedStudent = null; });
-                      if (className != null) _onClassSelectedInFees(className);
-                    },
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedDueClass,
+                          items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                          onChanged: _onClassSelectedInDues,
+                          decoration: InputDecoration(
+                            labelText: 'Class',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedDueSection,
+                          items: _dueSections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                          onChanged: _selectedDueClass == null ? null : _onSectionSelectedInDues,
+                          decoration: InputDecoration(
+                            labelText: 'Section',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: _selectedDueClass == null ? Colors.grey[200] : Colors.grey[100],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             // Term Selection Checkboxes
-            if (_selectedClass != null)
+            if (_selectedDueClass != null)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -2362,7 +2407,7 @@ class _FeesTabState extends State<FeesTab> {
               ),
             const SizedBox(height: 16),
             // Excel Export Button
-            if (_selectedClass != null && _students.isNotEmpty)
+            if (_selectedDueClass != null && _dueStudents.isNotEmpty)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -2377,13 +2422,13 @@ class _FeesTabState extends State<FeesTab> {
                 ),
               ),
             const SizedBox(height: 16),
-            if (_students.isNotEmpty && _selectedDueType != null) ...[
+            if (_dueStudents.isNotEmpty && _selectedDueType != null) ...[
               Text('Students', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.orange[900])),
               const SizedBox(height: 12),
-              for (final s in _students)
+              for (final s in _dueStudents)
               if (_selectedDueType == 'School Fee')
                 FutureBuilder<Map<String, dynamic>?>(
-                  future: SupabaseService.getFeeStructureByClass(s.className),
+                  future: SupabaseService.getFeeStructureByClass(s.className.split('-').first),
                   builder: (context, structureSnap) {
                     final classNameOnly = s.className.split('-').first;
                     if (structureSnap.connectionState == ConnectionState.waiting) {
