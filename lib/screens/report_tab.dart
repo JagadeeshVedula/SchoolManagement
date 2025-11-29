@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:school_management/models/staff.dart';
 import 'package:school_management/models/student.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:school_management/screens/due_report_tab.dart';
 import 'package:school_management/services/supabase_service.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:intl/intl.dart';
@@ -50,7 +51,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _loadClasses();
     _loadStaff();
     _dieselDateRange = DateTimeRange(
@@ -77,6 +78,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             break;
           case 3: // Staff Leave Report
             if (_staffLeaveReportData.isEmpty && _selectedStaff != null) _loadStaffLeaveReportData();
+            break;
+          case 4: // Due Report
+            // Optionally, add pre-loading for the due report tab
             break;
         }
       }
@@ -482,70 +486,69 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Column(
-        children: [
-          // Header with gradient background
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue[700]!, Colors.blue[400]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
+    return Column(
+      children: [
+        // Header with gradient background
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue[700]!, Colors.blue[400]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Fee Reports',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Generate and download fee collection reports by class and fee type',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
+            borderRadius: BorderRadius.circular(12),
           ),
-          TabBar(
-            controller: _tabController,
-            indicatorColor: _getTabColor(_tabController.index),
-            indicatorWeight: 4.0,
-            labelColor: _getTabColor(_tabController.index),
-            unselectedLabelColor: Colors.grey[600],
-            isScrollable: true,
-            tabs: const [
-              Tab(text: 'Fee Report'),
-              Tab(text: 'Diesel Report'),
-              Tab(text: 'Transactions Report'),
-              Tab(text: 'Staff Leave Report'),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Fee Reports',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Generate and download fee collection reports by class and fee type',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.white70,
+                ),
+              ),
             ],
           ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildFeeReportTab(),
-                _buildDieselReportTab(),
-                _buildTransactionsReportTab(),
-                _buildStaffLeaveReportTab(),
-              ],
-            ),
+        ),
+        TabBar(
+          controller: _tabController,
+          indicatorColor: _getTabColor(_tabController.index),
+          indicatorWeight: 4.0,
+          labelColor: _getTabColor(_tabController.index),
+          unselectedLabelColor: Colors.grey[600],
+          isScrollable: true,
+          tabs: const [
+            Tab(text: 'Fee Report'),
+            Tab(text: 'Diesel Report'),
+            Tab(text: 'Transactions Report'),
+            Tab(text: 'Staff Leave Report'),
+            Tab(text: 'Due Report'),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildFeeReportTab(),
+              _buildDieselReportTab(),
+              _buildTransactionsReportTab(),
+              _buildStaffLeaveReportTab(),
+              DueReportTab(staffList: _staffList),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -648,9 +651,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             const SizedBox(height: 24),
 
             // Report Data Display
-            if (_isFeeLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (_feeReportData.isNotEmpty) ...[
+            if (_isFeeLoading) ...[
+              const Center(child: CircularProgressIndicator()),
+            ] else if (_feeReportData.isNotEmpty) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -677,7 +680,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               const SizedBox(height: 16),
               // Report Table
               _buildFeeReportTable(),
-            ] else if (_selectedFeeClass != null && !_isFeeLoading)
+            ] else if (_selectedFeeClass != null) ...[
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
@@ -696,6 +699,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                   ),
                 ),
               ),
+            ]
           ],
         ],
       ),
@@ -735,25 +739,25 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             child: _isDieselLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
-                    children: [
-                      DataTable(
-                        columns: const [
-                          DataColumn(label: Text('Date')),
-                          DataColumn(label: Text('Route No')),
-                          DataColumn(label: Text('Litres')),
-                          DataColumn(label: Text('Amount')),
-                        ],
-                        rows: _dieselReportData
-                            .map((row) => DataRow(cells: [
-                                  DataCell(Text(row['FilledDate']?.toString() ?? '')),
-                                  DataCell(Text(row['RouteNo']?.toString() ?? '')),
-                                  DataCell(Text(row['FilledLitres']?.toString() ?? '')),
-                                  DataCell(Text(row['Amount']?.toString() ?? '')),
-                                ]))
-                            .toList(),
-                      ),
-                    ],
-                  ),
+              children: [
+                DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Date')),
+                    DataColumn(label: Text('Route No')),
+                    DataColumn(label: Text('Litres')),
+                    DataColumn(label: Text('Amount')),
+                  ],
+                  rows: _dieselReportData
+                      .map((row) => DataRow(cells: [
+                    DataCell(Text(row['FilledDate']?.toString() ?? '')),
+                    DataCell(Text(row['RouteNo']?.toString() ?? '')),
+                    DataCell(Text(row['FilledLitres']?.toString() ?? '')),
+                    DataCell(Text(row['Amount']?.toString() ?? '')),
+                  ]))
+                      .toList(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -793,27 +797,27 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             child: _isTransactionsLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
-                    children: [
-                      DataTable(
-                        columns: const [
-                          DataColumn(label: Text('Date')),
-                          DataColumn(label: Text('Account')),
-                          DataColumn(label: Text('Description')),
-                          DataColumn(label: Text('Type')),
-                          DataColumn(label: Text('Amount')),
-                        ],
-                        rows: _transactionsReportData
-                            .map((row) => DataRow(cells: [
-                                  DataCell(Text(row['DATE']?.toString() ?? '')),
-                                  DataCell(Text(row['ACCOUNT']?.toString() ?? '')),
-                                  DataCell(Text(row['DESCRIPTION']?.toString() ?? '')),
-                                  DataCell(Text(row['TYPE']?.toString() ?? '')),
-                                  DataCell(Text(row['AMOUNT']?.toString() ?? '')),
-                                ]))
-                            .toList(),
-                      ),
-                    ],
-                  ),
+              children: [
+                DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Date')),
+                    DataColumn(label: Text('Account')),
+                    DataColumn(label: Text('Description')),
+                    DataColumn(label: Text('Type')),
+                    DataColumn(label: Text('Amount')),
+                  ],
+                  rows: _transactionsReportData
+                      .map((row) => DataRow(cells: [
+                    DataCell(Text(row['DATE']?.toString() ?? '')),
+                    DataCell(Text(row['ACCOUNT']?.toString() ?? '')),
+                    DataCell(Text(row['DESCRIPTION']?.toString() ?? '')),
+                    DataCell(Text(row['TYPE']?.toString() ?? '')),
+                    DataCell(Text(row['AMOUNT']?.toString() ?? '')),
+                  ]))
+                      .toList(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -855,31 +859,31 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             child: _isStaffLeaveLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
-                    children: [
-                      DataTable(
-                        columns: const [
-                          DataColumn(label: Text('Staff Name')),
-                          DataColumn(label: Text('Leave Date')),
-                          DataColumn(label: Text('Reason')),
-                          DataColumn(label: Text('Status')),
-                        ],
-                        rows: _staffLeaveReportData
-                            .map((row) => DataRow(cells: [
-                                  DataCell(Text(row['LEAVEDATE']?.toString() ?? '')),
-                                  DataCell(Text(row['STAFF']?.toString() ?? '')),
-                                  DataCell(Text(row['REASON']?.toString() ?? '')),
-                                  DataCell(
-                                    Text(
-                                      (row['APPROVED'] == 'YES')
-                                          ? 'Approved'
-                                          : (row['REJECTED'] == 'YES' ? 'Rejected' : 'Pending'),
-                                    ),
-                                  ),
-                                ]))
-                            .toList(),
+              children: [
+                DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Staff Name')),
+                    DataColumn(label: Text('Leave Date')),
+                    DataColumn(label: Text('Reason')),
+                    DataColumn(label: Text('Status')),
+                  ],
+                  rows: _staffLeaveReportData
+                      .map((row) => DataRow(cells: [
+                    DataCell(Text(row['LEAVEDATE']?.toString() ?? '')),
+                    DataCell(Text(row['STAFF']?.toString() ?? '')),
+                    DataCell(Text(row['REASON']?.toString() ?? '')),
+                    DataCell(
+                      Text(
+                        (row['APPROVED'] == 'YES')
+                            ? 'Approved'
+                            : (row['REJECTED'] == 'YES' ? 'Rejected' : 'Pending'),
                       ),
-                    ],
-                  ),
+                    ),
+                  ]))
+                      .toList(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -911,6 +915,36 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         width: 2,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    );
+  }
+
+  DataCell _buildFeeDataCell(String text, {Color? color}) {
+    return DataCell(
+      Text(
+        text,
+        style: GoogleFonts.poppins(fontSize: 10, color: color),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  DataCell _buildFeeStatusCell(String status) {
+    return DataCell(
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: status == 'PAID' ? Colors.green : Colors.orange,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          status,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontSize: 12,
+          ),
+        ),
+      ),
     );
   }
 
@@ -1126,108 +1160,33 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                       ),
                     ),
                     // Term 1 data
-                    DataCell(
-                      Text(
-                        '₹${(data['Term1 Fee'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Term1 Paid'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.green[700]),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Term1 Due'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10, color: (data['Term1 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
-                        textAlign: TextAlign.center,
-                      ),
+                    _buildFeeDataCell('₹${(data['Term1 Fee'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell('₹${(data['Term1 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
+                    _buildFeeDataCell(
+                      '₹${(data['Term1 Due'] ?? 0).toStringAsFixed(0)}',
+                      color: (data['Term1 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
                     ),
                     // Term 2 data
-                    DataCell(
-                      Text(
-                        '₹${(data['Term2 Fee'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Term2 Paid'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.green[700]),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Term2 Due'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10, color: (data['Term2 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
-                        textAlign: TextAlign.center,
-                      ),
+                    _buildFeeDataCell('₹${(data['Term2 Fee'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell('₹${(data['Term2 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
+                    _buildFeeDataCell(
+                      '₹${(data['Term2 Due'] ?? 0).toStringAsFixed(0)}',
+                      color: (data['Term2 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
                     ),
                     // Term 3 data
-                    DataCell(
-                      Text(
-                        '₹${(data['Term3 Fee'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10),
-                        textAlign: TextAlign.center,
-                      ),
+                    _buildFeeDataCell('₹${(data['Term3 Fee'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell('₹${(data['Term3 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
+                    _buildFeeDataCell(
+                      '₹${(data['Term3 Due'] ?? 0).toStringAsFixed(0)}',
+                      color: (data['Term3 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
                     ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Term3 Paid'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.green[700]),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Term3 Due'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10, color: (data['Term3 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700]),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Bus Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Due'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10),
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Books Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Due'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10),
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        '₹${(data['Uniform Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Due'] ?? 0).toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(fontSize: 10),
-                      ),
-                    ),
-                    DataCell(
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: data['Overall Status'] == 'PAID'
-                              ? Colors.green
-                              : Colors.orange,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          data['Overall Status'] ?? '',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildFeeDataCell(
+                        '₹${(data['Bus Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Due'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell(
+                        '₹${(data['Books Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Due'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell(
+                        '₹${(data['Uniform Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Due'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeStatusCell(data['Overall Status'] ?? ''),
                   ],
                 ),
             ],
@@ -1253,6 +1212,8 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         return Colors.purple[700]!;
       case 3:
         return Colors.teal[700]!;
+      case 4:
+        return Colors.red[700]!;
       default:
         return Colors.blue[700]!;
     }

@@ -1881,4 +1881,21 @@ class SupabaseService {
       return false;
     }
   }
+
+  static Future<List<String>> getClassesForStaff(String staffName) async {
+    try {
+      final response = await client
+          .from('CLASS_TEACHER')
+          .select('CLASS')
+          .eq('STAFF', staffName);
+
+      final classes = (response as List)
+          .map((e) => e['CLASS'] as String)
+          .toList();
+      return classes;
+    } catch (e) {
+      print('Error fetching classes for staff: $e');
+      return [];
+    }
+  }
 }
