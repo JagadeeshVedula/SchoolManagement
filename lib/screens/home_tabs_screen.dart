@@ -372,7 +372,7 @@ class StudentDataWidget extends StatefulWidget {
 }
 
 class _StudentDataWidgetState extends State<StudentDataWidget> {
-  late Future<Map<String, List<String>>> _classSectionsFuture;
+  late Future<List<String>> _classesFuture;
   String? _selectedClass;
   String? _selectedSection;
   List<String> _sections = [];
@@ -381,7 +381,8 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
   @override
   void initState() {
     super.initState();
-    _classSectionsFuture = SupabaseService.getUniqueClassesAndSections();
+    _classesFuture = SupabaseService.getClassesFromFeeStructure();
+    _sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
     _studentsFuture = Future.value([]);
   }
 
@@ -389,16 +390,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
     setState(() {
       _selectedClass = className;
       _selectedSection = null;
-      _sections = [];
       _studentsFuture = Future.value([]);
-
-      if (className != null) {
-        _classSectionsFuture.then((classSections) {
-          setState(() {
-            _sections = classSections[className] ?? [];
-          });
-        });
-      }
     });
   }
 
@@ -433,8 +425,8 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
             ),
           ),
           padding: const EdgeInsets.all(16.0),
-          child: FutureBuilder<Map<String, List<String>>>(
-            future: _classSectionsFuture,
+          child: FutureBuilder<List<String>>(
+            future: _classesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
@@ -447,7 +439,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                 return Text('Error loading classes: ${snapshot.error}');
               }
 
-              final classes = snapshot.data?.keys.toList() ?? [];
+              final classes = snapshot.data ?? [];
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -24,7 +24,6 @@ class _FeesTabState extends State<FeesTab> {
 
   // Payments
   String? _selectedPaymentType; // 'School Fee', 'Books Fee', 'Uniform Fee'
-  Map<String, List<String>> _classSections = {};
   String? _selectedClass;
   String? _selectedSection;
   List<String> _sections = [];
@@ -69,15 +68,19 @@ class _FeesTabState extends State<FeesTab> {
   @override
   void initState() {
     super.initState();
-    _loadClassSections();
+    _loadDropdownData();
   }
 
-  Future<void> _loadClassSections() async {
-    final classSections = await SupabaseService.getUniqueClassesAndSections();
-    setState(() {
-      _classSections = classSections;
-      _classes = classSections.keys.toList()..sort();
-    });
+  Future<void> _loadDropdownData() async {
+    final classes = await SupabaseService.getClassesFromFeeStructure();
+    final sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
+    if (mounted) {
+      setState(() {
+        _classes = classes..sort();
+        _sections = sections;
+        _dueSections = sections;
+      });
+    }
   }
 
   Future<void> _onClassSelectedInFees(String? className) async {
@@ -86,7 +89,6 @@ class _FeesTabState extends State<FeesTab> {
       _selectedSection = null;
       _students = [];
       _selectedStudent = null;
-      _sections = _classSections[className] ?? [];
     });
   }
 
@@ -109,7 +111,6 @@ class _FeesTabState extends State<FeesTab> {
       _selectedDueClass = className;
       _selectedDueSection = null;
       _dueStudents = [];
-      _dueSections = _classSections[className] ?? [];
     });
   }
 

@@ -23,7 +23,6 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
 
   // Fee Report State
   String? _selectedFeeType = 'School Fee'; // Only 'School Fee' now
-  Map<String, List<String>> _classSections = {};
   String? _selectedFeeSection;
   List<String> _sections = [];
   String? _selectedFeeClass;
@@ -85,11 +84,12 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   }
 
   Future<void> _loadClasses() async {
-    final classSections = await SupabaseService.getUniqueClassesAndSections();
+    final classes = await SupabaseService.getClassesFromFeeStructure();
+    final sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
     if (mounted) {
       setState(() {
-        _classSections = classSections;
-        _classes = classSections.keys.toList()..sort();
+        _classes = classes..sort();
+        _sections = sections;
       });
     }
   }
@@ -605,7 +605,6 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                         setState(() {
                           _selectedFeeClass = value;
                           _selectedFeeSection = null;
-                          _sections = _classSections[value] ?? [];
                           _feeReportData = [];
                         });
                         _loadFeeReportData();

@@ -17,6 +17,8 @@ class _RegisterTabState extends State<RegisterTab> {
   // Student registration controllers
   final _sName = TextEditingController();
   String? _sClass;
+  String? _sSection;
+  List<String> _sections = [];
   final _sFather = TextEditingController();
   final _sMother = TextEditingController();
   final _sParentMobile = TextEditingController();
@@ -31,6 +33,7 @@ class _RegisterTabState extends State<RegisterTab> {
 
   // Performance controllers
   String? _perfClass;
+  String? _perfSection;
   Student? _perfStudent;
   List<Student> _perfStudents = [];
   final _perfAssessment = TextEditingController();
@@ -79,8 +82,14 @@ class _RegisterTabState extends State<RegisterTab> {
 
   Future<void> _loadClasses() async {
     try {
-      final classes = await SupabaseService.getUniqueClasses();
-      setState(() => _classes = classes);
+      final classes = await SupabaseService.getClassesFromFeeStructure();
+      final sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
+      if(mounted) {
+        setState(() {
+          _classes = classes..sort();
+          _sections = sections;
+        });
+      }
     } catch (e) {
       print('Error loading classes: $e');
     }
@@ -212,8 +221,8 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Future<void> _submitStudent() async {
-    if (_sName.text.trim().isEmpty || _sClass == null || _sGender == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter student name, select class, and gender')));
+    if (_sName.text.trim().isEmpty || _sClass == null || _sSection == null || _sGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter student name, select class, section, and gender')));
       return;
     }
     if (_sBusFacility && _sBusRoute == null) {
@@ -227,7 +236,7 @@ class _RegisterTabState extends State<RegisterTab> {
     setState(() => _isSubmittingStudent = true);
     final data = {
       'Name': _sName.text.trim(),
-      'Class': _sClass,
+      'Class': '$_sClass-$_sSection',
       'Father Name': _sFather.text.trim(),
       'Mother Name': _sMother.text.trim(),
       'Parent Mobile': _sParentMobile.text.trim(),
@@ -247,6 +256,7 @@ class _RegisterTabState extends State<RegisterTab> {
       setState(() { 
         _sGender = null; 
         _sClass = null;
+        _sSection = null;
         _sBusFacility = false;
         _sBusRoute = null;
         _sBusNo = null;
@@ -515,29 +525,54 @@ class _RegisterTabState extends State<RegisterTab> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _sClass,
-                    items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                    onChanged: (v) {
-                      setState(() {
-                        _sClass = v;
-                        print('DEBUG: Selected class: $v');
-                        // Auto-load hostel fee if hostel facility is already checked
-                        if (_sHostelFacility && v != null) {
-                          print('DEBUG: Hostel facility checked, loading fee for class: $v');
-                          print('DEBUG: Available fees: $_hostelFeesByClass');
-                          _sHostelFee = _hostelFeesByClass[v] ?? 0;
-                          print('DEBUG: Set hostel fee to: $_sHostelFee');
-                        }
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Class',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      filled: true,
-                      fillColor: Colors.blue[50],
-                      prefixIcon: const Icon(Icons.school, color: Colors.blue),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _sClass,
+                          items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                          onChanged: (v) {
+                            setState(() {
+                              _sClass = v;
+                              print('DEBUG: Selected class: $v');
+                              // Auto-load hostel fee if hostel facility is already checked
+                              if (_sHostelFacility && v != null) {
+                                print('DEBUG: Hostel facility checked, loading fee for class: $v');
+                                print('DEBUG: Available fees: $_hostelFeesByClass');
+                                _sHostelFee = _hostelFeesByClass[v] ?? 0;
+                                print('DEBUG: Set hostel fee to: $_sHostelFee');
+                              }
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Class',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.blue[50],
+                            prefixIcon: const Icon(Icons.school, color: Colors.blue),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _sSection,
+                          items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                          onChanged: (v) {
+                            setState(() {
+                              _sSection = v;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Section',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.blue[50],
+                            prefixIcon: const Icon(Icons.school, color: Colors.blue),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -788,18 +823,42 @@ class _RegisterTabState extends State<RegisterTab> {
           const SizedBox(height: 20),
           const Text('Select Class', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: _perfClass,
-            items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (v) {
-              setState(() {
-                _perfClass = v;
-                _perfStudent = null;
-                _perfStudents = [];
-              });
-              if (v != null) _loadStudentsForClass(v);
-            },
-            decoration: const InputDecoration(border: OutlineInputBorder()),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _perfClass,
+                  items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _perfClass = v;
+                      _perfSection = null;
+                      _perfStudent = null;
+                      _perfStudents = [];
+                    });
+                  },
+                  decoration: const InputDecoration(labelText: 'Class', border: OutlineInputBorder()),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _perfSection,
+                  items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _perfSection = v;
+                      _perfStudent = null;
+                      _perfStudents = [];
+                    });
+                    if (_perfClass != null && v != null) {
+                      _loadStudentsForClass('$_perfClass-$v');
+                    }
+                  },
+                  decoration: const InputDecoration(labelText: 'Section', border: OutlineInputBorder()),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           SizedBox(
