@@ -214,49 +214,62 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            const Spacer(),
             // School info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'NALANDA IIT OLYMPIAD SCHOOL',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'NALANDA IIT OLYMPIAD SCHOOL',
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
-                  Text(
-                    'NARSIPATNAM (1004)',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70,
-                    ),
+                ),
+                Text(
+                  'NARSIPATNAM (1004)',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white70,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Date: ${_formatDateTime(_currentDateTime)}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  Text(
-                    'Time: ${_formatTime(_currentDateTime)}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+            const Spacer(),
+            // Date and time
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Date: ${_formatDateTime(_currentDateTime)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
+                Text(
+                  'Time: ${_formatTime(_currentDateTime)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            // Mother Image
+            Image.asset(
+              'assets/images/Mother.png',
+              height: 85,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 16),
           ],
         ),
         actions: [
@@ -282,14 +295,15 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
           // Sidebar Navigation
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            width: _sidebarOpen ? 250 : 0,
+            width: _sidebarOpen ? 280 : 0,
             color: Colors.indigo[50],
             child: _sidebarOpen
                 ? SingleChildScrollView(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
