@@ -97,7 +97,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
               Navigator.pop(context);
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
             },
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            child: const Text('Confirm', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -156,7 +156,33 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       Center(child: MiscellaneousScreen(userRole: userRole)),
     ];
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldLogout = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Confirm Logout'),
+            content: const Text('Are you sure you want to logout?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Confirm', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        );
+        if (shouldLogout == true) {
+          if (context.mounted) {
+            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+          }
+        }
+        return false;
+      },
+      child: Scaffold(
       appBar: AppBar(
         toolbarHeight: 120,
         leading: IconButton(
@@ -306,7 +332,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
           ),
         ],
       ),
-    );
+    ));
   }
 
   List<Widget> _buildSidebarItems(List<Tab> tabs) {

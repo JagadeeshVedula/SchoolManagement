@@ -29,7 +29,33 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     final staffEmail = widget.staffDetails['Email'] ?? 'N/A';
     final staffQualification = widget.staffDetails['Qualification'] ?? 'N/A';
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldLogout = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Confirm Logout'),
+            content: const Text('Are you sure you want to logout?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Confirm', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        );
+        if (shouldLogout == true) {
+          if (context.mounted) {
+            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+          }
+        }
+        return false;
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(
           'Staff Dashboard',
@@ -60,7 +86,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                         Navigator.pop(context);
                         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                       },
-                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                      child: const Text('Confirm', style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
@@ -300,7 +326,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildInfoRow(String label, String value) {
