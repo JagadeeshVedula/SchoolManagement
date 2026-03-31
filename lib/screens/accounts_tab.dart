@@ -62,6 +62,87 @@ class _AccountsTabState extends State<AccountsTab> {
     await _saveClosingBalance(newClosingBalance);
   }
 
+  List<Map<String, dynamic>> _getGroupedSummary() {
+    final Map<String, Map<String, Map<String, double>>> grouped = {};
+
+    for (final t in _transactions) {
+       final cat = t['category'] as String? ?? 'Other';
+       final subcat = t['subcategory'] as String? ?? 'General';
+       final type = t['type'] as String;
+       final amt = t['amount'] as double;
+       
+       grouped.putIfAbsent(cat, () => {});
+       grouped[cat]!.putIfAbsent(subcat, () => {'credit': 0.0, 'debit': 0.0});
+       
+       if (type == 'credit') {
+         grouped[cat]![subcat]!['credit'] = grouped[cat]![subcat]!['credit']! + amt;
+       } else {
+         grouped[cat]![subcat]!['debit'] = grouped[cat]![subcat]!['debit']! + amt;
+       }
+    }
+
+    final summaryList = <Map<String, dynamic>>[];
+    grouped.forEach((category, subcats) {
+      subcats.forEach((subcat, totals) {
+         if (totals['credit']! > 0 || totals['debit']! > 0) {
+           summaryList.add({
+             'category': category,
+             'subcategory': subcat,
+             'description': category == subcat ? category : '$category - $subcat',
+             'credit': totals['credit']!,
+             'debit': totals['debit']!
+           });
+         }
+      });
+    });
+
+    summaryList.sort((a, b) {
+      if (a['category'] == 'Academic' && b['category'] != 'Academic') return -1;
+      if (a['category'] != 'Academic' && b['category'] == 'Academic') return 1;
+      return a['description'].compareTo(b['description']);
+    });
+
+    return summaryList;
+  }
+
+  List<DataRow> _buildDataRows() {
+    final grouped = _getGroupedSummary();
+    final List<DataRow> rows = [];
+    
+    String? currentCategory;
+    for (final item in grouped) {
+      if (item['category'] != currentCategory) {
+        currentCategory = item['category'];
+        final catItems = grouped.where((g) => g['category'] == currentCategory);
+        final catCredit = catItems.fold<double>(0, (sum, g) => sum + (g['credit'] as double));
+        final catDebit = catItems.fold<double>(0, (sum, g) => sum + (g['debit'] as double));
+        
+        rows.add(DataRow(
+          color: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) => Colors.grey[200]),
+          cells: [
+            DataCell(Text(currentCategory!, style: GoogleFonts.poppins(fontWeight: FontWeight.bold))),
+            DataCell(Text(catCredit > 0 ? catCredit.toStringAsFixed(2) : '', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.green[800]))),
+            DataCell(Text(catDebit > 0 ? catDebit.toStringAsFixed(2) : '', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.red[800]))),
+          ],
+        ));
+      }
+      
+      if (item['category'] != item['subcategory']) {
+        rows.add(DataRow(
+          cells: [
+            DataCell(Padding(
+              padding: const EdgeInsets.only(left: 24.0),
+              child: Text('• ${item['subcategory']}'),
+            )),
+            DataCell(Text((item['credit'] as double) > 0 ? (item['credit'] as double).toStringAsFixed(2) : '')),
+            DataCell(Text((item['debit'] as double) > 0 ? (item['debit'] as double).toStringAsFixed(2) : '')),
+          ],
+        ));
+      }
+    }
+    return rows;
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -116,18 +197,33 @@ class _AccountsTabState extends State<AccountsTab> {
     sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 6)).value = _previousDayClosingBalance + _totalCredit - _totalDebit;
 
     // Transaction Headers
-    sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 8)).value = 'Transaction';
+    sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 8)).value = 'Transaction Categorization';
     sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 8)).value = 'Credit';
     sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 8)).value = 'Debit';
 
     // Transaction Data
-    for (int i = 0; i < _transactions.length; i++) {
-      final transaction = _transactions[i];
-      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 9 + i)).value = transaction['description'];
-      if (transaction['type'] == 'credit') {
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 9 + i)).value = transaction['amount'];
-      } else {
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 9 + i)).value = transaction['amount'];
+    final summary = _getGroupedSummary();
+    int rowIndex = 9;
+    String? currentCategory;
+    for (int i = 0; i < summary.length; i++) {
+      final item = summary[i];
+      if (item['category'] != currentCategory) {
+        currentCategory = item['category'];
+        final catItems = summary.where((g) => g['category'] == currentCategory);
+        final catCredit = catItems.fold<double>(0, (sum, g) => sum + (g['credit'] as double));
+        final catDebit = catItems.fold<double>(0, (sum, g) => sum + (g['debit'] as double));
+        
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = currentCategory!.toUpperCase();
+        if (catCredit > 0) sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).value = catCredit;
+        if (catDebit > 0) sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex)).value = catDebit;
+        rowIndex++;
+      }
+
+      if (item['category'] != item['subcategory']) {
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = '   -> ${item['subcategory']}';
+        if (item['credit'] > 0) sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).value = item['credit'];
+        if (item['debit'] > 0) sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex)).value = item['debit'];
+        rowIndex++;
       }
     }
 
@@ -208,21 +304,11 @@ class _AccountsTabState extends State<AccountsTab> {
                     : SingleChildScrollView(
                         child: DataTable(
                           columns: const [
-                            DataColumn(label: Text('Transaction')),
+                            DataColumn(label: Text('Transaction Categorization')),
                             DataColumn(label: Text('Credit'), numeric: true),
                             DataColumn(label: Text('Debit'), numeric: true),
                           ],
-                          rows: [
-                            ..._transactions.map((transaction) {
-                              return DataRow(
-                                cells: [
-                                  DataCell(Text(transaction['description'] as String)),
-                                  DataCell(Text(transaction['type'] == 'credit' ? (transaction['amount'] as double).toStringAsFixed(2) : '')),
-                                  DataCell(Text(transaction['type'] == 'debit' ? (transaction['amount'] as double).toStringAsFixed(2) : '')),
-                                ],
-                              );
-                            }).toList(),
-                          ],
+                          rows: _buildDataRows(),
                         ),
                       ),
           ),

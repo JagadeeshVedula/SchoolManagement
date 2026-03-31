@@ -1684,14 +1684,17 @@ class SupabaseService {
       // Fetch from FEES table
       final feesResponse = await client
           .from('FEES')
-          .select('"STUDENT NAME", AMOUNT')
+          .select('"STUDENT NAME", AMOUNT, "FEE TYPE"')
           .eq('DATE', formattedDate);
 
       for (final fee in feesResponse) {
+        final feeType = (fee['FEE TYPE'] as String? ?? 'School Fee').trim();
         transactions.add({
-          'description': 'Fee from ${fee['STUDENT NAME']}',
+          'description': 'Academic - $feeType (${fee['STUDENT NAME']})',
           'amount': double.tryParse(fee['AMOUNT'].toString()) ?? 0.0,
           'type': 'credit',
+          'category': 'Academic',
+          'subcategory': feeType,
         });
       }
 
@@ -1706,6 +1709,8 @@ class SupabaseService {
           'description': 'Diesel for Route ${diesel['RouteNo']}',
           'amount': double.tryParse(diesel['Amount'].toString()) ?? 0.0,
           'type': 'debit',
+          'category': 'Diesel',
+          'subcategory': 'Route ${diesel['RouteNo']}',
         });
       }
 
@@ -1736,11 +1741,14 @@ class SupabaseService {
 
       for (final transaction in filteredGeneralTransactions) {
         final type = (transaction['TYPE'] as String? ?? '').toLowerCase();
+        final accountName = transaction['ACCOUNT'] ?? 'N/A';
         if (type == 'credit' || type == 'debit') {
           transactions.add({
-            'description': transaction['ACCOUNT'] ?? 'N/A',
+            'description': accountName,
             'amount': double.tryParse(transaction['AMOUNT'].toString()) ?? 0.0,
             'type': type,
+            'category': accountName,
+            'subcategory': accountName,
           });
         }
       }
