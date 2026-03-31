@@ -16,6 +16,8 @@ import 'package:school_management/screens/accounts_tab.dart';
 import 'package:school_management/models/user_role.dart';
 import 'package:school_management/screens/student_data_tab.dart';
 import 'package:school_management/screens/miscellaneous_screen.dart';
+import 'package:school_management/screens/Attendance.dart';
+import 'package:school_management/screens/Events.dart';
 
 class HomeTabsScreen extends StatefulWidget {
   final String role;
@@ -42,8 +44,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
   @override
   void initState() {
     super.initState();
-    // HomeTabsScreen is only used by admin, always 10 tabs
-    _lastTabCount = 10;
+    // HomeTabsScreen is only used by admin, always 12 tabs
+    _lastTabCount = 12;
     // Initialize with index 0 to avoid RangeError
     _tabController =
         TabController(length: _lastTabCount, initialIndex: 0, vsync: this);
@@ -139,6 +141,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       const Tab(text: 'Salary Slips'),
       const Tab(text: 'Pending Requests'),
       const Tab(text: 'Accounts'),
+      const Tab(text: 'Attendance'),
+      const Tab(text: 'Events'),
       const Tab(text: 'Miscellaneous'),
     ];
 
@@ -147,6 +151,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       const Center(child: SalarySlipsScreen()),
       const Center(child: LeaveRequestsApprovalScreen()),
       const Center(child: AccountsTab()),
+      const AttendanceScreen(),
+      const EventsScreen(),
       Center(child: MiscellaneousScreen(userRole: userRole)),
     ];
 
@@ -354,8 +360,10 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       Icons.assessment,
       Icons.receipt_long,
       Icons.pending_actions,
-      Icons.category,
       Icons.account_balance_wallet,
+      Icons.fact_check,
+      Icons.event,
+      Icons.category,
     ];
     return icons[index];
   }

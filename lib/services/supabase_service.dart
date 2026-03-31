@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:school_management/models/student.dart';
 import 'package:school_management/models/performance.dart';
 import 'package:school_management/models/staff.dart';
@@ -10,7 +11,25 @@ class SupabaseService {
   static const String supabaseAnonKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nZ2Nza2trcmljbm1ranFkcWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNjk4MjQsImV4cCI6MjA3ODc0NTgyNH0.Z74XcwusKBcVr82QWU5UxKBRgwyAILwKXiVgyTg5SaQ';
 
+  // Academic Year Credentials Mapping (Placeholders for user to replace)
+  // By default, 2026 points to the main database.
+  static final Map<String, Map<String, String>> yearCredentials = {
+    '2026': {'url': supabaseUrl, 'anonKey': supabaseAnonKey},
+    '2020': {'url': 'YOUR_2020_SUPABASE_URL', 'anonKey': 'YOUR_2020_SUPABASE_ANON_KEY'},
+    '2021': {'url': 'YOUR_2021_SUPABASE_URL', 'anonKey': 'YOUR_2021_SUPABASE_ANON_KEY'},
+    '2022': {'url': 'YOUR_2022_SUPABASE_URL', 'anonKey': 'YOUR_2022_SUPABASE_ANON_KEY'},
+    '2023': {'url': 'YOUR_2023_SUPABASE_URL', 'anonKey': 'YOUR_2023_SUPABASE_ANON_KEY'},
+    '2024': {'url': 'YOUR_2024_SUPABASE_URL', 'anonKey': 'YOUR_2024_SUPABASE_ANON_KEY'},
+    '2025': {'url': 'YOUR_2025_SUPABASE_URL', 'anonKey': 'YOUR_2025_SUPABASE_ANON_KEY'},
+    '2027': {'url': 'YOUR_2027_SUPABASE_URL', 'anonKey': 'YOUR_2027_SUPABASE_ANON_KEY'},
+    '2028': {'url': 'YOUR_2028_SUPABASE_URL', 'anonKey': 'YOUR_2028_SUPABASE_ANON_KEY'},
+    '2029': {'url': 'YOUR_2029_SUPABASE_URL', 'anonKey': 'YOUR_2029_SUPABASE_ANON_KEY'},
+    '2030': {'url': 'YOUR_2030_SUPABASE_URL', 'anonKey': 'YOUR_2030_SUPABASE_ANON_KEY'},
+  };
+
   static final SupabaseService _instance = SupabaseService._internal();
+
+  static SupabaseClient? _customClient;
 
   factory SupabaseService() {
     return _instance;
@@ -18,7 +37,7 @@ class SupabaseService {
 
   SupabaseService._internal();
 
-  static SupabaseClient get client => Supabase.instance.client;
+  static SupabaseClient get client => _customClient ?? Supabase.instance.client;
 
   // Initialize Supabase
   static Future<void> initialize() async {
@@ -26,6 +45,21 @@ class SupabaseService {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
     );
+  }
+
+  // Set the active academic year
+  static void setAcademicYear(String year) {
+    final creds = yearCredentials[year];
+    if (creds != null && creds['url'] != null && creds['anonKey'] != null) {
+      if (!creds['url']!.startsWith('YOUR_')) {
+        _customClient = SupabaseClient(creds['url']!, creds['anonKey']!);
+      } else {
+        // Fallback to default when placeholder is not yet configured
+        _customClient = SupabaseClient(supabaseUrl, supabaseAnonKey);
+      }
+    } else {
+      _customClient = SupabaseClient(supabaseUrl, supabaseAnonKey);
+    }
   }
 
   // Fetch all students
@@ -1869,6 +1903,42 @@ class SupabaseService {
     }
   }
 
+  // Send WhatsApp message via an API
+  static Future<bool> sendWhatsApp(String mobileNumber, String message, {List<int>? attachmentBytes, String? attachmentName}) async {
+    // NOTE: Sending messages automatically and with attachments requires an official WhatsApp API (Providers like Meta, Twilio, etc.)
+    // If you are using a WhatsApp API account from number 9493676085, your implementation would look like the HTTP POST below:
+    /*
+    final apiUrl = "https://your-whatsapp-provider-api/v1/messages";
+    final response = await http.post(Uri.parse(apiUrl), headers: {'Authorization': 'Bearer YOUR_TOKEN'}, body: {
+      'from': '919493676085',
+      'to': '91$mobileNumber',
+      'text': message,
+      // 'media_data': base64Encode(attachmentBytes)
+    });
+    return response.statusCode == 200;
+    */
+
+    // Otherwise, as a fallback, we use the standard WhatsApp URL launcher which opens the local app.
+    // Attachments must be manually attached once the chat opens.
+    final String waUrl = "https://wa.me/91$mobileNumber?text=${Uri.encodeComponent(message)}";
+    
+    try {
+      final Uri uri = Uri.parse(waUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // Add a slight delay so bulk sending doesn't overlap tabs too fast
+        await Future.delayed(const Duration(milliseconds: 500));
+        return true;
+      } else {
+        print('Could not launch WhatsApp for $mobileNumber');
+        return false;
+      }
+    } catch (e) {
+      print('Error sending WhatsApp: $e');
+      return false;
+    }
+  }
+
   static Future<bool> assignClassToTeacher(String staffName, String className) async {
     try {
       await client.from('CLASS_TEACHER').insert({
@@ -1896,6 +1966,25 @@ class SupabaseService {
     } catch (e) {
       print('Error fetching classes for staff: $e');
       return [];
+    }
+  }
+
+  // Fetch class teacher for a specific class (e.g., "V-A")
+  static Future<String?> getClassTeacher(String className) async {
+    try {
+      final response = await client
+          .from('CLASS_TEACHER')
+          .select('STAFF')
+          .eq('CLASS', className)
+          .limit(1);
+
+      if ((response as List).isNotEmpty) {
+        return response[0]['STAFF'] as String?;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching class teacher: $e');
+      return null;
     }
   }
 }

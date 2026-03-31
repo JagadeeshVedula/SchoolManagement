@@ -18,6 +18,13 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String _selectedYear = '2026';
+
+  @override
+  void initState() {
+    super.initState();
+    SupabaseService.setAcademicYear(_selectedYear);
+  }
 
   @override
   void dispose() {
@@ -161,6 +168,54 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Academic Year Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedYear,
+                decoration: InputDecoration(
+                  labelText: 'Academic Year',
+                  labelStyle: GoogleFonts.inter(
+                    color: const Color(0xFF718096),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.calendar_today_outlined,
+                    color: widget.userRole.color,
+                    size: 20,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF7FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                ),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF1A1D21),
+                ),
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  color: widget.userRole.color,
+                ),
+                items: List.generate(11, (index) => (2020 + index).toString()).map((year) {
+                  return DropdownMenuItem(
+                    value: year,
+                    child: Text(year),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedYear = value;
+                    });
+                    SupabaseService.setAcademicYear(value);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
               // Username Field
               TextFormField(
                 controller: _usernameController,
