@@ -18,6 +18,7 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
   String? _selectedClass;
   List<Student> _students = [];
   Map<String, List<Map<String, dynamic>>> _feesMap = {};
+  Map<String, double> _duesMap = {};
 
   @override
   void initState() {
@@ -54,9 +55,54 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
       if (studentNames.isNotEmpty) {
         feesMap = await SupabaseService.getFeesForStudents(studentNames);
       }
+      Map<String, double> duesMap = {};
+      Map<String, double> routeFees = {};
+      final classBase = className.split('-').first;
+      final structure = await SupabaseService.getFeeStructureByClass(classBase);
+      final totalFee = structure != null ? (double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0.0) : 0.0;
+      
+      for (final s in students) {
+        final concession = s.schoolFeeConcession.toDouble();
+        final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+        final studentFees = feesMap[s.name] ?? [];
+        
+        double studentTotalDue = 0.0;
+        for (int term = 1; term <= 3; term++) {
+          final termKeyFull = 'term $term';
+          double paidAmount = 0;
+          for (final fee in studentFees) {
+            final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
+            final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
+            if (feeType.contains('school fee') && termNo.contains(termKeyFull)) {
+              paidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+            }
+          }
+          final termFee = termFees[term]!;
+          if (paidAmount < termFee) {
+            studentTotalDue += (termFee - paidAmount);
+          }
+        }
+        
+        double busFeeDue = 0;
+        if (s.busRoute != null && s.busRoute!.isNotEmpty) {
+          final busPaidAmount = studentFees
+              .where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('bus fee'))
+              .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+          if (busPaidAmount == 0) {
+            if (!routeFees.containsKey(s.busRoute!)) {
+               routeFees[s.busRoute!] = await SupabaseService.getBusFeeByRoute(s.busRoute!);
+            }
+            busFeeDue = routeFees[s.busRoute!]!;
+          }
+        }
+        studentTotalDue += busFeeDue;
+        duesMap[s.name] = studentTotalDue;
+      }
+
       setState(() {
         _students = students;
         _feesMap = feesMap;
+        _duesMap = duesMap;
       });
     } catch (e) {
       print('Error fetching students: $e');
@@ -172,12 +218,24 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                          subtitle: Text(
-                                            'Total Paid: ₹${totalPaid.toStringAsFixed(2)}',
-                                            style: GoogleFonts.inter(
-                                              color: Colors.green[700],
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                          subtitle: Row(
+                                            children: [
+                                              Text(
+                                                'Paid: ₹${totalPaid.toStringAsFixed(2)}',
+                                                style: GoogleFonts.inter(
+                                                  color: Colors.green[700],
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Text(
+                                                'Due: ₹${(_duesMap[student.name] ?? 0.0).toStringAsFixed(2)}',
+                                                style: GoogleFonts.inter(
+                                                  color: Colors.red[600],
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                           children: [
                                             Container(

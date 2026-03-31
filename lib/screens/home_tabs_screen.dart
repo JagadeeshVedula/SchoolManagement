@@ -18,6 +18,7 @@ import 'package:school_management/screens/student_data_tab.dart';
 import 'package:school_management/screens/miscellaneous_screen.dart';
 import 'package:school_management/screens/Attendance.dart';
 import 'package:school_management/screens/Events.dart';
+import 'package:school_management/screens/staff_student_details_screen.dart';
 
 class HomeTabsScreen extends StatefulWidget {
   final String role;
@@ -896,12 +897,33 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: ElevatedButton(
-                          onPressed: () => _showAssignClassDialog(staff),
-                          child: const Text('Assign Class'),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.groups, size: 18),
+                            label: const Text('Students'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple[600],
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StaffStudentDetailsScreen(
+                                    staffName: staff.name,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => _showAssignClassDialog(staff),
+                            child: const Text('Assign Class'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
