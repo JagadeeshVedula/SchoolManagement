@@ -1720,7 +1720,7 @@ class SupabaseService {
     }
   }
 
-  // Get transactions from FEES and DIESEL tables by date
+  // Get transactions for Accounts Tab (Maintain original behavior)
   static Future<List<Map<String, dynamic>>> getTransactionsByDate(DateTime date) async {
     final formattedDate = DateFormat('dd-MM-yyyy').format(date);
     final isoDate = DateFormat('yyyy-MM-dd').format(date);
@@ -1733,11 +1733,13 @@ class SupabaseService {
           .select('"STUDENT NAME", AMOUNT, "FEE TYPE"')
           .eq('DATE', formattedDate);
 
-      for (final fee in feesResponse) {
-        final feeType = (fee['FEE TYPE'] as String? ?? 'School Fee').trim();
+      for (final fee in (feesResponse as List)) {
+        final f = fee as Map<String, dynamic>;
+        final sName = (f['STUDENT NAME'] as String? ?? 'N/A');
+        final feeType = (f['FEE TYPE'] as String? ?? 'School Fee').trim();
         transactions.add({
-          'description': 'Academic - $feeType (${fee['STUDENT NAME']})',
-          'amount': double.tryParse(fee['AMOUNT'].toString()) ?? 0.0,
+          'description': 'Academic - $feeType ($sName)',
+          'amount': double.tryParse(f['AMOUNT'].toString()) ?? 0.0,
           'type': 'credit',
           'category': 'Academic',
           'subcategory': feeType,
@@ -1750,38 +1752,34 @@ class SupabaseService {
           .select('RouteNo, Amount')
           .eq('FilledDate', isoDate);
 
-      for (final diesel in dieselResponse) {
+      for (final diesel in (dieselResponse as List)) {
+        final d = diesel as Map<String, dynamic>;
         transactions.add({
-          'description': 'Diesel for Route ${diesel['RouteNo']}',
-          'amount': double.tryParse(diesel['Amount'].toString()) ?? 0.0,
+          'description': 'Diesel for Route ${d['RouteNo']}',
+          'amount': double.tryParse(d['Amount'].toString()) ?? 0.0,
           'type': 'debit',
           'category': 'Diesel',
-          'subcategory': 'Route ${diesel['RouteNo']}',
+          'subcategory': 'Route ${d['RouteNo']}',
         });
       }
 
       // Fetch from TRANSACTIONS table
-      final generalTransactionsResponse = await client
+      final transactionsData = await client
           .from('TRANSACTIONS')
           .select('ACCOUNT, AMOUNT, TYPE, DATE');
 
-      // Client-side filtering to handle multiple date formats ('dd-MM-yyyy' and 'yyyy-MM-dd')
-      final filteredGeneralTransactions = generalTransactionsResponse.where((t) {
+      final transactionsList = (transactionsData as List).cast<Map<String, dynamic>>();
+      final filteredGeneralTransactions = transactionsList.where((t) {
         final dateString = t['DATE'] as String?;
         if (dateString == null) return false;
-
         try {
-          // Try parsing as 'dd-MM-yyyy'
           final parsedDate1 = DateFormat('dd-MM-yyyy').parse(dateString);
           if (parsedDate1.year == date.year && parsedDate1.month == date.month && parsedDate1.day == date.day) return true;
         } catch (_) {}
-
         try {
-          // Try parsing as 'yyyy-MM-dd'
           final parsedDate2 = DateFormat('yyyy-MM-dd').parse(dateString);
           if (parsedDate2.year == date.year && parsedDate2.month == date.month && parsedDate2.day == date.day) return true;
         } catch (_) {}
-
         return false;
       }).toList();
 
@@ -1798,10 +1796,124 @@ class SupabaseService {
           });
         }
       }
-
       return transactions;
     } catch (e) {
       print('Error fetching transactions by date: $e');
+      return [];
+    }
+  }
+
+  // Get transactions for Daily Report Tab (Enhanced with Student Class & Comments)
+  static Future<List<Map<String, dynamic>>> getDailyReportData(DateTime date) async {
+    final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+    final isoDate = DateFormat('yyyy-MM-dd').format(date);
+    final transactions = <Map<String, dynamic>>[];
+
+    try {
+      // Fetch from FEES table
+      final feesResponse = await client
+          .from('FEES')
+          .select('"STUDENT NAME", AMOUNT, "FEE TYPE"')
+          .eq('DATE', formattedDate);
+
+      // Collect all student names to fetch their classes in one batch
+      final List<String> studentNames = (feesResponse as List)
+          .map((f) => (f as Map<String, dynamic>)['STUDENT NAME'] as String)
+          .where((String name) => name.isNotEmpty)
+          .toSet()
+          .toList();
+      
+      final Map<String, String> studentClassMap = {};
+      if (studentNames.isNotEmpty) {
+        final studentsData = await client
+            .from('STUDENTS')
+            .select('Name, Class')
+            .in_('Name', studentNames);
+        
+        final studentsList = (studentsData as List).cast<Map<String, dynamic>>();
+        for (final s in studentsList) {
+          studentClassMap[s['Name'] as String] = s['Class'] as String? ?? 'N/A';
+        }
+      }
+
+      for (final fee in (feesResponse as List)) {
+        final f = fee as Map<String, dynamic>;
+        final sName = (f['STUDENT NAME'] as String? ?? 'N/A');
+        final sClass = studentClassMap[sName] ?? 'N/A';
+        final feeType = (f['FEE TYPE'] as String? ?? 'School Fee').trim();
+        
+        String category = 'School';
+        if (feeType.contains('Bus Fee')) category = 'Bus';
+        else if (feeType.contains('Hostel Fee')) category = 'Hostel';
+        else if (feeType.contains('Books Fee')) category = 'Books';
+        else if (feeType.contains('Uniform Fee')) category = 'Uniform';
+        
+        transactions.add({
+          'description': '$sName - $sClass',
+          'amount': double.tryParse(f['AMOUNT'].toString()) ?? 0.0,
+          'type': 'credit',
+          'category': category,
+          'subcategory': feeType,
+        });
+      }
+
+      // Fetch from DIESEL table
+      final dieselResponse = await client
+          .from('DIESEL')
+          .select('RouteNo, Amount')
+          .eq('FilledDate', isoDate);
+
+      for (final diesel in (dieselResponse as List)) {
+        final d = diesel as Map<String, dynamic>;
+        transactions.add({
+          'description': 'Diesel - Route ${d['RouteNo']}',
+          'amount': double.tryParse(d['Amount'].toString()) ?? 0.0,
+          'type': 'debit',
+          'category': 'Diesel',
+          'subcategory': 'Route ${d['RouteNo']}',
+        });
+      }
+
+      // Fetch from TRANSACTIONS table
+      final transactionsData = await client
+          .from('TRANSACTIONS')
+          .select('ACCOUNT, AMOUNT, TYPE, DATE, COMMENT');
+
+      final transactionsList = (transactionsData as List).cast<Map<String, dynamic>>();
+      final filteredGeneralTransactions = transactionsList.where((t) {
+        final dateString = t['DATE'] as String?;
+        if (dateString == null) return false;
+        try {
+          final parsedDate1 = DateFormat('dd-MM-yyyy').parse(dateString);
+          if (parsedDate1.year == date.year && parsedDate1.month == date.month && parsedDate1.day == date.day) return true;
+        } catch (_) {}
+        try {
+          final parsedDate2 = DateFormat('yyyy-MM-dd').parse(dateString);
+          if (parsedDate2.year == date.year && parsedDate2.month == date.month && parsedDate2.day == date.day) return true;
+        } catch (_) {}
+        return false;
+      }).toList();
+
+      for (final transaction in filteredGeneralTransactions) {
+        final type = (transaction['TYPE'] as String? ?? '').toLowerCase();
+        final accountName = transaction['ACCOUNT'] ?? 'N/A';
+        final comment = (transaction['COMMENT'] as String? ?? '').trim();
+        final categoryDisplay = comment.isNotEmpty ? comment : accountName;
+        
+        if (type == 'credit' || type == 'debit') {
+          transactions.add({
+            'description': accountName,
+            'amount': double.tryParse(transaction['AMOUNT'].toString()) ?? 0.0,
+            'type': type,
+            'category': categoryDisplay,
+            'subcategory': accountName,
+          });
+        }
+      }
+
+      return transactions;
+    } catch (e) {
+      print('Error fetching daily report data: $e');
       return [];
     }
   }
