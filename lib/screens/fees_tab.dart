@@ -11,6 +11,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:html' as html;
+import 'package:flutter/services.dart';
 
 class FeesTab extends StatefulWidget {
   const FeesTab({super.key});
@@ -708,24 +709,20 @@ class _FeesTabState extends State<FeesTab> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo placeholder
-                Container(
-                  width: 60, height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[800],
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.amber, width: 2),
-                  ),
-                  child: const Icon(Icons.school, color: Colors.white, size: 30),
+                // Logo from assets
+                Image.asset(
+                  'assets/images/Receipt_log.png',
+                  width: 70, height: 70,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     children: [
                       Text('NALANDA IIT OLYMPIAD SCHOOL NARSIPATNAM',
                           style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center),
-                      Text('Contact : 8096257938',
+                      Text('Contact : 9666376288',
                           style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
                           textAlign: TextAlign.center),
                       Text('Sarada Nagar, Narsipatnam, Andhra Pradesh 531116',
@@ -911,6 +908,10 @@ class _FeesTabState extends State<FeesTab> {
       final balance = (d['balance'] as double? ?? 0);
       final feeType = (d['feeType'] as String? ?? '');
 
+      // Load logo image
+      final logoData = await rootBundle.load('assets/images/Receipt_log.png');
+      final logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+
       // Build fee rows
       final rows = <List<String>>[];
       int sno = 1;
@@ -953,18 +954,14 @@ class _FeesTabState extends State<FeesTab> {
                   padding: const pw.EdgeInsets.all(12),
                   decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.black))),
                   child: pw.Row(children: [
-                    pw.Container(
-                      width: 50, height: 50,
-                      decoration: pw.BoxDecoration(shape: pw.BoxShape.circle, color: PdfColors.blue800),
-                      child: pw.Center(child: pw.Text('S', style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 22))),
-                    ),
-                    pw.SizedBox(width: 10),
+                    pw.Image(logoImage, width: 55, height: 55),
+                    pw.SizedBox(width: 15),
                     pw.Expanded(child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
                         pw.Text('NALANDA IIT OLYMPIAD SCHOOL NARSIPATNAM',
                             style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center),
-                        pw.Text('Contact : 8096257938', style: pw.TextStyle(fontSize: 10), textAlign: pw.TextAlign.center),
+                        pw.Text('Contact : 9666376288', style: pw.TextStyle(fontSize: 10), textAlign: pw.TextAlign.center),
                         pw.Text('Sarada Nagar, Narsipatnam, Andhra Pradesh 531116',
                             style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700), textAlign: pw.TextAlign.center),
                       ],
