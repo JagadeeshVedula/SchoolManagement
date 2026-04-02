@@ -189,7 +189,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  '₹${transaction['AMOUNT']?.toString() ?? '0'}',
+                                  'Rs.${transaction['AMOUNT']?.toString() ?? '0'}',
                                   style: GoogleFonts.poppins(
                                     color: isCredit ? Colors.green : Colors.red,
                                     fontWeight: FontWeight.bold,

@@ -278,8 +278,8 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
             _buildSection(
               title: 'Salary Calculation',
               children: [
-                _buildDetailRow('Monthly Salary:', '₹${salary.toStringAsFixed(2)}'),
-                _buildDetailRow('Daily Rate:', '₹${dailyRate.toStringAsFixed(2)}'),
+                _buildDetailRow('Monthly Salary:', 'Rs.${salary.toStringAsFixed(2)}'),
+                _buildDetailRow('Daily Rate:', 'Rs.${dailyRate.toStringAsFixed(2)}'),
                 _buildDetailRow(
                   'Formula:',
                   '(${salary.toStringAsFixed(2)} ÷ $workingDays) × $payableDays',
@@ -310,7 +310,7 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '₹${monthlySalary.toStringAsFixed(2)}',
+                    'Rs.${monthlySalary.toStringAsFixed(2)}',
                     style: GoogleFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,

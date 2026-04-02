@@ -99,7 +99,7 @@ class _StaffPaySlipsScreenState extends State<StaffPaySlipsScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Salary: ₹${monthlySalary.toStringAsFixed(2)}',
+                                      'Salary: Rs.${monthlySalary.toStringAsFixed(2)}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         color: Colors.green[700],

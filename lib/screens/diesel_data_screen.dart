@@ -649,7 +649,7 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '₹${data['Amount'] ?? 0.0}',
+                                'Rs.${data['Amount'] ?? 0.0}',
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,

@@ -221,7 +221,7 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                           subtitle: Row(
                                             children: [
                                               Text(
-                                                'Paid: ₹${totalPaid.toStringAsFixed(2)}',
+                                                'Paid: Rs.${totalPaid.toStringAsFixed(2)}',
                                                 style: GoogleFonts.inter(
                                                   color: Colors.green[700],
                                                   fontWeight: FontWeight.w600,
@@ -229,7 +229,7 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                               ),
                                               const SizedBox(width: 16),
                                               Text(
-                                                'Due: ₹${(_duesMap[student.name] ?? 0.0).toStringAsFixed(2)}',
+                                                'Due: Rs.${(_duesMap[student.name] ?? 0.0).toStringAsFixed(2)}',
                                                 style: GoogleFonts.inter(
                                                   color: Colors.red[600],
                                                   fontWeight: FontWeight.w600,
@@ -253,8 +253,8 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                                   const Divider(),
                                                   Text('Fee Structure', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.blue[900])),
                                                   const SizedBox(height: 8),
-                                                  Text('School Concession: ₹${student.schoolFeeConcession.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 13)),
-                                                  Text('Bus Concession: ₹${student.busFeeConcession.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 13)),
+                                                  Text('School Concession: Rs.${student.schoolFeeConcession.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 13)),
+                                                  Text('Bus Concession: Rs.${student.busFeeConcession.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 13)),
                                                   const Divider(),
                                                   Text('Fee Payments', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.blue[900])),
                                                   const SizedBox(height: 8),
@@ -274,7 +274,7 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                                             ),
                                                           ),
                                                           Text(
-                                                            '₹${double.tryParse(fee['AMOUNT']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0.00'}',
+                                                            'Rs.${double.tryParse(fee['AMOUNT']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0.00'}',
                                                             style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.green[700]),
                                                           ),
                                                         ],

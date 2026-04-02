@@ -1160,32 +1160,32 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                       ),
                     ),
                     // Term 1 data
-                    _buildFeeDataCell('₹${(data['Term1 Fee'] ?? 0).toStringAsFixed(0)}'),
-                    _buildFeeDataCell('₹${(data['Term1 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
+                    _buildFeeDataCell('Rs.${(data['Term1 Fee'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell('Rs.${(data['Term1 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
                     _buildFeeDataCell(
-                      '₹${(data['Term1 Due'] ?? 0).toStringAsFixed(0)}',
+                      'Rs.${(data['Term1 Due'] ?? 0).toStringAsFixed(0)}',
                       color: (data['Term1 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
                     ),
                     // Term 2 data
-                    _buildFeeDataCell('₹${(data['Term2 Fee'] ?? 0).toStringAsFixed(0)}'),
-                    _buildFeeDataCell('₹${(data['Term2 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
+                    _buildFeeDataCell('Rs.${(data['Term2 Fee'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell('Rs.${(data['Term2 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
                     _buildFeeDataCell(
-                      '₹${(data['Term2 Due'] ?? 0).toStringAsFixed(0)}',
+                      'Rs.${(data['Term2 Due'] ?? 0).toStringAsFixed(0)}',
                       color: (data['Term2 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
                     ),
                     // Term 3 data
-                    _buildFeeDataCell('₹${(data['Term3 Fee'] ?? 0).toStringAsFixed(0)}'),
-                    _buildFeeDataCell('₹${(data['Term3 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
+                    _buildFeeDataCell('Rs.${(data['Term3 Fee'] ?? 0).toStringAsFixed(0)}'),
+                    _buildFeeDataCell('Rs.${(data['Term3 Paid'] ?? 0).toStringAsFixed(0)}', color: Colors.green[700]),
                     _buildFeeDataCell(
-                      '₹${(data['Term3 Due'] ?? 0).toStringAsFixed(0)}',
+                      'Rs.${(data['Term3 Due'] ?? 0).toStringAsFixed(0)}',
                       color: (data['Term3 Due'] as double? ?? 0) > 0 ? Colors.red[700] : Colors.green[700],
                     ),
                     _buildFeeDataCell(
-                        '₹${(data['Bus Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Bus Fee Due'] ?? 0).toStringAsFixed(0)}'),
+                        'Rs.${(data['Bus Fee'] ?? 0).toStringAsFixed(0)}/Rs.${(data['Bus Fee Paid'] ?? 0).toStringAsFixed(0)}/Rs.${(data['Bus Fee Due'] ?? 0).toStringAsFixed(0)}'),
                     _buildFeeDataCell(
-                        '₹${(data['Books Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Books Fee Due'] ?? 0).toStringAsFixed(0)}'),
+                        'Rs.${(data['Books Fee'] ?? 0).toStringAsFixed(0)}/Rs.${(data['Books Fee Paid'] ?? 0).toStringAsFixed(0)}/Rs.${(data['Books Fee Due'] ?? 0).toStringAsFixed(0)}'),
                     _buildFeeDataCell(
-                        '₹${(data['Uniform Fee'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Paid'] ?? 0).toStringAsFixed(0)}/₹${(data['Uniform Fee Due'] ?? 0).toStringAsFixed(0)}'),
+                        'Rs.${(data['Uniform Fee'] ?? 0).toStringAsFixed(0)}/Rs.${(data['Uniform Fee Paid'] ?? 0).toStringAsFixed(0)}/Rs.${(data['Uniform Fee Due'] ?? 0).toStringAsFixed(0)}'),
                     _buildFeeStatusCell(data['Overall Status'] ?? ''),
                   ],
                 ),

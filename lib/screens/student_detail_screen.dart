@@ -71,9 +71,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   if (widget.student.gender != null && widget.student.gender!.isNotEmpty)
                     _buildInfoRow('Gender:', widget.student.gender!),
                   if (widget.student.schoolFeeConcession > 0)
-                    _buildInfoRow('School Fee Concession:', '₹${widget.student.schoolFeeConcession.toStringAsFixed(2)}'),
+                    _buildInfoRow('School Fee Concession:', 'Rs.${widget.student.schoolFeeConcession.toStringAsFixed(2)}'),
                   if (widget.student.tuitionFeeConcession > 0)
-                    _buildInfoRow('Tuition Fee Concession:', '₹${widget.student.tuitionFeeConcession.toStringAsFixed(2)}'),
+                    _buildInfoRow('Tuition Fee Concession:', 'Rs.${widget.student.tuitionFeeConcession.toStringAsFixed(2)}'),
                   if (widget.student.busRoute != null && widget.student.busRoute!.isNotEmpty)
                     _buildInfoRow('Bus Route:', widget.student.busRoute!),
                   if (widget.student.busNo != null && widget.student.busNo!.isNotEmpty)

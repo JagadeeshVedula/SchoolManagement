@@ -358,6 +358,16 @@ class SupabaseService {
     }
   }
 
+  static Future<bool> insertFees(List<Map<String, dynamic>> feesData) async {
+    try {
+      await client.from('FEES').insert(feesData);
+      return true;
+    } catch (e) {
+      print('Error inserting multiple fees: $e');
+      return false;
+    }
+  }
+
   // Fetch fees for a specific student
   static Future<List<Map<String, dynamic>>> getFeesByStudent(String studentName) async {
     try {
@@ -782,6 +792,40 @@ class SupabaseService {
       return 0;
     } catch (e) {
       print('Error fetching hostel fee: $e');
+      return 0;
+    }
+  }
+
+  // Fetch hostel fee by class AND type (AC or NON-AC)
+  static Future<double> getHostelFeeByClassAndType(String className, String type) async {
+    try {
+      final response = await client
+          .from('HOSTEL')
+          .select('HOSTEL_FEE')
+          .eq('CLASS', className)
+          .eq('TYPE', type)
+          .limit(1);
+      
+      if ((response as List).isNotEmpty) {
+        final fee = double.tryParse((response[0]['HOSTEL_FEE'] as dynamic).toString()) ?? 0;
+        return fee;
+      }
+      return 0;
+    } catch (e) {
+      print('Error fetching hostel fee by type: $e');
+      return 0;
+    }
+  }
+
+  // Get total paid amount for a student by fee type (partial match)
+  static Future<double> getTotalPaidByFeeType(String studentName, String feeTypeKeyword) async {
+    try {
+      final fees = await getFeesByStudent(studentName);
+      return fees
+          .where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains(feeTypeKeyword.toLowerCase()))
+          .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+    } catch (e) {
+      print('Error getting total paid by fee type: $e');
       return 0;
     }
   }

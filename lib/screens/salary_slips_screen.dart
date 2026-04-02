@@ -189,7 +189,7 @@ class _SalarySlipsScreenState extends State<SalarySlipsScreen> {
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        'Salary: ₹${monthlySalary.toStringAsFixed(2)}',
+                        'Salary: Rs.${monthlySalary.toStringAsFixed(2)}',
                         style: GoogleFonts.poppins(fontSize: 14),
                       ),
                       trailing: ElevatedButton(

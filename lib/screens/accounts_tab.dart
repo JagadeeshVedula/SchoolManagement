@@ -319,13 +319,13 @@ class _AccountsTabState extends State<AccountsTab> {
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Column(
               children: [
-                _buildSummaryRow('Previous Day\'s Closing Balance:', '₹${_previousDayClosingBalance.toStringAsFixed(2)}', Colors.black),
+                _buildSummaryRow('Previous Day\'s Closing Balance:', 'Rs.${_previousDayClosingBalance.toStringAsFixed(2)}', Colors.black),
                 const SizedBox(height: 4),
-                _buildSummaryRow('Total Credit:', '₹${_totalCredit.toStringAsFixed(2)}', Colors.green),
+                _buildSummaryRow('Total Credit:', 'Rs.${_totalCredit.toStringAsFixed(2)}', Colors.green),
                 const SizedBox(height: 4),
-                _buildSummaryRow('Total Debit:', '₹${_totalDebit.toStringAsFixed(2)}', Colors.red),
+                _buildSummaryRow('Total Debit:', 'Rs.${_totalDebit.toStringAsFixed(2)}', Colors.red),
                 const Divider(),
-                _buildSummaryRow('Closing Balance:', '₹${closingBalance.toStringAsFixed(2)}', Colors.blue, isBold: true),
+                _buildSummaryRow('Closing Balance:', 'Rs.${closingBalance.toStringAsFixed(2)}', Colors.blue, isBold: true),
               ],
             ),
           ),

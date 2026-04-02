@@ -811,7 +811,7 @@ class _RegisterTabState extends State<RegisterTab> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Hostel Fee: ₹${_sHostelFee.toStringAsFixed(2)}',
+                        'Hostel Fee: Rs.${_sHostelFee.toStringAsFixed(2)}',
                         style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue[900]),
                       ),
                     ),
