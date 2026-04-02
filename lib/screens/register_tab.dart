@@ -28,6 +28,7 @@ class _RegisterTabState extends State<RegisterTab> {
   String? _sBusRoute;
   String? _sBusNo;
   bool _sHostelFacility = false;
+  String? _sHostelType = 'NON-AC';
   DateTime? _selectedJoiningDate;
   double _sHostelFee = 0;
 
@@ -67,7 +68,7 @@ class _RegisterTabState extends State<RegisterTab> {
   List<String> _classes = [];
   List<String> _busRoutes = [];
   List<String> _busNumbers = [];
-  Map<String, double> _hostelFeesByClass = {};
+  Map<String, Map<String, double>> _hostelFeesByClass = {};
 
   @override
   void initState() {
@@ -123,6 +124,14 @@ class _RegisterTabState extends State<RegisterTab> {
       setState(() => _hostelFeesByClass = fees);
     } catch (e) {
       print('Error loading hostel fees: $e');
+    }
+  }
+
+  void _updateHostelFee() {
+    if (_sHostelFacility && _sClass != null && _sHostelType != null) {
+      _sHostelFee = _hostelFeesByClass[_sClass]?[_sHostelType!] ?? 0;
+    } else {
+      _sHostelFee = 0;
     }
   }
 
@@ -246,6 +255,7 @@ class _RegisterTabState extends State<RegisterTab> {
       'BusNo': _sBusNo,
       'Bus Facility': _sBusFacility ? 'Yes' : null,
       'Hostel Facility': _sHostelFacility ? 'Yes' : null,
+      'TYPE': _sHostelFacility ? _sHostelType : null,
     };
     data['DOJ'] = _selectedJoiningDate != null ? DateFormat('dd-MM-yyyy').format(_selectedJoiningDate!) : null;
     final ok = await SupabaseService.insertStudent(data);
@@ -262,6 +272,7 @@ class _RegisterTabState extends State<RegisterTab> {
         _sBusNo = null;
         _busNumbers = [];
         _sHostelFacility = false;
+        _sHostelType = 'NON-AC';
         _selectedJoiningDate = null;
         _sHostelFee = 0;
         _loadClasses(); 
@@ -535,13 +546,7 @@ class _RegisterTabState extends State<RegisterTab> {
                             setState(() {
                               _sClass = v;
                               print('DEBUG: Selected class: $v');
-                              // Auto-load hostel fee if hostel facility is already checked
-                              if (_sHostelFacility && v != null) {
-                                print('DEBUG: Hostel facility checked, loading fee for class: $v');
-                                print('DEBUG: Available fees: $_hostelFeesByClass');
-                                _sHostelFee = _hostelFeesByClass[v] ?? 0;
-                                print('DEBUG: Set hostel fee to: $_sHostelFee');
-                              }
+                              _updateHostelFee();
                             });
                           },
                           decoration: InputDecoration(
@@ -666,22 +671,68 @@ class _RegisterTabState extends State<RegisterTab> {
                   ),
                   if (_sBusFacility) ...[
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: _sBusRoute,
-                      items: _busRoutes.map((route) => DropdownMenuItem(value: route, child: Text(route))).toList(),
-                      onChanged: (v) {
-                        setState(() => _sBusRoute = v);
-                        if (v != null) {
-                          _loadBusNumbersByRoute(v);
+                    Autocomplete<String>(
+                      initialValue: TextEditingValue(text: _sBusRoute ?? ''),
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text == '') {
+                          return _busRoutes;
                         }
+                        return _busRoutes.where((String option) {
+                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                        });
                       },
-                      decoration: InputDecoration(
-                        labelText: 'Select Bus Route',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        filled: true,
-                        fillColor: Colors.blue[50],
-                        prefixIcon: const Icon(Icons.directions_bus, color: Colors.blue),
-                      ),
+                      onSelected: (String selection) {
+                        setState(() => _sBusRoute = selection);
+                        _loadBusNumbersByRoute(selection);
+                        setState(() => _sBusNo = null);
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: 'Search & Select Bus Route',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.blue[50],
+                            prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                          ),
+                          onChanged: (v) {
+                            if (_busRoutes.contains(v)) {
+                              setState(() => _sBusRoute = v);
+                              _loadBusNumbersByRoute(v);
+                            } else {
+                              setState(() => _sBusRoute = null);
+                            }
+                          },
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width - 64,
+                              height: 200,
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                itemCount: options.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final String option = options.elementAt(index);
+                                  return ListTile(
+                                    title: Text(option),
+                                    onTap: () {
+                                      onSelected(option);
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     if (_busNumbers.isNotEmpty)
@@ -715,17 +766,42 @@ class _RegisterTabState extends State<RegisterTab> {
                     onChanged: (v) {
                       setState(() {
                         _sHostelFacility = v ?? false;
-                        // Auto-load hostel fee if class is selected
-                        if (_sHostelFacility && _sClass != null) {
-                          print('DEBUG: Checking hostel fee for class: $_sClass');
-                          print('DEBUG: Available fees: $_hostelFeesByClass');
-                          _sHostelFee = _hostelFeesByClass[_sClass] ?? 0;
-                          print('DEBUG: Set hostel fee to: $_sHostelFee');
-                        }
+                        _updateHostelFee();
                       });
                     },
                   ),
                   if (_sHostelFacility) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('AC'),
+                            value: 'AC',
+                            groupValue: _sHostelType,
+                            onChanged: (v) {
+                              setState(() {
+                                _sHostelType = v;
+                                _updateHostelFee();
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('NON-AC'),
+                            value: 'NON-AC',
+                            groupValue: _sHostelType,
+                            onChanged: (v) {
+                              setState(() {
+                                _sHostelType = v;
+                                _updateHostelFee();
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(12),

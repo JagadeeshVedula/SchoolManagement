@@ -771,12 +771,12 @@ class SupabaseService {
     try {
       final response = await client
           .from('HOSTEL')
-          .select('"HOSTEL FEE"')
+          .select('"HOSTEL_FEE"')
           .eq('CLASS', className)
           .limit(1);
       
       if ((response as List).isNotEmpty) {
-        final fee = double.tryParse((response[0]['HOSTEL FEE'] as dynamic).toString()) ?? 0;
+        final fee = double.tryParse((response[0]['HOSTEL_FEE'] as dynamic).toString()) ?? 0;
         return fee;
       }
       return 0;
@@ -875,19 +875,21 @@ class SupabaseService {
   }
 
   // Get hostel fees by class from HOSTEL table
-  static Future<Map<String, double>> getHostelFees() async {
+  static Future<Map<String, Map<String, double>>> getHostelFees() async {
     try {
       final response = await client
           .from('HOSTEL')
-          .select('Class, Fee');
+          .select('CLASS, HOSTEL_FEE,TYPE');
       
-      final fees = <String, double>{};
+      final fees = <String, Map<String, double>>{};
       for (var item in response as List) {
-        final className = item['Class']?.toString();
-        final fee = item['Fee'];
-        print('DEBUG: Hostel - Class: $className, Fee: $fee');
-        if (className != null && fee != null) {
-          fees[className] = (fee is int) ? fee.toDouble() : double.parse(fee.toString());
+        final className = item['CLASS']?.toString();
+        final fee = item['HOSTEL_FEE'];
+        final type = item['TYPE']?.toString();
+        print('DEBUG: Hostel - Class: $className, Fee: $fee, Type: $type');
+        if (className != null && fee != null && type != null) {
+          if (!fees.containsKey(className)) fees[className] = {};
+          fees[className]![type] = (fee is int) ? fee.toDouble() : double.parse(fee.toString());
         }
       }
       print('DEBUG: Final hostel fees map: $fees');
