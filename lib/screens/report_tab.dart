@@ -48,12 +48,18 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   List<Map<String, dynamic>> _staffLeaveReportData = [];
   bool _isStaffLeaveLoading = false;
 
+  // Daily Report State
+  DateTime _selectedDailyDate = DateTime.now();
+  List<Map<String, dynamic>> _dailyReportData = [];
+  bool _isDailyLoading = false;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _loadClasses();
     _loadStaff();
+    _loadDailyReportData(); // Initial load for daily report tab
     _dieselDateRange = DateTimeRange(
       start: DateTime.now().subtract(const Duration(days: 7)),
       end: DateTime.now(),
@@ -80,7 +86,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             if (_staffLeaveReportData.isEmpty && _selectedStaff != null) _loadStaffLeaveReportData();
             break;
           case 4: // Due Report
-            // Optionally, add pre-loading for the due report tab
+            break;
+          case 5: // Daily Report
+            if (_dailyReportData.isEmpty) _loadDailyReportData();
             break;
         }
       }
@@ -276,6 +284,22 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
       _staffLeaveReportData = data;
       _isStaffLeaveLoading = false;
     });
+  }
+
+  Future<void> _loadDailyReportData() async {
+    setState(() => _isDailyLoading = true);
+    try {
+      final data = await SupabaseService.getDailyReportData(_selectedDailyDate);
+      setState(() {
+        _dailyReportData = data;
+        _isDailyLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isDailyLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading daily report: $e')),
+      );
+    }
   }
 
   // #endregion
@@ -534,6 +558,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             Tab(text: 'Transactions Report'),
             Tab(text: 'Staff Leave Report'),
             Tab(text: 'Due Report'),
+            Tab(text: 'Daily Report'),
           ],
         ),
         Expanded(
@@ -545,6 +570,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               _buildTransactionsReportTab(),
               _buildStaffLeaveReportTab(),
               DueReportTab(staffList: _staffList),
+              _buildDailyReportTab(),
             ],
           ),
         ),
@@ -1196,7 +1222,167 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
     );
   }
 
+  Widget _buildDailyReportTab() {
+    double totalCredit = 0;
+    double totalDebit = 0;
+    for (var t in _dailyReportData) {
+      final amt = double.tryParse(t['amount'].toString()) ?? 0.0;
+      if (t['type'] == 'credit') totalCredit += amt;
+      if (t['type'] == 'debit') totalDebit += amt;
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                   Expanded(
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Select Date', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      subtitle: Text(DateFormat('dd-MM-yyyy').format(_selectedDailyDate), style: GoogleFonts.poppins(fontSize: 16, color: Colors.indigo)),
+                      leading: const Icon(Icons.calendar_today, color: Colors.indigo),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDailyDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setState(() => _selectedDailyDate = picked);
+                          _loadDailyReportData();
+                        }
+                      },
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _downloadDailyExcel,
+                    icon: const Icon(Icons.download),
+                    label: const Text('Export Excel'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[700],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          if (_isDailyLoading)
+            const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+          else if (_dailyReportData.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    Icon(Icons.receipt_long, size: 64, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text('No transactions found for this date', style: GoogleFonts.poppins(color: Colors.grey[500])),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            // Totals Summary
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.indigo[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.indigo[100]!),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildSummaryItem('Total Credit', totalCredit, Colors.green[700]!),
+                  _buildSummaryItem('Total Debit', totalDebit, Colors.red[700]!),
+                  _buildSummaryItem('Net Balance', totalCredit - totalDebit, Colors.indigo[700]!),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Transactions Table
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4)],
+              ),
+              child: DataTable(
+                headingRowColor: MaterialStateProperty.all(Colors.indigo[900]),
+                columns: [
+                  DataColumn(label: Text('Description', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Category', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Credit', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Debit', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold))),
+                ],
+                rows: _dailyReportData.map((t) {
+                  final isCredit = t['type'] == 'credit';
+                  return DataRow(cells: [
+                    DataCell(Text(t['description']?.toString() ?? '', style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(t['category']?.toString() ?? '', style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(isCredit ? 'Rs.${t['amount']}' : '-', style: TextStyle(color: isCredit ? Colors.green[700] : Colors.black))),
+                    DataCell(Text(!isCredit ? 'Rs.${t['amount']}' : '-', style: TextStyle(color: !isCredit ? Colors.red[700] : Colors.black))),
+                  ]);
+                }).toList(),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(String label, double amount, Color color) {
+    return Column(
+      children: [
+        Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700])),
+        Text('Rs.${amount.toStringAsFixed(2)}', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+
+  Future<void> _downloadDailyExcel() async {
+     if (_dailyReportData.isEmpty) return;
+     final excel = excel_pkg.Excel.createExcel();
+     final sheet = excel['Daily Report'];
+     
+     sheet.appendRow(['Daily Transaction Report - ${DateFormat('dd-MM-yyyy').format(_selectedDailyDate)}']);
+     sheet.appendRow([]);
+     sheet.appendRow(['Description', 'Category', 'Subcategory', 'Type', 'Amount']);
+     
+     for (var t in _dailyReportData) {
+       sheet.appendRow([
+         t['description'],
+         t['category'],
+         t['subcategory'],
+         t['type'].toString().toUpperCase(),
+         t['amount']
+       ]);
+     }
+     
+     final bytes = excel.encode();
+     if (bytes != null) {
+       await _downloadFile(bytes, 'Daily_Report_${DateFormat('yyyyMMdd').format(_selectedDailyDate)}.xlsx');
+     }
+  }
+
   String _formatAmount(double? amount) {
+
     if (amount == null) return '0';
     return amount.toStringAsFixed(2);
   }
@@ -1214,6 +1400,8 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         return Colors.teal[700]!;
       case 4:
         return Colors.red[700]!;
+      case 5:
+        return Colors.indigo[700]!;
       default:
         return Colors.blue[700]!;
     }

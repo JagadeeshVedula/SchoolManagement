@@ -38,7 +38,7 @@ class SchoolManagementApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // MaterialApp is the root widget that provides material design components
     return MaterialApp(
-      title: 'EduManage', // App name shown in device app switcher
+      title: 'School Management System', // App name shown in device app switcher
       theme: AppTheme.lightTheme, // Custom light theme for the app
       darkTheme: AppTheme.darkTheme, // Custom dark theme for the app
       themeMode: ThemeMode.light, // Default to light theme

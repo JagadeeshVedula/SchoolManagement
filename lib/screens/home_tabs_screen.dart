@@ -223,13 +223,13 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
                 Text(
                   'NALANDA IIT OLYMPIAD SCHOOL',
                   style: GoogleFonts.poppins(
-                    fontSize: 22,
+                    fontSize: 35,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
                 Text(
-                  'NARSIPATNAM (1004)',
+                  'NARSIPATNAM - 531116',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

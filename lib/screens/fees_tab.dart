@@ -1191,7 +1191,7 @@ class _FeesTabState extends State<FeesTab> {
 
     // Local controllers for this dialog
     final termMonthController = ValueNotifier<String?>(_selectedTermMonth);
-    final termYearController = TextEditingController();
+    final termYearController = ValueNotifier<String?>(DateTime.now().year.toString());
     final amountController = TextEditingController();
     final hostelPaymentController = TextEditingController();
     final termSelections = Map<int, bool>.from(_termSelections);
@@ -1372,11 +1372,19 @@ class _FeesTabState extends State<FeesTab> {
                       ),
                     if (_selectedPaymentType == 'School Fee')
                       const SizedBox(height: 16),
-                    // Term Year - Only for School Fee
+                    // Term Year Dropdown - Only for School Fee
                     if (_selectedPaymentType == 'School Fee')
-                      TextField(
-                        controller: termYearController,
-                        decoration: const InputDecoration(labelText: 'Term Year', border: OutlineInputBorder()),
+                      DropdownButtonFormField<String>(
+                        value: termYearController.value,
+                        items: List.generate(
+                                11, (index) => (2020 + index).toString())
+                            .map((year) => DropdownMenuItem(
+                                value: year, child: Text(year)))
+                            .toList(),
+                        onChanged: (v) => setDialogState(() => termYearController.value = v),
+                        decoration: const InputDecoration(
+                            labelText: 'Term Year',
+                            border: OutlineInputBorder()),
                       ),
                     if (_selectedPaymentType == 'School Fee')
                       const SizedBox(height: 16),
@@ -1820,8 +1828,8 @@ class _FeesTabState extends State<FeesTab> {
                               ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Please select Term Month')));
                               return;
                             }
-                            if (termYearController.text.isEmpty) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Please enter Term Year')));
+                            if (termYearController.value == null || termYearController.value!.isEmpty) {
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Please select Term Year')));
                               return;
                             }
                           }
@@ -1856,7 +1864,7 @@ class _FeesTabState extends State<FeesTab> {
                               'STUDENT NAME': _selectedStudent!.name,
                               'FEE TYPE': _selectedPaymentType!.trim(),
                               'AMOUNT': amountController.text.trim(),
-                              'TERM YEAR': _selectedPaymentType == 'School Fee' ? termYearController.text.trim() : currentYear,
+                              'TERM YEAR': _selectedPaymentType == 'School Fee' ? termYearController.value : currentYear,
                               'TERM MONTH': _selectedPaymentType == 'School Fee' ? termMonthController.value : '',
                               'TERM NO': selectedTermNos,
                               'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now()),
@@ -1870,7 +1878,7 @@ class _FeesTabState extends State<FeesTab> {
                                   'STUDENT NAME': _selectedStudent!.name,
                                   'FEE TYPE': 'Bus Fee',
                                   'AMOUNT': busPaymentAmount,
-                                  'TERM YEAR': termYearController.text.trim().isNotEmpty ? termYearController.text.trim() : currentYear,
+                                  'TERM YEAR': (termYearController.value != null && termYearController.value!.isNotEmpty) ? termYearController.value : currentYear,
                                   'TERM MONTH': termMonthController.value ?? '',
                                   'TERM NO': 'N/A',
                                   'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now()),
@@ -1886,7 +1894,7 @@ class _FeesTabState extends State<FeesTab> {
                                   'STUDENT NAME': _selectedStudent!.name,
                                   'FEE TYPE': 'Hostel Fee',
                                   'AMOUNT': hostelPaymentAmount,
-                                  'TERM YEAR': termYearController.text.trim(),
+                                  'TERM YEAR': termYearController.value ?? currentYear,
                                   'TERM MONTH': termMonthController.value ?? '',
                                   'TERM NO': 'N/A',
                                   'DATE': DateFormat('dd-MM-yyyy').format(_selectedDate ?? DateTime.now()),

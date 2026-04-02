@@ -124,7 +124,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                       ),
                       const SizedBox(height: 4), // Small space between text lines
                       Text( // App name text
-                        'EduManage',
+                        'School Management System',
                         style: GoogleFonts.poppins(
                           color: Colors.white, // Solid white color
                           fontSize: 36, // Large font size for emphasis
