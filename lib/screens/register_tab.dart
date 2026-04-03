@@ -31,6 +31,7 @@ class _RegisterTabState extends State<RegisterTab> {
   String? _sHostelType = 'NON-AC';
   DateTime? _selectedJoiningDate;
   double _sHostelFee = 0;
+  bool _sAdminFee = false;
 
   // Performance controllers
   String? _perfClass;
@@ -259,6 +260,38 @@ class _RegisterTabState extends State<RegisterTab> {
     };
     data['DOJ'] = _selectedJoiningDate != null ? DateFormat('dd-MM-yyyy').format(_selectedJoiningDate!) : null;
     final ok = await SupabaseService.insertStudent(data);
+    
+    // If student inserted and Admin Fee checkbox was selected, add the fee record
+    if (ok && _sAdminFee) {
+      final currentMonth = DateTime.now().month;
+      int currentTerm = 1;
+      String termMonth = 'June - September';
+      
+      // Determine current term based on current month
+      if (currentMonth >= 6 && currentMonth <= 9) {
+        currentTerm = 1;
+        termMonth = 'June - September';
+      } else if (currentMonth >= 11 || currentMonth <= 2) {
+        currentTerm = 2;
+        termMonth = 'November - February';
+      } else if (currentMonth >= 3 && currentMonth <= 5) {
+        currentTerm = 3;
+        termMonth = 'March - June';
+      }
+      
+      final currentYear = DateTime.now().year.toString();
+      final feeData = {
+        'STUDENT NAME': _sName.text.trim(),
+        'AMOUNT': 500,
+        'FEE TYPE': 'Administration fee',
+        'DATE': DateFormat('dd-MM-yyyy').format(DateTime.now()),
+        'TERM MONTH': termMonth,
+        'TERM YEAR': currentYear,
+        'TERM NO': currentTerm.toString(),
+      };
+      await SupabaseService.insertFee(feeData);
+    }
+
     setState(() => _isSubmittingStudent = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student registered successfully')));
@@ -275,6 +308,7 @@ class _RegisterTabState extends State<RegisterTab> {
         _sHostelType = 'NON-AC';
         _selectedJoiningDate = null;
         _sHostelFee = 0;
+        _sAdminFee = false;
         _loadClasses(); 
         _currentPage = 0; 
       });
@@ -660,6 +694,15 @@ class _RegisterTabState extends State<RegisterTab> {
                         });
                       }
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  // Admin Fee Checkbox
+                  CheckboxListTile(
+                    title: const Text('Admin Fee (Rs. 500)', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Automatically add Rs. 500 as Administration fee'),
+                    value: _sAdminFee,
+                    activeColor: Colors.blue,
+                    onChanged: (v) => setState(() => _sAdminFee = v ?? false),
                   ),
                   const SizedBox(height: 16),
                   // Bus Facility

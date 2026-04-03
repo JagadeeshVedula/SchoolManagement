@@ -467,9 +467,9 @@ class _FeesTabState extends State<FeesTab> {
       final filteredPayments = payments.where((p) {
         final feeType = (p['FEE TYPE'] as String? ?? '').trim();
         
-        // For School Fee, show School Fee and Bus Fee
+        // For School Fee, show School Fee, Bus Fee, and Administration Fee
         if (_selectedPaymentType == 'School Fee') {
-          return feeType.contains('School Fee') || feeType.contains('Bus Fee');
+          return feeType.contains('School Fee') || feeType.contains('Bus Fee') || feeType.contains('Administration');
         }
         
         // For Books Fee and Uniform Fee, show only that specific fee type
@@ -691,6 +691,8 @@ class _FeesTabState extends State<FeesTab> {
         rows.add({'sno': sno++, 'desc': 'Books Fee', 'amount': thisPaid});
       } else if (feeType.toLowerCase().contains('uniform')) {
         rows.add({'sno': sno++, 'desc': 'Uniform Fee', 'amount': thisPaid});
+      } else if (feeType.toLowerCase().contains('administration') || feeType.toLowerCase().contains('admin')) {
+        rows.add({'sno': sno++, 'desc': 'Administration Fee', 'amount': thisPaid});
       } else {
         rows.add({'sno': sno++, 'desc': 'School Fee', 'amount': thisPaid});
       }
@@ -930,6 +932,8 @@ class _FeesTabState extends State<FeesTab> {
           rows.add(['${sno++}', 'Books Fee', thisPaid.toStringAsFixed(0)]);
         } else if (feeType.toLowerCase().contains('uniform')) {
           rows.add(['${sno++}', 'Uniform Fee', thisPaid.toStringAsFixed(0)]);
+        } else if (feeType.toLowerCase().contains('administration') || feeType.toLowerCase().contains('admin')) {
+          rows.add(['${sno++}', 'Administration Fee', thisPaid.toStringAsFixed(0)]);
         } else {
           rows.add(['${sno++}', 'School Fee', thisPaid.toStringAsFixed(0)]);
         }

@@ -1847,6 +1847,7 @@ class SupabaseService {
         else if (feeType.contains('Hostel Fee')) category = 'Hostel';
         else if (feeType.contains('Books Fee')) category = 'Books';
         else if (feeType.contains('Uniform Fee')) category = 'Uniform';
+        else if (feeType.contains('Administration fee')) category = 'Admin';
         
         transactions.add({
           'description': '$sName - $sClass',
