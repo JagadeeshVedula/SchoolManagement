@@ -132,14 +132,14 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: const Color(0xFF800000),
         elevation: 2,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[50]!, Colors.cyan[50]!],
+            colors: [const Color(0xFF800000).withOpacity(0.05), const Color(0xFFB91C1C).withOpacity(0.05)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -204,12 +204,12 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                         ),
                                         child: ExpansionTile(
                                           leading: CircleAvatar(
-                                            backgroundColor: Colors.blue[100],
+                                            backgroundColor: const Color(0xFF800000).withOpacity(0.1),
                                             child: Text(
                                               student.name.isNotEmpty
                                                   ? student.name.substring(0, 1).toUpperCase()
                                                   : '?',
-                                              style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold),
+                                              style: TextStyle(color: const Color(0xFF800000), fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                           title: Text(
@@ -245,18 +245,18 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  Text('Contact Details', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.blue[900])),
+                                                  Text('Contact Details', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF800000))),
                                                   const SizedBox(height: 8),
                                                   Text('Father Name: ${student.fatherName}', style: GoogleFonts.inter(fontSize: 13)),
                                                   Text('Mother Name: ${student.motherName}', style: GoogleFonts.inter(fontSize: 13)),
                                                   Text('Parent Mobile: ${student.parentMobile}', style: GoogleFonts.inter(fontSize: 13)),
                                                   const Divider(),
-                                                  Text('Fee Structure', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.blue[900])),
+                                                  Text('Fee Structure', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF800000))),
                                                   const SizedBox(height: 8),
                                                   Text('School Concession: Rs.${student.schoolFeeConcession.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 13)),
                                                   Text('Bus Concession: Rs.${student.busFeeConcession.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 13)),
                                                   const Divider(),
-                                                  Text('Fee Payments', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.blue[900])),
+                                                  Text('Fee Payments', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF800000))),
                                                   const SizedBox(height: 8),
                                                   ...(_feesMap[student.name] ?? []).map((fee) {
                                                     return Padding(

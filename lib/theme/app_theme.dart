@@ -7,22 +7,22 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Static final variable for light theme - cannot be changed after compilation
   static final lightTheme = ThemeData(
-    useMaterial3: true, // Use Material 3 for modern look
-    primaryColor: const Color(0xFF6366F1), // Indigo 500
+    useMaterial3: true,
+    primaryColor: const Color(0xFF800000), // Maroon
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF6366F1),
-      primary: const Color(0xFF6366F1),
-      secondary: const Color(0xFFF59E0B), // Amber 500
+      seedColor: const Color(0xFF800000),
+      primary: const Color(0xFF800000),
+      secondary: const Color(0xFFF59E0B),
       surface: Colors.white,
-      background: const Color(0xFFF8FAFC), // Slate 50
+      background: const Color(0xFFF8FAFC),
     ),
-    brightness: Brightness.light, 
+    brightness: Brightness.light,
     scaffoldBackgroundColor: const Color(0xFFF8FAFC),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      iconTheme: const IconThemeData(color: Color(0xFF1E293B)), // Slate 800
+      iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
       titleTextStyle: GoogleFonts.poppins(
         color: const Color(0xFF1E293B),
         fontSize: 20,
@@ -37,7 +37,7 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF6366F1),
+        backgroundColor: const Color(0xFF800000),
         foregroundColor: Colors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -47,7 +47,7 @@ class AppTheme {
     ),
     textTheme: TextTheme(
       displayLarge: GoogleFonts.poppins(
-        color: const Color(0xFF0F172A), // Slate 900
+        color: const Color(0xFF0F172A),
         fontSize: 32,
         fontWeight: FontWeight.w700,
       ),
@@ -57,12 +57,12 @@ class AppTheme {
         fontWeight: FontWeight.w600,
       ),
       bodyLarge: GoogleFonts.inter(
-        color: const Color(0xFF334155), // Slate 700
+        color: const Color(0xFF334155),
         fontSize: 16,
         fontWeight: FontWeight.w400,
       ),
       bodyMedium: GoogleFonts.inter(
-        color: const Color(0xFF64748B), // Slate 500
+        color: const Color(0xFF64748B),
         fontSize: 14,
         fontWeight: FontWeight.w400,
       ),
@@ -72,7 +72,7 @@ class AppTheme {
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)), // Slate 200
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -80,23 +80,22 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF800000), width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
   );
 
-  // Dark theme configuration for dark mode
   static final darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    primaryColor: const Color(0xFF818CF8), // Indigo 400
+    primaryColor: const Color(0xFFB91C1C), // Lighter Maroon for Dark Mode
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF6366F1),
+      seedColor: const Color(0xFF800000),
       brightness: Brightness.dark,
-      primary: const Color(0xFF818CF8),
-      secondary: const Color(0xFFFBBF24), // Amber 400
+      primary: const Color(0xFFB91C1C),
+      secondary: const Color(0xFFFBBF24),
     ),
-    scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
+    scaffoldBackgroundColor: const Color(0xFF0F172A),
   );
 }

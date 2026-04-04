@@ -55,7 +55,7 @@ class _StudentDataTabState extends State<StudentDataTab> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.blue[50]!, Colors.cyan[100]!],
+            colors: [const Color(0xFF800000).withOpacity(0.05), const Color(0xFFB91C1C).withOpacity(0.1)],
           ),
         ),
         child: FutureBuilder<List<dynamic>>(
@@ -81,7 +81,7 @@ class _StudentDataTabState extends State<StudentDataTab> {
                     style: GoogleFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: Colors.indigo[900],
+                      color: const Color(0xFF800000),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -93,7 +93,7 @@ class _StudentDataTabState extends State<StudentDataTab> {
                           'Total Students',
                           allStudents.length.toString(),
                           Icons.people,
-                          Colors.blue,
+                          const Color(0xFF800000),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -114,7 +114,7 @@ class _StudentDataTabState extends State<StudentDataTab> {
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.indigo[800],
+                      color: const Color(0xFF800000),
                     ),
                   ),
                   const SizedBox(height: 12),

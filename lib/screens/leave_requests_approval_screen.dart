@@ -36,7 +36,7 @@ class _LeaveRequestsApprovalScreenState extends State<LeaveRequestsApprovalScree
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.red[700],
+        backgroundColor: const Color(0xFF800000),
         elevation: 2,
         bottom: TabBar(
           controller: _tabController,
@@ -415,7 +415,7 @@ class _CompletedRequestsTabState extends State<_CompletedRequestsTab> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.blue[50]!, Colors.green[50]!],
+          colors: [const Color(0xFF800000).withOpacity(0.05), Colors.green[50]!],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -425,7 +425,7 @@ class _CompletedRequestsTabState extends State<_CompletedRequestsTab> {
           // Filters
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.blue[700],
+            color: const Color(0xFF800000),
             child: Column(
               children: [
                 Row(
@@ -580,7 +580,7 @@ class _CompletedRequestsTabState extends State<_CompletedRequestsTab> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation(Colors.blue[600]),
+                      valueColor: AlwaysStoppedAnimation(const Color(0xFF800000)),
                     ),
                   );
                 }
@@ -604,7 +604,7 @@ class _CompletedRequestsTabState extends State<_CompletedRequestsTab> {
                         Icon(
                           Icons.hourglass_empty,
                           size: 64,
-                          color: Colors.blue[600],
+                          color: const Color(0xFF800000),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -612,7 +612,7 @@ class _CompletedRequestsTabState extends State<_CompletedRequestsTab> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.blue[900],
+                            color: const Color(0xFF800000),
                           ),
                         ),
                       ],

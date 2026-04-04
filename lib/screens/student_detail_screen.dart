@@ -45,9 +45,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: const Color(0xFF800000).withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue[200]!),
+                border: Border.all(color: const Color(0xFF800000).withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +248,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                             children: [
                               Text(
                                 'Assessment: ${perf.assessment}',
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue[800]),
+                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF800000)),
                               ),
                               const SizedBox(height: 8),
                               Wrap(

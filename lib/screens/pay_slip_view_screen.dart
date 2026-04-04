@@ -229,7 +229,7 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
           'Pay Slip - $staffName',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.blue[600],
+        backgroundColor: const Color(0xFF800000),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -240,9 +240,9 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: const Color(0xFF800000).withOpacity(0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[300]!),
+                border: Border.all(color: const Color(0xFF800000).withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,7 +252,7 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Colors.blue[900],
+                      color: const Color(0xFF800000),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -333,7 +333,7 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
+                  backgroundColor: const Color(0xFF800000),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -388,7 +388,7 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
             value,
             style: GoogleFonts.poppins(
               fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w600,
-              color: isHighlight ? Colors.blue[700] : Colors.black87,
+              color: isHighlight ? const Color(0xFF800000) : Colors.black87,
               fontSize: isHighlight ? 16 : 14,
             ),
           ),
@@ -415,7 +415,7 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.blue[900],
+              color: const Color(0xFF800000),
             ),
           ),
           const SizedBox(height: 12),

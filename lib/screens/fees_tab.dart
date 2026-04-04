@@ -1227,7 +1227,7 @@ class _FeesTabState extends State<FeesTab> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.blue[50]!, Colors.indigo[100]!],
+              colors: [const Color(0xFF800000).withOpacity(0.05), const Color(0xFF800000).withOpacity(0.1)],
             ),
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1271,7 +1271,7 @@ class _FeesTabState extends State<FeesTab> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.indigo[600],
+                          color: const Color(0xFF800000),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -1283,8 +1283,8 @@ class _FeesTabState extends State<FeesTab> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          border: Border.all(color: Colors.blue[200]!, width: 1),
+                          color: const Color(0xFF800000).withOpacity(0.05),
+                          border: Border.all(color: const Color(0xFF800000).withOpacity(0.2), width: 1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -1295,7 +1295,7 @@ class _FeesTabState extends State<FeesTab> {
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
-                                color: Colors.blue[900],
+                                color: const Color(0xFF800000),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -1304,7 +1304,7 @@ class _FeesTabState extends State<FeesTab> {
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 13,
-                                color: Colors.blue[700],
+                                color: const Color(0xFF800000).withOpacity(0.8),
                               ),
                             ),
                           ],
@@ -1450,11 +1450,11 @@ class _FeesTabState extends State<FeesTab> {
                                     child: Container(
                                       decoration: BoxDecoration(
                                         border: Border.all(
-                                          color: termSelections[termNum]! ? Colors.blue[400]! : Colors.grey[300]!,
+                                          color: termSelections[termNum]! ? const Color(0xFF800000).withOpacity(0.6) : Colors.grey[300]!,
                                           width: termSelections[termNum]! ? 2 : 1,
                                         ),
                                         borderRadius: BorderRadius.circular(6),
-                                        color: termSelections[termNum]! ? Colors.blue[50] : Colors.transparent,
+                                        color: termSelections[termNum]! ? const Color(0xFF800000).withOpacity(0.1) : Colors.transparent,
                                       ),
                                       child: CheckboxListTile(
                                         value: termSelections[termNum],
@@ -1514,14 +1514,14 @@ class _FeesTabState extends State<FeesTab> {
                                     Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Colors.teal[50],
-                                        border: Border.all(color: Colors.teal[200]!, width: 1),
+                                        color: const Color(0xFF800000).withOpacity(0.05),
+                                        border: Border.all(color: const Color(0xFF800000).withOpacity(0.2), width: 1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text('Hostel Fee', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                                          Text('Hostel Fee', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14, color: const Color(0xFF800000))),
                                           const SizedBox(height: 8),
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1620,8 +1620,8 @@ class _FeesTabState extends State<FeesTab> {
                                                 Container(
                                                   padding: const EdgeInsets.all(10),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.blue[50],
-                                                    border: Border.all(color: Colors.blue[200]!, width: 1),
+                                                    color: const Color(0xFF800000).withOpacity(0.05),
+                                                    border: Border.all(color: const Color(0xFF800000).withOpacity(0.2), width: 1),
                                                     borderRadius: BorderRadius.circular(6),
                                                   ),
                                                   child: Row(
@@ -1697,14 +1697,14 @@ class _FeesTabState extends State<FeesTab> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.orange[50],
-                                      border: Border.all(color: Colors.orange[200]!, width: 1),
+                                      color: const Color(0xFF800000).withOpacity(0.05),
+                                      border: Border.all(color: const Color(0xFF800000).withOpacity(0.2), width: 1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Bus Fee (Route: ${_selectedStudent!.busRoute})', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                                        Text('Bus Fee (Route: ${_selectedStudent!.busRoute})', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14, color: const Color(0xFF800000))),
                                         const SizedBox(height: 8),
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1818,7 +1818,7 @@ class _FeesTabState extends State<FeesTab> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: const Color(0xFF800000),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: (_isSubmitting || 
@@ -1991,7 +1991,7 @@ class _FeesTabState extends State<FeesTab> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.blue[50]!, Colors.indigo[100]!],
+            colors: [const Color(0xFF800000).withOpacity(0.05), const Color(0xFF800000).withOpacity(0.05)],
           ),
         ),
         child: SingleChildScrollView(
@@ -1999,9 +1999,9 @@ class _FeesTabState extends State<FeesTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Fees', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.indigo[900])),
+              Text('Fees', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: const Color(0xFF800000))),
               const SizedBox(height: 30),
-              _menuButton(icon: Icons.payments, title: 'Payments', onPressed: () => setState(() => _currentPage = 1), color: Colors.blue),
+              _menuButton(icon: Icons.payments, title: 'Payments', onPressed: () => setState(() => _currentPage = 1), color: const Color(0xFF800000)),
               const SizedBox(height: 16),
               _menuButton(icon: Icons.request_quote, title: 'Dues', onPressed: () => setState(() => _currentPage = 2), color: Colors.orange),
             ],
@@ -2060,14 +2060,14 @@ class _FeesTabState extends State<FeesTab> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.arrow_back, size: 20, color: Color(0xFF6366F1)),
+                    const Icon(Icons.arrow_back, size: 20, color: Color(0xFF800000)),
                     const SizedBox(width: 8),
                     Text(
                       'Back to Menu',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6366F1),
+                        color: const Color(0xFF800000),
                       ),
                     ),
                   ],
@@ -2107,7 +2107,7 @@ class _FeesTabState extends State<FeesTab> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [ 
-                    _buildPaymentChip('School Fee', const Color(0xFF6366F1)),
+                    _buildPaymentChip('School Fee', const Color(0xFF800000)),
                     _buildPaymentChip('Books Fee', const Color(0xFF10B981)),
                     _buildPaymentChip('Uniform Fee', const Color(0xFFF59E0B)),
                   ],
@@ -2153,7 +2153,7 @@ class _FeesTabState extends State<FeesTab> {
                             labelText: 'Class',
                             filled: true,
                             fillColor: const Color(0xFFF1F5F9),
-                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF6366F1)),
+                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF800000)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -2171,7 +2171,7 @@ class _FeesTabState extends State<FeesTab> {
                             labelText: 'Section',
                             filled: true,
                             fillColor: _selectedClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
-                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF6366F1)),
+                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF800000)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -2190,8 +2190,8 @@ class _FeesTabState extends State<FeesTab> {
                       icon: const Icon(Icons.search_outlined), 
                       label: Text('Search & Select Student', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)), 
                       style: ElevatedButton.styleFrom( 
-                        backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
-                        foregroundColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF800000).withOpacity(0.1),
+                        foregroundColor: const Color(0xFF800000),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ), 
@@ -2207,8 +2207,8 @@ class _FeesTabState extends State<FeesTab> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
-                border: Border.all(color: Colors.blue[200]!, width: 2),
+                color: const Color(0xFF800000).withOpacity(0.05),
+                border: Border.all(color: const Color(0xFF800000).withOpacity(0.2), width: 2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -2216,7 +2216,7 @@ class _FeesTabState extends State<FeesTab> {
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Colors.blue[900],
+                  color: const Color(0xFF800000),
                 ),
               ),
             ),
@@ -2291,7 +2291,7 @@ class _FeesTabState extends State<FeesTab> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Payment History', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.indigo[900])),
+                        Text('Payment History', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF800000))),
                         IconButton(
                           onPressed: () => setState(() {
                             _showPaymentHistory = false;
@@ -2364,7 +2364,7 @@ class _FeesTabState extends State<FeesTab> {
                               leading: Icon(Icons.receipt_long, color: Colors.deepOrange),
                               title: Text(
                                 sessionID,
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: Colors.indigo[900]),
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: const Color(0xFF800000)),
                               ),
                               subtitle: RichText(
                                 text: TextSpan(
@@ -2423,14 +2423,14 @@ class _FeesTabState extends State<FeesTab> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.arrow_back, size: 20, color: Color(0xFF6366F1)),
+                    const Icon(Icons.arrow_back, size: 20, color: Color(0xFF800000)),
                     const SizedBox(width: 8),
                     Text(
                       'Back to Menu',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6366F1),
+                        color: const Color(0xFF800000),
                       ),
                     ),
                   ],

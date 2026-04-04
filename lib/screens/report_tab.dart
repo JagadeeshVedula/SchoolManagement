@@ -517,7 +517,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
           width: double.infinity,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              colors: [Color(0xFF800000), Color(0xFFB91C1C)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -549,9 +549,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
           color: Colors.white,
           child: TabBar(
             controller: _tabController,
-            indicatorColor: const Color(0xFF6366F1),
+            indicatorColor: const Color(0xFF800000),
             indicatorWeight: 3.0,
-            labelColor: const Color(0xFF6366F1),
+            labelColor: const Color(0xFF800000),
             unselectedLabelColor: const Color(0xFF64748B),
             isScrollable: true,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
@@ -652,7 +652,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                         labelText: 'Class',
                         filled: true,
                         fillColor: const Color(0xFFF1F5F9),
-                        prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF6366F1)),
+                        prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF800000)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -685,7 +685,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                         labelText: 'Section',
                         filled: true,
                         fillColor: _selectedFeeClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
-                        prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF6366F1)),
+                        prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF800000)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -1006,7 +1006,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         child: SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: DataTable(
-            headingRowColor: MaterialStateProperty.all(Colors.blue[700]),
+            headingRowColor: MaterialStateProperty.all(const Color(0xFF800000)),
             headingRowHeight: 56,
             dataRowHeight: 80,
             columns: [
@@ -1298,7 +1298,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                             color: const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.calendar_today_outlined, color: Color(0xFF6366F1), size: 24),
+                          child: const Icon(Icons.calendar_today_outlined, color: Color(0xFF800000), size: 24),
                         ),
                         const SizedBox(width: 16),
                         Column(
@@ -1378,7 +1378,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                 children: [
                   _buildSummaryItem('Total Credit', totalCredit, const Color(0xFF10B981)),
                   _buildSummaryItem('Total Debit', totalDebit, const Color(0xFFF43F5E)),
-                  _buildSummaryItem('Net Balance', totalCredit - totalDebit, const Color(0xFF6366F1)),
+                  _buildSummaryItem('Net Balance', totalCredit - totalDebit, const Color(0xFF800000)),
                 ],
               ),
             ),
@@ -1393,7 +1393,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                 boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4)],
               ),
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(Colors.indigo[900]),
+                headingRowColor: WidgetStateProperty.all(const Color(0xFF800000)),
                 columns: [
                   DataColumn(label: Text('Description', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold))),
                   DataColumn(label: Text('Category', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -1477,19 +1477,19 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   Color _getTabColor(int index) {
     switch (index) {
       case 0:
-        return Colors.blue[700]!;
+        return const Color(0xFF800000);
       case 1:
         return Colors.orange[700]!;
       case 2:
         return Colors.purple[700]!;
       case 3:
-        return Colors.teal[700]!;
+        return const Color(0xFF800000);
       case 4:
         return Colors.red[700]!;
       case 5:
-        return Colors.indigo[700]!;
+        return const Color(0xFF800000);
       default:
-        return Colors.blue[700]!;
+        return const Color(0xFF800000);
     }
   }
 }

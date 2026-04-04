@@ -73,8 +73,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF6366F1), // Indigo 500
-              Color(0xFF8B5CF6), // Violet 500
+              Color(0xFF800000), // Maroon
+              Color(0xFFB91C1C), // Medium Maroon
             ],
           ),
         ),

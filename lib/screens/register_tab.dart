@@ -445,7 +445,7 @@ class _RegisterTabState extends State<RegisterTab> {
                   icon: Icons.school_outlined,
                   title: 'Register Student',
                   subtitle: 'Add new students to the system',
-                  gradient: const [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  gradient: const [Color(0xFF800000), Color(0xFFB91C1C)],
                   onPressed: () => setState(() => _currentPage = 1),
                 ),
                 const SizedBox(height: 16),
@@ -453,7 +453,7 @@ class _RegisterTabState extends State<RegisterTab> {
                   icon: Icons.people_outline,
                   title: 'Register Staff',
                   subtitle: 'Manage school faculty and staff',
-                  gradient: const [Color(0xFF0EA5E9), Color(0xFF2DD4BF)],
+                  gradient: const [Color(0xFF800000), Color(0xFFB91C1C)],
                   onPressed: () => setState(() => _currentPage = 2),
                 ),
                 const SizedBox(height: 16),
@@ -581,14 +581,14 @@ class _RegisterTabState extends State<RegisterTab> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  colors: [Color(0xFF800000), Color(0xFFB91C1C)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.3),
+                    color: const Color(0xFF800000).withOpacity(0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -630,7 +630,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     decoration: InputDecoration(
                       labelText: 'Student Name',
                       hintText: 'Enter full name',
-                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6366F1)),
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -656,7 +656,7 @@ class _RegisterTabState extends State<RegisterTab> {
                             labelText: 'Class',
                             filled: true,
                             fillColor: const Color(0xFFF1F5F9),
-                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF6366F1)),
+                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF800000)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -678,7 +678,7 @@ class _RegisterTabState extends State<RegisterTab> {
                             labelText: 'Section',
                             filled: true,
                             fillColor: const Color(0xFFF1F5F9),
-                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF6366F1)),
+                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF800000)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -693,7 +693,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sFather,
                     decoration: InputDecoration(
                       labelText: "Father's Name",
-                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6366F1)),
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -707,7 +707,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sMother,
                     decoration: InputDecoration(
                       labelText: "Mother's Name",
-                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6366F1)),
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -721,7 +721,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sParentMobile,
                     decoration: InputDecoration(
                       labelText: 'Parent Mobile',
-                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF6366F1)),
+                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -736,7 +736,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sAddress,
                     decoration: InputDecoration(
                       labelText: 'Address',
-                      prefixIcon: const Icon(Icons.home_outlined, color: Color(0xFF6366F1)),
+                      prefixIcon: const Icon(Icons.home_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -752,7 +752,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     onChanged: (v) => setState(() => _sGender = v),
                     decoration: InputDecoration(
                       labelText: 'Gender',
-                      prefixIcon: const Icon(Icons.wc_outlined, color: Color(0xFF6366F1)),
+                      prefixIcon: const Icon(Icons.wc_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -764,13 +764,13 @@ class _RegisterTabState extends State<RegisterTab> {
                   const SizedBox(height: 16),
                   // Joining Date
                   ListTile(
-                    leading: const Icon(Icons.calendar_today, color: Colors.blue),
+                    leading: const Icon(Icons.calendar_today, color: Color(0xFF800000)),
                     title: Text(
                       _selectedJoiningDate == null
                           ? 'Select Joining Date'
                           : 'Joining Date: ${DateFormat('dd-MM-yyyy').format(_selectedJoiningDate!)}',
                     ),
-                    trailing: const Icon(Icons.edit, color: Colors.blue),
+                    trailing: const Icon(Icons.edit, color: Color(0xFF800000)),
                     onTap: () async {
                       final pickedDate = await showDatePicker(
                         context: context,
@@ -791,7 +791,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     title: const Text('Admin Fee (Rs. 500)', style: TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: const Text('Automatically add Rs. 500 as Administration fee'),
                     value: _sAdminFee,
-                    activeColor: Colors.blue,
+                    activeColor: const Color(0xFF800000),
                     onChanged: (v) => setState(() => _sAdminFee = v ?? false),
                   ),
                   const SizedBox(height: 16),
@@ -799,7 +799,7 @@ class _RegisterTabState extends State<RegisterTab> {
                   CheckboxListTile(
                     title: const Text('Bus Facility', style: TextStyle(fontWeight: FontWeight.w600)),
                     value: _sBusFacility,
-                    activeColor: Colors.blue,
+                    activeColor: const Color(0xFF800000),
                     onChanged: (v) => setState(() => _sBusFacility = v ?? false),
                   ),
                   if (_sBusFacility) ...[
@@ -827,8 +827,8 @@ class _RegisterTabState extends State<RegisterTab> {
                             labelText: 'Search & Select Bus Route',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             filled: true,
-                            fillColor: Colors.blue[50],
-                            prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                            fillColor: const Color(0xFF800000).withOpacity(0.05),
+                            prefixIcon: const Icon(Icons.search, color: Color(0xFF800000)),
                           ),
                           onChanged: (v) {
                             if (_busRoutes.contains(v)) {
@@ -877,8 +877,8 @@ class _RegisterTabState extends State<RegisterTab> {
                           labelText: 'Select Bus Number',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           filled: true,
-                          fillColor: Colors.blue[50],
-                          prefixIcon: const Icon(Icons.confirmation_number, color: Colors.blue),
+                          fillColor: const Color(0xFF800000).withOpacity(0.05),
+                          prefixIcon: const Icon(Icons.confirmation_number, color: Color(0xFF800000)),
                         ),
                       )
                     else if (_sBusRoute != null)
@@ -895,7 +895,7 @@ class _RegisterTabState extends State<RegisterTab> {
                   CheckboxListTile(
                     title: const Text('Hostel Facility', style: TextStyle(fontWeight: FontWeight.w600)),
                     value: _sHostelFacility,
-                    activeColor: Colors.blue,
+                    activeColor: const Color(0xFF800000),
                     onChanged: (v) {
                       setState(() {
                         _sHostelFacility = v ?? false;
@@ -939,13 +939,13 @@ class _RegisterTabState extends State<RegisterTab> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        border: Border.all(color: Colors.blue),
+                        color: const Color(0xFF800000).withOpacity(0.05),
+                        border: Border.all(color: const Color(0xFF800000)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         'Hostel Fee: Rs.${_sHostelFee.toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue[900]),
+                        style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF800000)),
                       ),
                     ),
                   ],
@@ -956,7 +956,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     child: ElevatedButton(
                       onPressed: _isSubmittingStudent ? null : _submitStudent,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF800000),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
@@ -990,14 +990,14 @@ class _RegisterTabState extends State<RegisterTab> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0EA5E9), Color(0xFF2DD4BF)],
+                  colors: [Color(0xFF800000), Color(0xFFB91C1C)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.3),
+                    color: const Color(0xFF800000).withOpacity(0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -1044,7 +1044,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _staffName,
                     decoration: InputDecoration(
                       labelText: 'Staff Name',
-                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF0EA5E9)),
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -1058,7 +1058,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _staffQualification,
                     decoration: InputDecoration(
                       labelText: 'Qualification',
-                      prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF0EA5E9)),
+                      prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -1072,7 +1072,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _staffMobile,
                     decoration: InputDecoration(
                       labelText: 'Mobile Number',
-                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF0EA5E9)),
+                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -1087,7 +1087,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _staffSalary,
                     decoration: InputDecoration(
                       labelText: 'Salary',
-                      prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFF0EA5E9)),
+                      prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -1107,7 +1107,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     onChanged: (value) => setState(() => _staffType = value),
                     decoration: InputDecoration(
                       labelText: 'Staff Type',
-                      prefixIcon: const Icon(Icons.category_outlined, color: Color(0xFF0EA5E9)),
+                      prefixIcon: const Icon(Icons.category_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -1123,7 +1123,7 @@ class _RegisterTabState extends State<RegisterTab> {
                     child: ElevatedButton(
                       onPressed: _isSubmittingStaff ? null : _submitStaff,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0EA5E9),
+                        backgroundColor: const Color(0xFF800000),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
@@ -1558,14 +1558,14 @@ class _RegisterTabState extends State<RegisterTab> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.arrow_back, size: 20, color: Color(0xFF6366F1)),
+              const Icon(Icons.arrow_back, size: 20, color: Color(0xFF800000)),
               const SizedBox(width: 8),
               Text(
                 'Back to Menu',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF6366F1),
+                  color: const Color(0xFF800000),
                 ),
               ),
             ],

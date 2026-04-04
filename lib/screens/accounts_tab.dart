@@ -105,7 +105,7 @@ class _AccountsTabState extends State<AccountsTab> {
     return summaryList;
   }
 
-  List<DataRow> _buildDataRows() {
+  List<DataRow> _buildDataRows(double catWidth) {
     final grouped = _getGroupedSummary();
     final List<DataRow> rows = [];
     
@@ -120,7 +120,9 @@ class _AccountsTabState extends State<AccountsTab> {
         rows.add(DataRow(
           color: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) => Colors.grey[200]),
           cells: [
-            DataCell(Text(currentCategory!, style: GoogleFonts.poppins(fontWeight: FontWeight.bold))),
+            DataCell(SizedBox(
+              width: catWidth,
+              child: Text(currentCategory!, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)))),
             DataCell(Text(catCredit > 0 ? catCredit.toStringAsFixed(2) : '', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.green[800]))),
             DataCell(Text(catDebit > 0 ? catDebit.toStringAsFixed(2) : '', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.red[800]))),
           ],
@@ -132,8 +134,10 @@ class _AccountsTabState extends State<AccountsTab> {
           cells: [
             DataCell(Padding(
               padding: const EdgeInsets.only(left: 24.0),
-              child: Text('• ${item['subcategory']}'),
-            )),
+              child: SizedBox(
+                width: catWidth - 24,
+                child: Text('• ${item['subcategory']}'))),
+            ),
             DataCell(Text((item['credit'] as double) > 0 ? (item['credit'] as double).toStringAsFixed(2) : '')),
             DataCell(Text((item['debit'] as double) > 0 ? (item['debit'] as double).toStringAsFixed(2) : '')),
           ],
@@ -273,7 +277,7 @@ class _AccountsTabState extends State<AccountsTab> {
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                colors: [Color(0xFF800000), Color(0xFFB91C1C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -293,16 +297,16 @@ class _AccountsTabState extends State<AccountsTab> {
                     Text(
                       'Financial Ledger',
                       style: GoogleFonts.poppins(
-                        fontSize: 32,
+                        fontSize: 24,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       'Daily transaction summary and account categorization',
                       style: GoogleFonts.inter(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.white.withOpacity(0.8),
                       ),
                     ),
@@ -340,7 +344,7 @@ class _AccountsTabState extends State<AccountsTab> {
                       label: Text('Export Excel', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF6366F1),
+                        foregroundColor: const Color(0xFF800000),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
@@ -351,7 +355,7 @@ class _AccountsTabState extends State<AccountsTab> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
 
           // Transactions Table
           Expanded(
@@ -371,79 +375,75 @@ class _AccountsTabState extends State<AccountsTab> {
                             ),
                           ],
                         ),
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: DataTable(
-                            headingRowColor: MaterialStateProperty.all(const Color(0xFFF8FAFC)),
-                            headingRowHeight: 56,
-                            dataRowHeight: 52,
-                            columnSpacing: 24,
-                            columns: [
-                              DataColumn(
-                                label: Text(
-                                  'Transaction Categorization',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF475569),
-                                  ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calculate column width to fill the screen
+                            final double valueColumnsWidth = 280; 
+                            final double catWidth = (constraints.maxWidth - valueColumnsWidth).clamp(200.0, double.infinity);
+
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: DataTable(
+                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+                                  headingRowHeight: 40,
+                                  dataRowHeight: 40,
+                                  columnSpacing: 40,
+                                  horizontalMargin: 24,
+                                  columns: [
+                                    DataColumn(
+                                      label: SizedBox(
+                                        width: catWidth,
+                                        child: Text(
+                                          'Transaction Categorization',
+                                          style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF475569),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(label: Text('Credit', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF475569))), numeric: true),
+                                    DataColumn(label: Text('Debit', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF475569))), numeric: true),
+                                  ],
+                                  rows: _buildDataRows(catWidth),
                                 ),
                               ),
-                              DataColumn(
-                                label: Text(
-                                  'Credit',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF475569),
-                                  ),
-                                ),
-                                numeric: true,
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Debit',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF475569),
-                                  ),
-                                ),
-                                numeric: true,
-                              ),
-                            ],
-                            rows: _buildDataRows(),
-                          ),
+                            );
+                          }
                         ),
                       ),
           ),
 
-          // Totals and Closing Balance
+          const SizedBox(height: 16),
           // Totals and Closing Balance Card
           Container(
-            padding: const EdgeInsets.all(24),
-            margin: const EdgeInsets.only(top: 24),
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A), // Slate 900
-              borderRadius: BorderRadius.circular(24),
+              color: const Color(0xFF800000), // Primary Maroon
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  color: const Color(0xFF800000).withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Column(
               children: [
                 _buildSummaryRow('Opening Balance', _previousDayClosingBalance, Colors.white.withOpacity(0.7)),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _buildSummaryRow('Total Credit', _totalCredit, const Color(0xFF10B981)),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _buildSummaryRow('Total Debit', _totalDebit, const Color(0xFFF43F5E)),
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: 8),
                   child: Divider(color: Colors.white24),
                 ),
-                _buildSummaryRow('Closing Balance', closingBalance, const Color(0xFF6366F1), isBold: true, isLarge: true),
+                _buildSummaryRow('Closing Balance', closingBalance, Colors.white, isBold: true, isLarge: true),
               ],
             ),
           ),

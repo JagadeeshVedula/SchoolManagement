@@ -179,7 +179,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Attendance', style: GoogleFonts.poppins()),
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color(0xFF800000),
       ),
       body: _isLoadingDropdowns
           ? const Center(child: CircularProgressIndicator())
@@ -242,7 +242,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         padding: const EdgeInsets.all(12.0),
                         child: Row(
                           children: [
-                            const Icon(Icons.person, color: Colors.indigo),
+                            const Icon(Icons.person, color: Color(0xFF800000)),
                             const SizedBox(width: 8),
                             Text(
                               'Class Teacher: $_classTeacher',
@@ -258,7 +258,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     icon: const Icon(Icons.list),
                     label: const Text('Show Students'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo,
+                      backgroundColor: const Color(0xFF800000),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),

@@ -65,7 +65,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: const Color(0xFF800000),
         elevation: 2,
         actions: [
           IconButton(
@@ -99,7 +99,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[50]!, Colors.cyan[50]!],
+            colors: [const Color(0xFF800000).withOpacity(0.05), const Color(0xFFB91C1C).withOpacity(0.05)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -115,7 +115,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: Colors.blue[900],
+                  color: const Color(0xFF800000),
                 ),
               ),
               const SizedBox(height: 8),
@@ -138,7 +138,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     gradient: LinearGradient(
-                      colors: [Colors.white, Colors.blue[50]!],
+                      colors: [Colors.white, const Color(0xFF800000).withOpacity(0.05)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -149,14 +149,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.person, color: Colors.blue[700], size: 28),
+                          Icon(Icons.person, color: const Color(0xFF800000), size: 28),
                           const SizedBox(width: 12),
                           Text(
                             'Staff Information',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue[900],
+                              color: const Color(0xFF800000),
                             ),
                           ),
                         ],
@@ -181,7 +181,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.blue[900],
+                  color: const Color(0xFF800000),
                 ),
               ),
               const SizedBox(height: 16),
@@ -346,7 +346,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           style: GoogleFonts.poppins(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.blue[900],
+            color: const Color(0xFF800000),
           ),
         ),
       ],

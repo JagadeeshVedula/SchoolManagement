@@ -149,7 +149,7 @@ class _SalarySlipsScreenState extends State<SalarySlipsScreen> {
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
+                  backgroundColor: const Color(0xFF800000),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
@@ -204,7 +204,7 @@ class _SalarySlipsScreenState extends State<SalarySlipsScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[600],
+                          backgroundColor: const Color(0xFF800000),
                           foregroundColor: Colors.white,
                         ),
                         child: Text(
@@ -331,7 +331,7 @@ class _GeneratePaySlipDialogState extends State<_GeneratePaySlipDialog> {
             widget.onGenerate(_selectedMonth, workingDays);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue[600],
+            backgroundColor: const Color(0xFF800000),
             foregroundColor: Colors.white,
           ),
           child: Text(

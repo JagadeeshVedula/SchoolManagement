@@ -193,26 +193,10 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
         title: Row(
           children: [
             // Logo from assets
-            Container(
-              width: 85,
+            Image.asset(
+              'assets/images/logo.png',
               height: 85,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  fit: BoxFit.contain,
-                  scale: 0.8,
-                ),
-              ),
+              fit: BoxFit.contain,
             ),
             const Spacer(),
             // School info
@@ -283,7 +267,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              colors: [Color(0xFF800000), Color(0xFFB91C1C)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -307,7 +291,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
                           padding: const EdgeInsets.all(16),
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                              colors: [Color(0xFF800000), Color(0xFFB91C1C)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -365,22 +349,22 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF6366F1).withOpacity(0.1) : Colors.transparent,
+          color: isActive ? const Color(0xFF800000).withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: isActive ? Border.all(color: const Color(0xFF6366F1).withOpacity(0.2), width: 1) : null,
+          border: isActive ? Border.all(color: const Color(0xFF800000).withOpacity(0.2), width: 1) : null,
         ),
         child: ListTile(
           title: Text(
             tab.text ?? '',
             style: GoogleFonts.poppins(
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
+              color: isActive ? const Color(0xFF800000) : const Color(0xFF64748B),
               fontSize: 14,
             ),
           ),
           leading: Icon(
             _getTabIcon(idx),
-            color: isActive ? const Color(0xFF6366F1) : const Color(0xFF94A3B8),
+            color: isActive ? const Color(0xFF800000) : const Color(0xFF94A3B8),
             size: 20,
           ),
           onTap: () {
@@ -469,7 +453,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
         Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF0EA5E9), Color(0xFF2DD4BF)], // Sky to Teal
+              colors: [Color(0xFF800000), Color(0xFFB91C1C)], // Maroon Gradient
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -510,7 +494,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                border: Border.all(color: Colors.cyan[300]!, width: 2),
+                                border: Border.all(color: Color(0xFFB91C1C).withOpacity(0.3), width: 2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: DropdownButton<String>(
@@ -539,7 +523,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
                                 color: _selectedClass == null ? Colors.grey[200] : Colors.white,
-                                border: Border.all(color: Colors.cyan[300]!, width: 2),
+                                border: Border.all(color: Color(0xFFB91C1C).withOpacity(0.3), width: 2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: DropdownButton<String>(
@@ -605,7 +589,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.school,
-                              size: 48, color: Colors.cyan[600]),
+                              size: 48, color: Color(0xFF800000)),
                           const SizedBox(height: 12),
                           const Text('No students found in this class'),
                         ],
@@ -670,10 +654,10 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                           trailing: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0EA5E9).withOpacity(0.1),
+                              color: const Color(0xFF800000).withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF0EA5E9)),
+                            child: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF800000)),
                           ),
                           onTap: () {
                             // Navigate to student detail screen
@@ -702,7 +686,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.info_outline,
-                        size: 48, color: Colors.cyan[600]),
+                        size: 48, color: Color(0xFF800000)),
                     const SizedBox(height: 12),
                     Text(
                       'Select a class and section to view students',
@@ -865,7 +849,7 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.people_outline, size: 48, color: const Color(0xFF6366F1)),
+                  Icon(Icons.people_outline, size: 48, color: const Color(0xFF800000)),
                   const SizedBox(height: 12),
                   Text('No Staff Records', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
                   const SizedBox(height: 8),
@@ -938,8 +922,8 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                             icon: const Icon(Icons.groups_outlined, size: 18),
                             label: const Text('Students'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
-                              foregroundColor: const Color(0xFF8B5CF6),
+                              backgroundColor: const Color(0xFF800000).withOpacity(0.1),
+                              foregroundColor: const Color(0xFF800000),
                               elevation: 0,
                             ),
                             onPressed: () {
@@ -956,7 +940,7 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                           const SizedBox(width: 12),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6366F1),
+                              backgroundColor: const Color(0xFF800000),
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
@@ -1010,7 +994,7 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                colors: [Color(0xFF800000), Color(0xFFB91C1C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

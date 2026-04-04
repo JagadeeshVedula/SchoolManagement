@@ -57,7 +57,7 @@ class _StaffPaySlipsScreenState extends State<StaffPaySlipsScreen> {
           'My Pay Slips',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.blue[600],
+        backgroundColor: const Color(0xFF800000),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -121,7 +121,7 @@ class _StaffPaySlipsScreenState extends State<StaffPaySlipsScreen> {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue[600],
+                                  backgroundColor: const Color(0xFF800000),
                                   foregroundColor: Colors.white,
                                 ),
                                 child: Text(

@@ -312,7 +312,7 @@ class _EventsScreenState extends State<EventsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Events', style: GoogleFonts.poppins()),
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color(0xFF800000),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -332,8 +332,8 @@ class _EventsScreenState extends State<EventsScreen> {
               },
               borderRadius: BorderRadius.circular(8),
               selectedColor: Colors.white,
-              fillColor: Colors.indigo,
-              color: Colors.indigo,
+              fillColor: const Color(0xFF800000),
+              color: const Color(0xFF800000),
               children: const [
                 Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Class Events')),
                 Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('School Events')),
@@ -396,7 +396,7 @@ class _EventsScreenState extends State<EventsScreen> {
           icon: const Icon(Icons.send),
           label: const Text('Send Message Option'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.indigo,
+            backgroundColor: const Color(0xFF800000),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
@@ -428,7 +428,7 @@ class _EventsScreenState extends State<EventsScreen> {
           icon: const Icon(Icons.send),
           label: const Text('Send Message Option'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.indigo,
+            backgroundColor: const Color(0xFF800000),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
@@ -482,13 +482,13 @@ class _EventsScreenState extends State<EventsScreen> {
                 Expanded(
                   child: Row(
                     children: [
-                      const Icon(Icons.insert_drive_file, size: 16, color: Colors.indigo),
+                      const Icon(Icons.insert_drive_file, size: 16, color: Color(0xFF800000)),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           _promoAttachment!.name,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(color: Colors.indigo, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.poppins(color: const Color(0xFF800000), fontWeight: FontWeight.w600),
                         ),
                       ),
                       IconButton(
@@ -510,7 +510,7 @@ class _EventsScreenState extends State<EventsScreen> {
             icon: const Icon(Icons.send),
             label: const Text('Send WhatsApp Option'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal, // WhatsApp-ish color
+              backgroundColor: const Color(0xFF800000), // WhatsApp-ish color (updated to Maroon)
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
