@@ -748,7 +748,7 @@ class _RegisterTabState extends State<RegisterTab> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: _sGender,
-                    items: const [DropdownMenuItem(value: 'Male', child: Text('Male')), DropdownMenuItem(value: 'Female', child: Text('Female'))],
+                    items: const [DropdownMenuItem(value: 'M', child: Text('Male')), DropdownMenuItem(value: 'F', child: Text('Female'))],
                     onChanged: (v) => setState(() => _sGender = v),
                     decoration: InputDecoration(
                       labelText: 'Gender',

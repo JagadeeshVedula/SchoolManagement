@@ -59,6 +59,10 @@ class _FeesTabState extends State<FeesTab> {
   // Track payment status for Books and Uniform fees
   bool _booksFeeAlreadyPaid = false;
   bool _uniformFeeAlreadyPaid = false;
+  double _booksFeeTotal = 0;
+  double _booksFeePaid = 0;
+  double _uniformFeeTotal = 0;
+  double _uniformFeePaid = 0;
   bool _hostelFeeAlreadyPaid = false;
 
   bool _isSubmitting = false;
@@ -1153,13 +1157,39 @@ class _FeesTabState extends State<FeesTab> {
 
   Future<void> _populateAmountByFeeType(TextEditingController amountController, String classWithoutSection) async {
     try {
-      if (_selectedPaymentType == 'Books Fee') {
-        final fee = await SupabaseService.getBooksFeeByClass(classWithoutSection);
-        amountController.text = fee.toStringAsFixed(2);
+      if (_selectedPaymentType == 'Books Fee' && _selectedStudent != null) {
+        final totalFee = await SupabaseService.getBooksFeeByClass(classWithoutSection);
+        final paidFee = await SupabaseService.getTotalPaidByFeeType(_selectedStudent!.name, 'Books Fee');
+        final remaining = (totalFee - paidFee).clamp(0, double.infinity);
+        
+        if (mounted) {
+          setState(() {
+            _booksFeeTotal = totalFee;
+            _booksFeePaid = paidFee;
+            _booksFeeAlreadyPaid = remaining <= 0 && totalFee > 0;
+          });
+        }
+        amountController.text = _booksFeeAlreadyPaid ? '0.00' : remaining.toStringAsFixed(2);
       } else if (_selectedPaymentType == 'Uniform Fee' && _selectedStudent != null) {
-        final gender = _selectedStudent!.gender ?? 'Male';
-        final fee = await SupabaseService.getUniformFeeByClassAndGender(classWithoutSection, gender);
-        amountController.text = fee.toStringAsFixed(2);
+        String gender = _selectedStudent!.gender ?? 'M';
+        // Normalize gender to match 'M' or 'F' used in Supabase UNIFORM table
+        if (gender.toLowerCase().startsWith('m')) {
+          gender = 'M';
+        } else if (gender.toLowerCase().startsWith('f')) {
+          gender = 'F';
+        }
+        final totalFee = await SupabaseService.getUniformFeeByClassAndGender(classWithoutSection, gender);
+        final paidFee = await SupabaseService.getTotalPaidByFeeType(_selectedStudent!.name, 'Uniform Fee');
+        final remaining = (totalFee - paidFee).clamp(0, double.infinity);
+        
+        if (mounted) {
+          setState(() {
+            _uniformFeeTotal = totalFee;
+            _uniformFeePaid = paidFee;
+            _uniformFeeAlreadyPaid = remaining <= 0 && totalFee > 0;
+          });
+        }
+        amountController.text = _uniformFeeAlreadyPaid ? '0.00' : remaining.toStringAsFixed(2);
       }
     } catch (e) {
       print('Error populating amount: $e');
@@ -1181,17 +1211,7 @@ class _FeesTabState extends State<FeesTab> {
     }
 
     // Check payment status for Books and Uniform fees
-    if (_selectedPaymentType == 'Books Fee') {
-      final isPaid = await _checkBooksFeeAlreadyPaid(_selectedStudent!.name);
-      if (mounted) {
-        setState(() => _booksFeeAlreadyPaid = isPaid);
-      }
-    } else if (_selectedPaymentType == 'Uniform Fee') {
-      final isPaid = await _checkUniformFeeAlreadyPaid(_selectedStudent!.name);
-      if (mounted) {
-        setState(() => _uniformFeeAlreadyPaid = isPaid);
-      }
-    }
+    // Checks for already paid status will now be handled inside _populateAmountByFeeType
 
     // Local controllers for this dialog
     final termMonthController = ValueNotifier<String?>(_selectedTermMonth);
@@ -1215,7 +1235,7 @@ class _FeesTabState extends State<FeesTab> {
     bool payHostelFee = false;
     
     // Auto-populate amount based on payment type
-    _populateAmountByFeeType(amountController, classWithoutSection);
+    await _populateAmountByFeeType(amountController, classWithoutSection);
     
     showDialog(
       context: context,
@@ -1311,6 +1331,75 @@ class _FeesTabState extends State<FeesTab> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                    // Dynamic Status for Books and Uniform Fees
+                    if (_selectedPaymentType == 'Books Fee' && _booksFeePaid > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _booksFeeAlreadyPaid ? Colors.green[50] : Colors.orange[50],
+                            border: Border.all(color: _booksFeeAlreadyPaid ? Colors.green : Colors.orange),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _booksFeeAlreadyPaid ? Icons.check_circle : Icons.warning_amber_rounded,
+                                size: 16,
+                                color: _booksFeeAlreadyPaid ? Colors.green[800] : Colors.orange[800],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _booksFeeAlreadyPaid 
+                                      ? 'Total Books fee paid: Rs.${_booksFeeTotal.toStringAsFixed(0)}' 
+                                      : 'Books Fee: Total Rs.${_booksFeeTotal.toStringAsFixed(0)}, Paid Rs.${_booksFeePaid.toStringAsFixed(0)}, Remaining Rs.${(_booksFeeTotal - _booksFeePaid).toStringAsFixed(0)}',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600, 
+                                    fontSize: 12, 
+                                    color: _booksFeeAlreadyPaid ? Colors.green[800] : Colors.orange[800]
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (_selectedPaymentType == 'Uniform Fee' && _uniformFeePaid > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _uniformFeeAlreadyPaid ? Colors.green[50] : Colors.orange[50],
+                            border: Border.all(color: _uniformFeeAlreadyPaid ? Colors.green : Colors.orange),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _uniformFeeAlreadyPaid ? Icons.check_circle : Icons.warning_amber_rounded,
+                                size: 16,
+                                color: _uniformFeeAlreadyPaid ? Colors.green[800] : Colors.orange[800],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _uniformFeeAlreadyPaid 
+                                      ? 'Total Uniform fee paid: Rs.${_uniformFeeTotal.toStringAsFixed(0)}' 
+                                      : 'Uniform Fee: Total Rs.${_uniformFeeTotal.toStringAsFixed(0)}, Paid Rs.${_uniformFeePaid.toStringAsFixed(0)}, Remaining Rs.${(_uniformFeeTotal - _uniformFeePaid).toStringAsFixed(0)}',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600, 
+                                    fontSize: 12, 
+                                    color: _uniformFeeAlreadyPaid ? Colors.green[800] : Colors.orange[800]
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -1395,8 +1484,18 @@ class _FeesTabState extends State<FeesTab> {
                     // Amount
                     TextField(
                       controller: amountController,
-                      decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
-                      keyboardType: TextInputType.number,
+                      enabled: !((_selectedPaymentType == 'Books Fee' && _booksFeeAlreadyPaid) ||
+                               (_selectedPaymentType == 'Uniform Fee' && _uniformFeeAlreadyPaid)),
+                      decoration: InputDecoration(
+                        labelText: (_selectedPaymentType == 'Books Fee' && _booksFeeAlreadyPaid)
+                            ? 'Total Books fee paid'
+                            : (_selectedPaymentType == 'Uniform Fee' && _uniformFeeAlreadyPaid)
+                                ? 'Total Uniform fee paid'
+                                : 'Amount',
+                        border: const OutlineInputBorder(),
+                        suffixText: 'Rs.',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
                     const SizedBox(height: 16),
                     // Term No Checkboxes - Only for School Fee
