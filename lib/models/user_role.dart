@@ -30,20 +30,20 @@ class UserRole {
           id: 'admin',
           title: 'Admin',
           description: 'System administration and management',
-          icon: Icons.admin_panel_settings, // Admin shield icon
-          color: Color(0xFFDC2626), // Red color
-          gradientStart: Color(0xFFEF4444), // Lighter red
-          gradientEnd: Color(0xFFF87171), // Pinkish red
+          icon: Icons.admin_panel_settings,
+          color: const Color(0xFF6366F1), // Indigo 500
+          gradientStart: const Color(0xFF6366F1), // Indigo 500
+          gradientEnd: const Color(0xFF8B5CF6), // Violet 500
         ),
         // Staff role definition
         UserRole(
           id: 'staff',
           title: 'Staff',
           description: 'Staff member access for leave and payslips',
-          icon: Icons.person_4, // Staff person icon
-          color: Color(0xFF2563EB), // Blue color
-          gradientStart: Color(0xFF3B82F6), // Lighter blue
-          gradientEnd: Color(0xFF60A5FA), // Light blue
+          icon: Icons.person_4,
+          color: const Color(0xFF0EA5E9), // Sky 500
+          gradientStart: const Color(0xFF0EA5E9), // Sky 500
+          gradientEnd: const Color(0xFF2DD4BF), // Teal 400
         ),
       ];
 }

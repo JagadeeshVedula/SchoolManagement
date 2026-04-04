@@ -7,55 +7,96 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Static final variable for light theme - cannot be changed after compilation
   static final lightTheme = ThemeData(
-    primarySwatch: Colors.blue, // Primary color swatch for material components
-    brightness: Brightness.light, // Overall brightness of the theme
-    scaffoldBackgroundColor: const Color(0xFFF8FAFD), // Background color for scaffolds
-    appBarTheme: AppBarTheme( // Custom styling for app bars
-      backgroundColor: Colors.transparent, // Transparent background for modern look
-      elevation: 0, // Remove shadow for flat design
-      titleTextStyle: GoogleFonts.poppins( // Custom font for app bar titles
-        color: const Color(0xFF1A1D21), // Dark gray color for text
-        fontSize: 24, // Large font size for prominence
-        fontWeight: FontWeight.w600, // Semi-bold for better readability
+    useMaterial3: true, // Use Material 3 for modern look
+    primaryColor: const Color(0xFF6366F1), // Indigo 500
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF6366F1),
+      primary: const Color(0xFF6366F1),
+      secondary: const Color(0xFFF59E0B), // Amber 500
+      surface: Colors.white,
+      background: const Color(0xFFF8FAFC), // Slate 50
+    ),
+    brightness: Brightness.light, 
+    scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: true,
+      iconTheme: const IconThemeData(color: Color(0xFF1E293B)), // Slate 800
+      titleTextStyle: GoogleFonts.poppins(
+        color: const Color(0xFF1E293B),
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
       ),
     ),
-    textTheme: TextTheme( // Define text styles for different text types
-      displayLarge: GoogleFonts.poppins( // Style for large display text
-        color: const Color(0xFF1A1D21), // Dark text color
-        fontSize: 32, // Large font size for headings
-        fontWeight: FontWeight.w700, // Bold weight for emphasis
-      ),
-      displayMedium: GoogleFonts.poppins( // Style for medium display text
-        color: const Color(0xFF1A1D21),
-        fontSize: 24, // Medium font size for subheadings
-        fontWeight: FontWeight.w600, // Semi-bold weight
-      ),
-      bodyLarge: GoogleFonts.inter( // Style for large body text
-        color: const Color(0xFF2D3748), // Slightly lighter text color
-        fontSize: 16, // Standard body text size
-        fontWeight: FontWeight.w400, // Regular weight for readability
-      ),
-      bodyMedium: GoogleFonts.inter( // Style for medium body text
-        color: const Color(0xFF718096), // Light gray for less important text
-        fontSize: 14, // Smaller font size
-        fontWeight: FontWeight.w400, // Regular weight
+    cardTheme: CardTheme(
+      color: Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.05),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF6366F1),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 16),
       ),
     ),
-    inputDecorationTheme: InputDecorationTheme( // Styling for input fields
-      filled: true, // Fill background of input fields
-      fillColor: Colors.white, // White background for inputs
-      border: OutlineInputBorder( // Border styling
-        borderRadius: BorderRadius.circular(12), // Rounded corners
-        borderSide: BorderSide.none, // No border for modern look
+    textTheme: TextTheme(
+      displayLarge: GoogleFonts.poppins(
+        color: const Color(0xFF0F172A), // Slate 900
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Inner padding
+      displayMedium: GoogleFonts.poppins(
+        color: const Color(0xFF0F172A),
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+      ),
+      bodyLarge: GoogleFonts.inter(
+        color: const Color(0xFF334155), // Slate 700
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+      ),
+      bodyMedium: GoogleFonts.inter(
+        color: const Color(0xFF64748B), // Slate 500
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)), // Slate 200
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
   );
 
   // Dark theme configuration for dark mode
   static final darkTheme = ThemeData(
-    primarySwatch: Colors.blue, // Same primary color for consistency
-    brightness: Brightness.dark, // Dark brightness for dark mode
-    scaffoldBackgroundColor: const Color(0xFF0F1419), // Dark background color
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    primaryColor: const Color(0xFF818CF8), // Indigo 400
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF6366F1),
+      brightness: Brightness.dark,
+      primary: const Color(0xFF818CF8),
+      secondary: const Color(0xFFFBBF24), // Amber 400
+    ),
+    scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
   );
 }

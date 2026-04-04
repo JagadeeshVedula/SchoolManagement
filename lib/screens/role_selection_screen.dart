@@ -69,12 +69,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
     return Scaffold( // Basic material design scaffold
       body: Container( // Container for background gradient
         decoration: const BoxDecoration( // Background decoration
-          gradient: LinearGradient( // Gradient from blue to purple
-            begin: Alignment.topLeft, // Gradient starts at top-left
-            end: Alignment.bottomRight, // Gradient ends at bottom-right
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFF667EEA), // Light blue color
-              Color(0xFF764BA2), // Purple color
+              Color(0xFF6366F1), // Indigo 500
+              Color(0xFF8B5CF6), // Violet 500
             ],
           ),
         ),

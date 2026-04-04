@@ -426,12 +426,8 @@ class _RegisterTabState extends State<RegisterTab> {
     if (_currentPage == 0) {
       // Menu page with 4 buttons
       return Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.purple[50]!, Colors.pink[100]!],
-          ),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8FAFC),
         ),
         child: Center(
           child: SingleChildScrollView(
@@ -440,36 +436,40 @@ class _RegisterTabState extends State<RegisterTab> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Registration Menu',
-                  style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.purple[900]),
+                  'Registration Portal',
+                  style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
                 _buildMenuButton(
-                  icon: Icons.school,
+                  icon: Icons.school_outlined,
                   title: 'Register Student',
-                  color: Colors.blue,
+                  subtitle: 'Add new students to the system',
+                  gradient: const [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                   onPressed: () => setState(() => _currentPage = 1),
                 ),
                 const SizedBox(height: 16),
                 _buildMenuButton(
-                  icon: Icons.people,
+                  icon: Icons.people_outline,
                   title: 'Register Staff',
-                  color: Colors.green,
+                  subtitle: 'Manage school faculty and staff',
+                  gradient: const [Color(0xFF0EA5E9), Color(0xFF2DD4BF)],
                   onPressed: () => setState(() => _currentPage = 2),
                 ),
                 const SizedBox(height: 16),
                 _buildMenuButton(
-                  icon: Icons.bar_chart,
+                  icon: Icons.bar_chart_outlined,
                   title: 'Add Performance',
-                  color: Colors.orange,
+                  subtitle: 'Record academic achievements',
+                  gradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
                   onPressed: () => setState(() => _currentPage = 3),
                 ),
                 const SizedBox(height: 16),
                 _buildMenuButton(
-                  icon: Icons.directions_bus,
+                  icon: Icons.directions_bus_outlined,
                   title: 'Register Bus',
-                  color: Colors.teal,
+                  subtitle: 'Manage transport routes and vehicles',
+                  gradient: const [Color(0xFF10B981), Color(0xFF059669)],
                   onPressed: () => setState(() => _currentPage = 4),
                 ),
               ],
@@ -492,28 +492,76 @@ class _RegisterTabState extends State<RegisterTab> {
     }
   }
 
-  Widget _buildMenuButton({required IconData icon, required String title, required Color color, required VoidCallback onPressed}) {
-    return SizedBox(
+  Widget _buildMenuButton({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<Color> gradient,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
       width: double.infinity,
-      height: 130,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 8,
+      height: 120,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 44, color: Colors.white),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
-              textAlign: TextAlign.center,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.first.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, size: 32, color: Colors.white),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -521,13 +569,7 @@ class _RegisterTabState extends State<RegisterTab> {
 
   Widget _buildStudentRegistrationPage() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.blue[50]!, Colors.cyan[100]!],
-        ),
-      ),
+      color: const Color(0xFFF8FAFC),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -535,18 +577,42 @@ class _RegisterTabState extends State<RegisterTab> {
             _buildBackButton(),
             const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(16),
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.blue[600],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Register Student',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Student Registration',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Fill in the details to enroll a new student',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -563,10 +629,14 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sName,
                     decoration: InputDecoration(
                       labelText: 'Student Name',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      hintText: 'Enter full name',
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6366F1)),
                       filled: true,
-                      fillColor: Colors.blue[50],
-                      prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -579,16 +649,18 @@ class _RegisterTabState extends State<RegisterTab> {
                           onChanged: (v) {
                             setState(() {
                               _sClass = v;
-                              print('DEBUG: Selected class: $v');
                               _updateHostelFee();
                             });
                           },
                           decoration: InputDecoration(
                             labelText: 'Class',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             filled: true,
-                            fillColor: Colors.blue[50],
-                            prefixIcon: const Icon(Icons.school, color: Colors.blue),
+                            fillColor: const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF6366F1)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
@@ -604,10 +676,13 @@ class _RegisterTabState extends State<RegisterTab> {
                           },
                           decoration: InputDecoration(
                             labelText: 'Section',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             filled: true,
-                            fillColor: Colors.blue[50],
-                            prefixIcon: const Icon(Icons.school, color: Colors.blue),
+                            fillColor: const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF6366F1)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
@@ -618,10 +693,13 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sFather,
                     decoration: InputDecoration(
                       labelText: "Father's Name",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6366F1)),
                       filled: true,
-                      fillColor: Colors.blue[50],
-                      prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -629,10 +707,13 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sMother,
                     decoration: InputDecoration(
                       labelText: "Mother's Name",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6366F1)),
                       filled: true,
-                      fillColor: Colors.blue[50],
-                      prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -640,10 +721,13 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sParentMobile,
                     decoration: InputDecoration(
                       labelText: 'Parent Mobile',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF6366F1)),
                       filled: true,
-                      fillColor: Colors.blue[50],
-                      prefixIcon: const Icon(Icons.phone, color: Colors.blue),
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     keyboardType: TextInputType.phone,
                   ),
@@ -652,10 +736,13 @@ class _RegisterTabState extends State<RegisterTab> {
                     controller: _sAddress,
                     decoration: InputDecoration(
                       labelText: 'Address',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      prefixIcon: const Icon(Icons.home_outlined, color: Color(0xFF6366F1)),
                       filled: true,
-                      fillColor: Colors.blue[50],
-                      prefixIcon: const Icon(Icons.home, color: Colors.blue),
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -665,10 +752,13 @@ class _RegisterTabState extends State<RegisterTab> {
                     onChanged: (v) => setState(() => _sGender = v),
                     decoration: InputDecoration(
                       labelText: 'Gender',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      prefixIcon: const Icon(Icons.wc_outlined, color: Color(0xFF6366F1)),
                       filled: true,
-                      fillColor: Colors.blue[50],
-                      prefixIcon: const Icon(Icons.wc, color: Colors.blue),
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -862,16 +952,18 @@ class _RegisterTabState extends State<RegisterTab> {
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 56,
                     child: ElevatedButton(
                       onPressed: _isSubmittingStudent ? null : _submitStudent,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: const Color(0xFF6366F1),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
                       ),
-                      child: _isSubmittingStudent
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
-                          : const Text('Register Student', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+                      child: _isSubmittingStudent 
+                        ? const CircularProgressIndicator(color: Colors.white) 
+                        : Text('Submit Registration', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -885,235 +977,562 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Widget _buildStaffRegistrationPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildBackButton(),
-          const SizedBox(height: 16),
-          Text('Register Staff', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 20),
-          TextField(controller: _staffName, decoration: const InputDecoration(labelText: 'Staff Name', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _staffQualification, decoration: const InputDecoration(labelText: 'Qualification', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _staffMobile, decoration: const InputDecoration(labelText: 'Mobile', border: OutlineInputBorder()), keyboardType: TextInputType.phone),
-          const SizedBox(height: 12),
-          TextField(controller: _staffSalary, decoration: const InputDecoration(labelText: 'Salary', border: OutlineInputBorder()), keyboardType: TextInputType.number),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _staffType,
-            items: const [
-              DropdownMenuItem(value: 'Teaching', child: Text('Teaching')),
-              DropdownMenuItem(value: 'Non-Teaching', child: Text('Non-Teaching')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _staffType = value;
-              });
-            },
-            decoration: const InputDecoration(
-              labelText: 'Staff Type',
-              border: OutlineInputBorder(),
+    return Container(
+      color: const Color(0xFFF8FAFC),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            _buildBackButton(),
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0EA5E9), Color(0xFF2DD4BF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0EA5E9).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Staff Registration',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Register new faculty and school staff',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _isSubmittingStaff ? null : _submitStaff,
-              child: _isSubmittingStaff ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Register Staff'),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _staffName,
+                    decoration: InputDecoration(
+                      labelText: 'Staff Name',
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF0EA5E9)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _staffQualification,
+                    decoration: InputDecoration(
+                      labelText: 'Qualification',
+                      prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF0EA5E9)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _staffMobile,
+                    decoration: InputDecoration(
+                      labelText: 'Mobile Number',
+                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF0EA5E9)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _staffSalary,
+                    decoration: InputDecoration(
+                      labelText: 'Salary',
+                      prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFF0EA5E9)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _staffType,
+                    items: const [
+                      DropdownMenuItem(value: 'Teaching', child: Text('Teaching')),
+                      DropdownMenuItem(value: 'Non-Teaching', child: Text('Non-Teaching')),
+                    ],
+                    onChanged: (value) => setState(() => _staffType = value),
+                    decoration: InputDecoration(
+                      labelText: 'Staff Type',
+                      prefixIcon: const Icon(Icons.category_outlined, color: Color(0xFF0EA5E9)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isSubmittingStaff ? null : _submitStaff,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0EA5E9),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: _isSubmittingStaff 
+                        ? const CircularProgressIndicator(color: Colors.white) 
+                        : Text('Register Staff', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPerformancePage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildBackButton(),
-          const SizedBox(height: 16),
-          Text('Add Performance', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 20),
-          const Text('Select Class', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _perfClass,
-                  items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (v) {
-                    setState(() {
-                      _perfClass = v;
-                      _perfSection = null;
-                      _perfStudent = null;
-                      _perfStudents = [];
-                    });
-                  },
-                  decoration: const InputDecoration(labelText: 'Class', border: OutlineInputBorder()),
+    return Container(
+      color: const Color(0xFFF8FAFC),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            _buildBackButton(),
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF59E0B).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _perfSection,
-                  items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                  onChanged: (v) {
-                    setState(() {
-                      _perfSection = v;
-                      _perfStudent = null;
-                      _perfStudents = [];
-                    });
-                    if (_perfClass != null && v != null) {
-                      _loadStudentsForClass('$_perfClass-$v');
-                    }
-                  },
-                  decoration: const InputDecoration(labelText: 'Section', border: OutlineInputBorder()),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _openStudentSearchDialog,
-              icon: const Icon(Icons.search),
-              label: const Text('Search & Select Student'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Academic Performance',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Record student grades and achievements',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          if (_perfStudent != null) ...[  
-            const SizedBox(height: 12), 
-            Text(
-              'Selected: ${_perfStudent!.name} (${_perfStudent!.className})',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.blue,
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _perfClass,
+                          items: _classes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                          onChanged: (v) {
+                            setState(() {
+                              _perfClass = v;
+                              _perfSection = null;
+                              _perfStudent = null;
+                              _perfStudents = [];
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Class',
+                            filled: true,
+                            fillColor: const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFFF59E0B)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _perfSection,
+                          items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                          onChanged: (v) {
+                            setState(() {
+                              _perfSection = v;
+                              _perfStudent = null;
+                              _perfStudents = [];
+                            });
+                            if (_perfClass != null && v != null) {
+                              _loadStudentsForClass('$_perfClass-$v');
+                            }
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Section',
+                            filled: true,
+                            fillColor: const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFFF59E0B)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed: _openStudentSearchDialog,
+                      icon: const Icon(Icons.search_outlined),
+                      label: Text('Search & Select Student', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B).withOpacity(0.1),
+                        foregroundColor: const Color(0xFFD97706),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  if (_perfStudent != null) ...[  
+                    const SizedBox(height: 16), 
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_outline, color: Color(0xFFD97706), size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Selected: ${_perfStudent!.name}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFD97706),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _perfAssessment,
+                    decoration: InputDecoration(
+                      labelText: 'Assessment Name',
+                      hintText: 'e.g., Mid-term, Final Exam',
+                      prefixIcon: const Icon(Icons.assignment_outlined, color: Color(0xFFF59E0B)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Subject Marks',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ..._subjects.map((subject) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              subject,
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: TextField(
+                              controller: _subjectMarksControllers[subject],
+                              decoration: InputDecoration(
+                                hintText: 'Marks',
+                                filled: true,
+                                fillColor: const Color(0xFFF1F5F9),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isSubmittingPerf ? null : _submitPerformance,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: _isSubmittingPerf
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text('Add Performance Record', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          TextField(
-            controller: _perfAssessment,
-            decoration: const InputDecoration(
-              labelText: 'Assessment Name',
-              border: OutlineInputBorder(),
-              hintText: 'e.g., Mid-term, Final Exam',
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.orange[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange[200]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Enter Marks for Each Subject',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.orange[900],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ..._subjects.map((subject) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            subject,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: TextField(
-                            controller: _subjectMarksControllers[subject],
-                            decoration: InputDecoration(
-                              hintText: 'Marks',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _isSubmittingPerf ? null : _submitPerformance,
-              child: _isSubmittingPerf
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Add Performance'),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildBusRegistrationPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildBackButton(),
-          const SizedBox(height: 16),
-          Text('Register Bus', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 20),
-          TextField(controller: _busNumber, decoration: const InputDecoration(labelText: 'Bus Number', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _busRegNumber, decoration: const InputDecoration(labelText: 'Bus Registration Number', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _busRoute, decoration: const InputDecoration(labelText: 'Route', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _busFees, decoration: const InputDecoration(labelText: 'Fees', border: OutlineInputBorder()), keyboardType: TextInputType.number),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _isSubmittingBus ? null : _submitBus,
-              child: _isSubmittingBus ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Register Bus'),
+    return Container(
+      color: const Color(0xFFF8FAFC),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            _buildBackButton(),
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF10B981), Color(0xFF059669)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Bus Registration',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Manage school transport and vehicle routes',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _busNumber,
+                    decoration: InputDecoration(
+                      labelText: 'Bus Number / ID',
+                      prefixIcon: const Icon(Icons.directions_bus_outlined, color: Color(0xFF10B981)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _busRegNumber,
+                    decoration: InputDecoration(
+                      labelText: 'Registration Number',
+                      prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF10B981)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _busRoute,
+                    decoration: InputDecoration(
+                      labelText: 'Route Name',
+                      prefixIcon: const Icon(Icons.route_outlined, color: Color(0xFF10B981)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _busFees,
+                    decoration: InputDecoration(
+                      labelText: 'Transport Fees',
+                      prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFF10B981)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isSubmittingBus ? null : _submitBus,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: _isSubmittingBus 
+                        ? const CircularProgressIndicator(color: Colors.white) 
+                        : Text('Register Bus', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1121,10 +1540,37 @@ class _RegisterTabState extends State<RegisterTab> {
   Widget _buildBackButton() {
     return Align(
       alignment: Alignment.topLeft,
-      child: ElevatedButton.icon(
-        onPressed: () => setState(() => _currentPage = 0),
-        icon: const Icon(Icons.arrow_back),
-        label: const Text('Back'),
+      child: InkWell(
+        onTap: () => setState(() => _currentPage = 0),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.arrow_back, size: 20, color: Color(0xFF6366F1)),
+              const SizedBox(width: 8),
+              Text(
+                'Back to Menu',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6366F1),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

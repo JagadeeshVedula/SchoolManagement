@@ -2036,93 +2036,112 @@ class _FeesTabState extends State<FeesTab> {
 
   Widget _buildPaymentsPage() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.blue[50]!, Colors.cyan[100]!],
-        ),
-      ),
+      color: const Color(0xFFF8FAFC),
       child: SingleChildScrollView( 
         padding: const EdgeInsets.all(16), 
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ 
-          ElevatedButton.icon( 
-            onPressed: () => setState(() => _currentPage = 0), 
-            icon: const Icon(Icons.arrow_back), 
-            label: const Text('Back'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo,
+          Align(
+            alignment: Alignment.topLeft,
+            child: InkWell(
+              onTap: () => setState(() => _currentPage = 0),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.arrow_back, size: 20, color: Color(0xFF6366F1)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Back to Menu',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6366F1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ), 
-          const SizedBox(height: 16), 
-          Text('Payments', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.indigo[900])), 
+          ),
+          const SizedBox(height: 24), 
+          Text('Fee Payments', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A))), 
           const SizedBox(height: 20), 
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Wrap(spacing: 10, runSpacing: 10, children: [ 
-              ChoiceChip( 
-                label: const Text('School Fee', style: TextStyle(fontWeight: FontWeight.w600)), 
-                selected: _selectedPaymentType == 'School Fee',
-                backgroundColor: Colors.grey[200],
-                selectedColor: Colors.blue,
-                labelStyle: TextStyle(
-                  color: _selectedPaymentType == 'School Fee' ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w600,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select Payment Type',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                  ),
                 ),
-                onSelected: (_) => setState(() {
-                  _selectedPaymentType = 'School Fee';
-                  _showPaymentHistory = false;
-                }), 
-              ), 
-              ChoiceChip( 
-                label: const Text('Books Fee', style: TextStyle(fontWeight: FontWeight.w600)), 
-                selected: _selectedPaymentType == 'Books Fee',
-                backgroundColor: Colors.grey[200],
-                selectedColor: Colors.green,
-                labelStyle: TextStyle(
-                  color: _selectedPaymentType == 'Books Fee' ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [ 
+                    _buildPaymentChip('School Fee', const Color(0xFF6366F1)),
+                    _buildPaymentChip('Books Fee', const Color(0xFF10B981)),
+                    _buildPaymentChip('Uniform Fee', const Color(0xFFF59E0B)),
+                  ],
                 ),
-                onSelected: (_) => setState(() {
-                  _selectedPaymentType = 'Books Fee';
-                  _showPaymentHistory = false;
-                }), 
-              ), 
-              ChoiceChip( 
-                label: const Text('Uniform Fee', style: TextStyle(fontWeight: FontWeight.w600)), 
-                selected: _selectedPaymentType == 'Uniform Fee',
-                backgroundColor: Colors.grey[200],
-                selectedColor: Colors.orange,
-                labelStyle: TextStyle(
-                  color: _selectedPaymentType == 'Uniform Fee' ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w600,
-                ),
-                onSelected: (_) => setState(() {
-                  _selectedPaymentType = 'Uniform Fee';
-                  _showPaymentHistory = false;
-                }), 
-              ), 
-            ]),
+              ],
+            ),
           ),
           const SizedBox(height: 20), 
           if (_selectedPaymentType != null) ...[  
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Select Class', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.indigo[800])), 
-                  const SizedBox(height: 12), 
+                  Text(
+                    'Student Selection',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 20), 
                   Row(
                     children: [
                       Expanded(
@@ -2132,9 +2151,13 @@ class _FeesTabState extends State<FeesTab> {
                           onChanged: _onClassSelectedInFees,
                           decoration: InputDecoration(
                             labelText: 'Class',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             filled: true,
-                            fillColor: Colors.grey[100],
+                            fillColor: const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF6366F1)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
@@ -2146,32 +2169,39 @@ class _FeesTabState extends State<FeesTab> {
                           onChanged: _selectedClass == null ? null : _onSectionSelectedInFees,
                           decoration: InputDecoration(
                             labelText: 'Section',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             filled: true,
-                            fillColor: _selectedClass == null ? Colors.grey[200] : Colors.grey[100],
+                            fillColor: _selectedClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF6366F1)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ), 
-                  const SizedBox(height: 16), 
+                  const SizedBox(height: 24), 
                   SizedBox( 
                     width: double.infinity, 
+                    height: 56,
                     child: ElevatedButton.icon( 
                       onPressed: (_selectedClass != null && _selectedSection != null) ? _openStudentSearchDialog : null,
-                      icon: const Icon(Icons.search), 
-                      label: const Text('Search & Select Student', style: TextStyle(fontWeight: FontWeight.w600)), 
+                      icon: const Icon(Icons.search_outlined), 
+                      label: Text('Search & Select Student', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)), 
                       style: ElevatedButton.styleFrom( 
-                        backgroundColor: Colors.blue, 
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
+                        foregroundColor: const Color(0xFF6366F1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
                       ), 
                     ), 
                   ),
                 ],
               ),
             ),
-          ], 
+          ],
+          const SizedBox(height: 16),
           if (_selectedStudent != null) ...[  
             const SizedBox(height: 16), 
             Container(
@@ -2369,65 +2399,111 @@ class _FeesTabState extends State<FeesTab> {
   }
   Widget _buildDuesPage() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.orange[50]!, Colors.amber[100]!],
-        ),
-      ),
+      color: const Color(0xFFF8FAFC),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          ElevatedButton.icon(
-            onPressed: () => setState(() => _currentPage = 0), 
-            icon: const Icon(Icons.arrow_back), 
-            label: const Text('Back'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text('Dues', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.orange[900])),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
+          Align(
+            alignment: Alignment.topLeft,
+            child: InkWell(
+              onTap: () => setState(() => _currentPage = 0),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
-            ),
-            child: Wrap(spacing: 10, children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _selectedDueType == 'School Fee' ? Colors.deepOrange : Colors.grey[300],
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
-                onPressed: () => setState(() => _selectedDueType = 'School Fee'),
-                child: Text(
-                  'School & Bus Fees Due',
-                  style: TextStyle(
-                    color: _selectedDueType == 'School Fee' ? Colors.white : Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.arrow_back, size: 20, color: Color(0xFF6366F1)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Back to Menu',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6366F1),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ]),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text('Outstanding Dues', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A))),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Fee Category',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildSelectionChip('School Fee', 'School & Bus Fees Due', const Color(0xFFF43F5E)),
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           if (_selectedDueType != null) ...[
+            const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Select Class', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.orange[800])),
-                  const SizedBox(height: 12),
+                  Text(
+                    'Class Filter',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
@@ -2437,9 +2513,13 @@ class _FeesTabState extends State<FeesTab> {
                           onChanged: _onClassSelectedInDues,
                           decoration: InputDecoration(
                             labelText: 'Class',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             filled: true,
-                            fillColor: Colors.grey[100],
+                            fillColor: const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFFF43F5E)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
@@ -2451,9 +2531,13 @@ class _FeesTabState extends State<FeesTab> {
                           onChanged: _selectedDueClass == null ? null : _onSectionSelectedInDues,
                           decoration: InputDecoration(
                             labelText: 'Section',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             filled: true,
-                            fillColor: _selectedDueClass == null ? Colors.grey[200] : Colors.grey[100],
+                            fillColor: _selectedDueClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
+                            prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFFF43F5E)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
@@ -2466,36 +2550,51 @@ class _FeesTabState extends State<FeesTab> {
             // Term Selection Checkboxes
             if (_selectedDueClass != null)
               Container(
-                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 8)],
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Filter by Terms', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.orange[800])),
+                    Text(
+                      'Term Visibility',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       title: const Text('Term 1', style: TextStyle(fontWeight: FontWeight.w600)),
                       value: _dueTerms['Term1'],
-                      activeColor: Colors.deepOrange,
+                      activeColor: const Color(0xFFF43F5E),
                       onChanged: (v) => setState(() => _dueTerms['Term1'] = v ?? false),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     CheckboxListTile(
-                      title: const Text('Term 2',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      title: const Text('Term 2', style: TextStyle(fontWeight: FontWeight.w600)),
                       value: _dueTerms['Term2'],
-                      activeColor: Colors.deepOrange,
-                      onChanged: (v) =>
-                          setState(() => _dueTerms['Term2'] = v ?? false),
+                      activeColor: const Color(0xFFF43F5E),
+                      onChanged: (v) => setState(() => _dueTerms['Term2'] = v ?? false),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     CheckboxListTile(
                       title: const Text('Term 3', style: TextStyle(fontWeight: FontWeight.w600)),
                       value: _dueTerms['Term3'],
-                      activeColor: Colors.deepOrange,
+                      activeColor: const Color(0xFFF43F5E),
                       onChanged: (v) => setState(() => _dueTerms['Term3'] = v ?? false),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ],
                 ),
@@ -2503,16 +2602,21 @@ class _FeesTabState extends State<FeesTab> {
             const SizedBox(height: 16),
             // Excel Export Button
             if (_selectedDueClass != null && _dueStudents.isNotEmpty)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.download),
-                  label: const Text('Export to Excel', style: TextStyle(fontWeight: FontWeight.w600)),
-                  onPressed: () => _exportDuesToExcel(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              Padding(
+                padding: const EdgeInsets.only(top: 24.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.download_outlined),
+                    label: Text('Export Outstanding Dues (Excel)', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16)),
+                    onPressed: () => _exportDuesToExcel(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
                   ),
                 ),
               ),
@@ -2747,6 +2851,58 @@ class _FeesTabState extends State<FeesTab> {
             ],
           ],
         ]),
+      ),
+    );
+  }
+
+  Widget _buildPaymentChip(String type, Color color) {
+    bool isSelected = _selectedPaymentType == type;
+    return InkWell(
+      onTap: () => setState(() => _selectedPaymentType = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? color : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : color.withOpacity(0.2),
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          type,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected ? Colors.white : color,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionChip(String type, String title, Color color) {
+    bool isSelected = _selectedDueType == type;
+    return InkWell(
+      onTap: () => setState(() => _selectedDueType = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: isSelected ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+          border: Border.all(color: isSelected ? color : Colors.grey[200]!),
+        ),
+        child: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected ? Colors.white : Colors.grey[700],
+          ),
+        ),
       ),
     );
   }

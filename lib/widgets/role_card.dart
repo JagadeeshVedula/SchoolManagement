@@ -99,6 +99,7 @@ class _RoleCardState extends State<RoleCard> with SingleTickerProviderStateMixin
                 _isHovered ? -8.0 : 0.0, // Lift effect on hover
               ),
             decoration: BoxDecoration( // Card styling
+              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5), // Subtle border
               gradient: LinearGradient( // Gradient background using role colors
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -107,16 +108,17 @@ class _RoleCardState extends State<RoleCard> with SingleTickerProviderStateMixin
                   widget.role.gradientEnd,
                 ],
               ),
-              borderRadius: BorderRadius.circular(20), // Rounded corners
+              borderRadius: BorderRadius.circular(24), // More rounded corners
               boxShadow: [ // Shadow effects
                 if (_isHovered) // Only show enhanced shadow when hovered
                   BoxShadow(
                     color: widget.role.color.withOpacity(0.4), // Color-based shadow
-                    blurRadius: 20, // Soft blur
-                    offset: const Offset(0, 10), // Shadow position
+                    blurRadius: 25, // Soft blur
+                    spreadRadius: 2,
+                    offset: const Offset(0, 12), // Shadow position
                   ),
                 BoxShadow( // Base shadow always present
-                  color: widget.role.color.withOpacity(0.2),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

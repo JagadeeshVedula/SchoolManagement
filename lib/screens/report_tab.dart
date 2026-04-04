@@ -512,54 +512,59 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Header with gradient background
+        // Header with Indigo gradient
         Container(
-          decoration: BoxDecoration(
+          width: double.infinity,
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blue[700]!, Colors.blue[400]!],
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Fee Reports',
+                'Institutional Reports',
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: 32,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
-                'Generate and download fee collection reports by class and fee type',
-                style: GoogleFonts.poppins(
+                'Comprehensive analytics and data exports for school management',
+                style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: Colors.white70,
+                  color: Colors.white.withOpacity(0.8),
                 ),
               ),
             ],
           ),
         ),
-        TabBar(
-          controller: _tabController,
-          indicatorColor: _getTabColor(_tabController.index),
-          indicatorWeight: 4.0,
-          labelColor: _getTabColor(_tabController.index),
-          unselectedLabelColor: Colors.grey[600],
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'Fee Report'),
-            Tab(text: 'Diesel Report'),
-            Tab(text: 'Transactions Report'),
-            Tab(text: 'Staff Leave Report'),
-            Tab(text: 'Due Report'),
-            Tab(text: 'Daily Report'),
-          ],
+        Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            indicatorColor: const Color(0xFF6366F1),
+            indicatorWeight: 3.0,
+            labelColor: const Color(0xFF6366F1),
+            unselectedLabelColor: const Color(0xFF64748B),
+            isScrollable: true,
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
+            unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 13),
+            tabs: const [
+              Tab(text: 'Fee Report'),
+              Tab(text: 'Diesel Report'),
+              Tab(text: 'Transactions Report'),
+              Tab(text: 'Staff Leave Report'),
+              Tab(text: 'Due Report'),
+              Tab(text: 'Daily Report'),
+            ],
+          ),
         ),
         Expanded(
           child: TabBarView(
@@ -586,13 +591,12 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         children: [
           const SizedBox(height: 24),
 
-          // Fee Type Selection
           Text(
             'Select Fee Type',
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 12),
@@ -600,7 +604,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildFeeTypeChip('School Fee', Colors.green),
+              _buildFeeTypeChip('School Fee', const Color(0xFF10B981)),
             ],
           ),
           const SizedBox(height: 24),
@@ -608,20 +612,26 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
           // Class Selection
           if (_selectedFeeType != null) ...[
             Text(
-              'Select Class',
+              'Filter by Class',
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 5)],
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -638,9 +648,15 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                         });
                         _loadFeeReportData();
                       },
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
                         labelText: 'Class',
+                        filled: true,
+                        fillColor: const Color(0xFFF1F5F9),
+                        prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF6366F1)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
                   ),
@@ -665,9 +681,15 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                               });
                               _loadFeeReportData();
                             },
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
                         labelText: 'Section',
+                        filled: true,
+                        fillColor: _selectedFeeClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
+                        prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF6366F1)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
                   ),
@@ -684,21 +706,23 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Report Data (${_feeReportData.length} records)',
+                    'Report Results (${_feeReportData.length} students)',
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
                     ),
                   ),
                   ElevatedButton.icon(
                     onPressed: _downloadFeeExcel,
-                    icon: const Icon(Icons.download),
-                    label: const Text('Download Excel'),
+                    icon: const Icon(Icons.download_outlined, size: 18),
+                    label: Text('Export Excel', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[600],
+                      backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
                     ),
                   ),
                 ],
@@ -1236,45 +1260,85 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                   Expanded(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text('Select Date', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                      subtitle: Text(DateFormat('dd-MM-yyyy').format(_selectedDailyDate), style: GoogleFonts.poppins(fontSize: 16, color: Colors.indigo)),
-                      leading: const Icon(Icons.calendar_today, color: Colors.indigo),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDailyDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
-                        );
-                        if (picked != null) {
-                          setState(() => _selectedDailyDate = picked);
-                          _loadDailyReportData();
-                        }
-                      },
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                 Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDailyDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() => _selectedDailyDate = picked);
+                        _loadDailyReportData();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.calendar_today_outlined, color: Color(0xFF6366F1), size: 24),
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reporting Date',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                            Text(
+                              DateFormat('dd MMMM yyyy').format(_selectedDailyDate),
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: _downloadDailyExcel,
-                    icon: const Icon(Icons.download),
-                    label: const Text('Export Excel'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[700],
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _downloadDailyExcel,
+                  icon: const Icon(Icons.download_outlined, size: 18),
+                  label: Text('Export Excel', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
@@ -1297,18 +1361,24 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
           else ...[
             // Totals Summary
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.indigo[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.indigo[100]!),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildSummaryItem('Total Credit', totalCredit, Colors.green[700]!),
-                  _buildSummaryItem('Total Debit', totalDebit, Colors.red[700]!),
-                  _buildSummaryItem('Net Balance', totalCredit - totalDebit, Colors.indigo[700]!),
+                  _buildSummaryItem('Total Credit', totalCredit, const Color(0xFF10B981)),
+                  _buildSummaryItem('Total Debit', totalDebit, const Color(0xFFF43F5E)),
+                  _buildSummaryItem('Net Balance', totalCredit - totalDebit, const Color(0xFF6366F1)),
                 ],
               ),
             ),
@@ -1350,8 +1420,24 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   Widget _buildSummaryItem(String label, double amount, Color color) {
     return Column(
       children: [
-        Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700])),
-        Text('Rs.${amount.toStringAsFixed(2)}', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1,
+            color: const Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Rs.${amount.toStringAsFixed(2)}',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
       ],
     );
   }

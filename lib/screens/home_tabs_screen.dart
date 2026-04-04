@@ -281,9 +281,9 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
           const SizedBox(width: 8),
         ],
         flexibleSpace: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blue[800]!, Colors.blue[600]!],
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -296,7 +296,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: _sidebarOpen ? 280 : 0,
-            color: Colors.indigo[50],
+            color: const Color(0xFFF1F5F9), // Slate 100
             child: _sidebarOpen
                 ? SingleChildScrollView(
                     child: Column(
@@ -305,9 +305,9 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.blue[800]!, Colors.blue[600]!],
+                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -363,24 +363,25 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       final isMiscellaneous = tab.text == 'Miscellaneous';
 
       return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: isActive ? (isMiscellaneous ? Colors.green[100] : Colors.blue[100]) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: isActive ? Border.all(color: isMiscellaneous ? Colors.green[600]! : Colors.blue[600]!, width: 2) : null,
+          color: isActive ? const Color(0xFF6366F1).withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: isActive ? Border.all(color: const Color(0xFF6366F1).withOpacity(0.2), width: 1) : null,
         ),
         child: ListTile(
           title: Text(
             tab.text ?? '',
             style: GoogleFonts.poppins(
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: isActive ? (isMiscellaneous ? Colors.green[900] : Colors.blue[900]) : Colors.grey[700],
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
               fontSize: 14,
             ),
           ),
           leading: Icon(
             _getTabIcon(idx),
-            color: isActive ? (isMiscellaneous ? Colors.green[600] : Colors.blue[600]) : Colors.grey[600],
+            color: isActive ? const Color(0xFF6366F1) : const Color(0xFF94A3B8),
+            size: 20,
           ),
           onTap: () {
             _tabController.animateTo(idx);
@@ -466,11 +467,15 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
       children: [
         // Class Filter Dropdown with gradient header
         Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.cyan[600]!, Colors.cyan[400]!],
+              colors: [Color(0xFF0EA5E9), Color(0xFF2DD4BF)], // Sky to Teal
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
             ),
           ),
           padding: const EdgeInsets.all(16.0),
@@ -615,45 +620,61 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                   itemBuilder: (context, index) {
                     final student = students[index];
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 12.0),
-                      elevation: 4,
+                      margin: const EdgeInsets.only(bottom: 16.0),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            colors: [Colors.cyan[50]!, Colors.blue[50]!],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white,
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16.0),
                           title: Text(
                             student.name,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.cyan[900],
+                              color: const Color(0xFF0F172A),
                             ),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 8),
-                              Text(
-                                'Class: ${student.className}',
-                                style: GoogleFonts.inter(color: Colors.grey),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.school_outlined, size: 14, color: Color(0xFF64748B)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Class: ${student.className}',
+                                    style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                'Father: ${student.fatherName}',
-                                style: GoogleFonts.inter(color: Colors.grey),
+                              Row(
+                                children: [
+                                  const Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Father: ${student.fatherName}',
+                                    style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.cyan[600]),
+                          trailing: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0EA5E9).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF0EA5E9)),
+                          ),
                           onTap: () {
                             // Navigate to student detail screen
                             Navigator.push(
@@ -844,11 +865,11 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.people, size: 48, color: Colors.amber[600]),
+                  Icon(Icons.people_outline, size: 48, color: const Color(0xFF6366F1)),
                   const SizedBox(height: 12),
-                  Text('No Staff Records', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.amber[700])),
+                  Text('No Staff Records', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
                   const SizedBox(height: 8),
-                  Text('No staff members are currently registered.', style: GoogleFonts.inter(color: Colors.grey)),
+                  Text('No staff members are currently registered.', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
                 ],
               ),
             ),
@@ -861,17 +882,16 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
           itemBuilder: (context, index) {
             final staff = staffList[index];
             return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.only(bottom: 16),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
+              ),
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors: [Colors.amber[50]!, Colors.orange[50]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -880,21 +900,21 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                     children: [
                       Text(
                         staff.name,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Colors.amber[900],
+                          color: const Color(0xFF0F172A),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.school, size: 16, color: Colors.amber[600]),
+                          const Icon(Icons.school_outlined, size: 16, color: Color(0xFF64748B)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Qualification: ${staff.qualification}',
-                              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
+                              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
                             ),
                           ),
                         ],
@@ -902,11 +922,11 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.phone, size: 16, color: Colors.amber[600]),
+                          const Icon(Icons.phone_outlined, size: 16, color: Color(0xFF64748B)),
                           const SizedBox(width: 8),
                           Text(
                             'Mobile: ${staff.mobile}',
-                            style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
+                            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
                           ),
                         ],
                       ),
@@ -915,11 +935,12 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           ElevatedButton.icon(
-                            icon: const Icon(Icons.groups, size: 18),
+                            icon: const Icon(Icons.groups_outlined, size: 18),
                             label: const Text('Students'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purple[600],
-                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFF8B5CF6).withOpacity(0.1),
+                              foregroundColor: const Color(0xFF8B5CF6),
+                              elevation: 0,
                             ),
                             onPressed: () {
                               Navigator.push(
@@ -932,8 +953,13 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
                               );
                             },
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6366F1),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                            ),
                             onPressed: () => _showAssignClassDialog(staff),
                             child: const Text('Assign Class'),
                           ),
@@ -976,32 +1002,36 @@ class _TransportDataWidgetState extends State<TransportDataWidget> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.orange[50]!, Colors.deepOrange[50]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF8FAFC),
       ),
       child: Column(
         children: [
           Container(
-            color: Colors.deepOrange[700],
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
             child: TabBar(
               controller: _tabController,
               indicatorColor: Colors.white,
-              indicatorWeight: 3,
+              indicatorWeight: 4,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.7),
               labelStyle: GoogleFonts.poppins(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
               unselectedLabelStyle: GoogleFonts.poppins(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
               tabs: const [
-                Tab(text: 'Transport Details'),
-                Tab(text: 'Diesel Data'),
+                Tab(text: 'Transport Details', icon: Icon(Icons.directions_bus, size: 20)),
+                Tab(text: 'Diesel Data', icon: Icon(Icons.local_gas_station, size: 20)),
               ],
             ),
           ),
