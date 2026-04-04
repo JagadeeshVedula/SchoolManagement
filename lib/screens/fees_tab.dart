@@ -1491,7 +1491,7 @@ class _FeesTabState extends State<FeesTab> {
                         }),
                       const SizedBox(height: 16),
                       // Hostel Fee Section - Only for School Fee and if student has the facility
-                      if (hasHostelFacility)
+                      if (hasHostelFacility && _selectedPaymentType == 'School Fee')
                         FutureBuilder<double>(
                           future: SupabaseService.getHostelFeeByClass(classWithoutSection),
                           builder: (context, hostelFeeSnap) {
@@ -1672,8 +1672,8 @@ class _FeesTabState extends State<FeesTab> {
                           },
                         ),
                     ],
-                    // Bus Fee Section
-                    if (hasBusRoute) ...[
+                    // Bus Fee Section - Only for School Fee
+                    if (hasBusRoute && _selectedPaymentType == 'School Fee') ...[
                       const SizedBox(height: 16),
                       FutureBuilder<double>(
                         future: SupabaseService.getBusFeeByRoute(_selectedStudent!.busRoute!),
