@@ -182,6 +182,7 @@ class _DieselDataScreenState extends State<DieselDataScreen> with SingleTickerPr
         ),
         body: TabBarView(
           controller: _tabController,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
             _buildAddDieselDataForm(),
             _buildViewCurrentDayData(),

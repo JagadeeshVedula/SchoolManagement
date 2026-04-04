@@ -678,6 +678,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         Expanded(
           child: TabBarView(
             controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
               _buildFeeReportTab(),
               _buildDieselReportTab(),

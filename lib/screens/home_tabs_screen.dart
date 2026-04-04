@@ -326,6 +326,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
               children: views,
             ),
           ),

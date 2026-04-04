@@ -48,6 +48,7 @@ class _LeaveRequestsApprovalScreenState extends State<LeaveRequestsApprovalScree
       ),
       body: TabBarView(
         controller: _tabController,
+        physics: const NeverScrollableScrollPhysics(),
         children: const [
           _PendingRequestsTab(),
           _CompletedRequestsTab(),
