@@ -107,10 +107,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                           color: Colors.white.withOpacity(0.2), // Semi-transparent white
                           borderRadius: BorderRadius.circular(16), // Rounded corners
                         ),
-                        child: const Icon( // App icon
-                          Icons.school, // Education icon
-                          color: Colors.white, // White color
-                          size: 32, // Icon size
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16), // Space between icon and text
