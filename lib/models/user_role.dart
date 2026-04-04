@@ -25,16 +25,6 @@ class UserRole {
   // Static getter that returns a list of all available user roles
   // Using getter instead of static final List for better encapsulation
   static List<UserRole> get roles => [
-        // Admin role definition
-        UserRole(
-          id: 'admin',
-          title: 'Admin',
-          description: 'System administration and management',
-          icon: Icons.admin_panel_settings, // Admin shield icon
-          color: Color(0xFFDC2626), // Red color
-          gradientStart: Color(0xFFEF4444), // Lighter red
-          gradientEnd: Color(0xFFF87171), // Pinkish red
-        ),
         // Staff role definition
         UserRole(
           id: 'staff',

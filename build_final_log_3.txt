@@ -1,0 +1,1955 @@
+
+Running Gradle task 'assembleRelease'...                        
+lib/screens/staff_student_details_screen.dart:4:41: Error: Type 'StatefulWidget' not found.
+class StaffStudentDetailsScreen extends StatefulWidget {
+                                        ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:10:3: Error: Type 'State' not found.
+  State<StaffStudentDetailsScreen> createState() => _StaffStudentDetailsScreenState();
+  ^^^^^
+lib/screens/staff_student_details_screen.dart:13:47: Error: Type 'State' not found.
+class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
+                                              ^^^^^
+lib/screens/staff_student_details_screen.dart:17:8: Error: Type 'Student' not found.
+  List<Student> _students = [];
+       ^^^^^^^
+lib/screens/staff_student_details_screen.dart:184:58: Error: Type 'Student' not found.
+  Map<int, Map<String, dynamic>> _calculateTermBreakdown(Student student) {
+                                                         ^^^^^^^
+lib/screens/staff_student_details_screen.dart:231:51: Error: Type 'Student' not found.
+  Map<String, dynamic> _calculateBusAndHostelFees(Student student) {
+                                                  ^^^^^^^
+lib/screens/staff_student_details_screen.dart:246:3: Error: Type 'Widget' not found.
+  Widget _buildTermsRow(Map<int, Map<String, dynamic>> termBreakdown) {
+  ^^^^^^
+lib/screens/staff_student_details_screen.dart:311:3: Error: Type 'Widget' not found.
+  Widget _buildBusHostelRow(Map<String, dynamic> busHostelInfo) {
+  ^^^^^^
+lib/screens/staff_student_details_screen.dart:544:3: Error: Type 'Widget' not found.
+  Widget build(BuildContext context) {
+  ^^^^^^
+lib/screens/staff_student_details_screen.dart:544:16: Error: Type 'BuildContext' not found.
+  Widget build(BuildContext context) {
+               ^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:8:33: Error: Type 'StatefulWidget' not found.
+class PaySlipViewScreen extends StatefulWidget {
+                                ^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:17:3: Error: Type 'State' not found.
+  State<PaySlipViewScreen> createState() => _PaySlipViewScreenState();
+  ^^^^^
+lib/screens/pay_slip_view_screen.dart:20:39: Error: Type 'State' not found.
+class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
+                                      ^^^^^
+lib/screens/pay_slip_view_screen.dart:211:3: Error: Type 'Widget' not found.
+  Widget build(BuildContext context) {
+  ^^^^^^
+lib/screens/pay_slip_view_screen.dart:211:16: Error: Type 'BuildContext' not found.
+  Widget build(BuildContext context) {
+               ^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:345:3: Error: Type 'Widget' not found.
+  Widget _buildInfoRow(String label, String value) {
+  ^^^^^^
+lib/screens/pay_slip_view_screen.dart:370:3: Error: Type 'Widget' not found.
+  Widget _buildDetailRow(String label, String value, {bool isHighlight = false, bool isMuted = false}) {
+  ^^^^^^
+lib/screens/pay_slip_view_screen.dart:397:3: Error: Type 'Widget' not found.
+  Widget _buildSection({
+  ^^^^^^
+lib/screens/pay_slip_view_screen.dart:399:19: Error: Type 'Widget' not found.
+    required List<Widget> children,
+                  ^^^^^^
+lib/screens/staff_student_details_screen.dart:7:42: Error: The super constructor has no corresponding named parameter.
+  const StaffStudentDetailsScreen({super.key, required this.staffName});
+                                         ^
+lib/screens/pay_slip_view_screen.dart:12:11: Error: The super constructor has no corresponding named parameter.
+    super.key,
+          ^
+lib/screens/home_tabs_screen.dart:927:57: Error: A value of type 'StaffStudentDetailsScreen' can't be returned from a function with return type 'Widget'.
+ - 'StaffStudentDetailsScreen' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+ - 'Widget' is from 'package:flutter/src/widgets/framework.dart' ('../../Documents/flutter/packages/flutter/lib/src/widgets/framework.dart').
+                                  builder: (context) => StaffStudentDetailsScreen(
+                                                        ^
+lib/screens/staff_dashboard_screen.dart:290:47: Error: A value of type 'StaffStudentDetailsScreen' can't be returned from a function with return type 'Widget'.
+ - 'StaffStudentDetailsScreen' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+ - 'Widget' is from 'package:flutter/src/widgets/framework.dart' ('../../Documents/flutter/packages/flutter/lib/src/widgets/framework.dart').
+                        builder: (context) => StaffStudentDetailsScreen(
+                                              ^
+lib/screens/salary_slips_screen.dart:200:53: Error: A value of type 'PaySlipViewScreen' can't be returned from a function with return type 'Widget'.
+ - 'PaySlipViewScreen' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+ - 'Widget' is from 'package:flutter/src/widgets/framework.dart' ('../../Documents/flutter/packages/flutter/lib/src/widgets/framework.dart').
+                              builder: (context) => PaySlipViewScreen(
+                                                    ^
+lib/screens/staff_student_details_screen.dart:17:8: Error: 'Student' isn't a type.
+  List<Student> _students = [];
+       ^^^^^^^
+lib/screens/staff_student_details_screen.dart:24:11: Error: Superclass has no method named 'initState'.
+    super.initState();
+          ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:29:5: Error: The method 'setState' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+    setState(() => _isLoading = true);
+    ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:31:29: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+      final classes = await SupabaseService.getClassesForStaff(widget.staffName);
+                            ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:31:64: Error: The getter 'widget' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final classes = await SupabaseService.getClassesForStaff(widget.staffName);
+                                                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:32:7: Error: The method 'setState' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+      setState(() {
+      ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:44:7: Error: The method 'setState' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+      setState(() => _isLoading = false);
+      ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:49:5: Error: The method 'setState' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+    setState(() => _isLoading = true);
+    ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:51:30: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+      final students = await SupabaseService.getStudentsByClass(className);
+                             ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:55:25: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+        feesMap = await SupabaseService.getFeesForStudents(studentNames);
+                        ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:61:31: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+      final structure = await SupabaseService.getFeeStructureByClass(classBase);
+                              ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:66:26: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+        final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                         ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:110:44: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+            routeFees[s.busRoute!] = await SupabaseService.getBusFeeByRoute(s.busRoute!);
+                                           ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:140:34: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+          hostelFeeTotal = await SupabaseService.getHostelFeeByClassAndType(classBase, s.hostelType!);
+                                 ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:162:7: Error: The method 'setState' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+      setState(() {
+      ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:171:7: Error: The method 'setState' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+      setState(() => _isLoading = false);
+      ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:184:58: Error: 'Student' isn't a type.
+  Map<int, Map<String, dynamic>> _calculateTermBreakdown(Student student) {
+                                                         ^^^^^^^
+lib/screens/staff_student_details_screen.dart:196:22: Error: The getter 'SupabaseService' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'SupabaseService'.
+    final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+                     ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:231:51: Error: 'Student' isn't a type.
+  Map<String, dynamic> _calculateBusAndHostelFees(Student student) {
+                                                  ^^^^^^^
+lib/screens/staff_student_details_screen.dart:253:30: Error: Couldn't find constructor 'EdgeInsets.only'.
+              padding: const EdgeInsets.only(right: 12.0),
+                             ^^^^
+lib/screens/staff_student_details_screen.dart:255:32: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                               ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:247:12: Error: The method 'SingleChildScrollView' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'SingleChildScrollView'.
+    return SingleChildScrollView(
+           ^^^^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:248:24: Error: The getter 'Axis' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Axis'.
+      scrollDirection: Axis.horizontal,
+                       ^^^^
+lib/screens/staff_student_details_screen.dart:249:14: Error: The method 'Row' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Row'.
+      child: Row(
+             ^^^
+lib/screens/staff_student_details_screen.dart:252:13: Error: The method 'Padding' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Padding'.
+            Padding(
+            ^^^^^^^
+lib/screens/staff_student_details_screen.dart:254:22: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+              child: Container(
+                     ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:256:29: Error: The method 'BoxDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+                decoration: BoxDecoration(
+                            ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:257:29: Error: The method 'LinearGradient' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'LinearGradient'.
+                  gradient: LinearGradient(
+                            ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:258:30: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                    colors: [Colors.blue[50]!, Colors.blue[100]!],
+                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:258:48: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                    colors: [Colors.blue[50]!, Colors.blue[100]!],
+                                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:259:28: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                    begin: Alignment.topLeft,
+                           ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:260:26: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                    end: Alignment.bottomRight,
+                         ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:262:33: Error: The getter 'BorderRadius' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                  borderRadius: BorderRadius.circular(8),
+                                ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:263:27: Error: The getter 'Border' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+                  border: Border.all(color: Colors.blue[300]!, width: 1),
+                          ^^^^^^
+lib/screens/staff_student_details_screen.dart:263:45: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                  border: Border.all(color: Colors.blue[300]!, width: 1),
+                                            ^^^^^^
+lib/screens/staff_student_details_screen.dart:265:24: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+                child: Column(
+                       ^^^^^^
+lib/screens/staff_student_details_screen.dart:266:39: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                                      ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:267:33: Error: The getter 'MainAxisSize' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'MainAxisSize'.
+                  mainAxisSize: MainAxisSize.min,
+                                ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:269:21: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                    Text(
+                    ^^^^
+lib/screens/staff_student_details_screen.dart:271:30: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                      style: GoogleFonts.poppins(
+                             ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:273:37: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                        fontWeight: FontWeight.w600,
+                                    ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:274:32: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                        color: Colors.blue[900],
+                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:277:21: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                    Text(
+                    ^^^^
+lib/screens/staff_student_details_screen.dart:279:30: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                      style: GoogleFonts.inter(
+                             ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:281:32: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                        color: Colors.green[700],
+                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:282:37: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                        fontWeight: FontWeight.w500,
+                                    ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:285:21: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                    Text(
+                    ^^^^
+lib/screens/staff_student_details_screen.dart:287:30: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                      style: GoogleFonts.inter(
+                             ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:289:32: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                        color: Colors.red[600],
+                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:290:37: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                        fontWeight: FontWeight.w500,
+                                    ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:294:23: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                      Text(
+                      ^^^^
+lib/screens/staff_student_details_screen.dart:296:32: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                        style: GoogleFonts.inter(
+                               ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:298:34: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                          color: Colors.blueGrey[600],
+                                 ^^^^^^
+lib/screens/staff_student_details_screen.dart:299:38: Error: The getter 'FontStyle' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontStyle'.
+                          fontStyle: FontStyle.italic,
+                                     ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:317:30: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                             ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:369:17: Error: Couldn't find constructor 'SizedBox'.
+          const SizedBox(width: 8),
+                ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:373:30: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                             ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:312:12: Error: The method 'Row' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Row'.
+    return Row(
+           ^^^
+lib/screens/staff_student_details_screen.dart:315:11: Error: The method 'Expanded' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Expanded'.
+          Expanded(
+          ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:316:20: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+            child: Container(
+                   ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:318:27: Error: The method 'BoxDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+              decoration: BoxDecoration(
+                          ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:319:27: Error: The method 'LinearGradient' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'LinearGradient'.
+                gradient: LinearGradient(
+                          ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:320:28: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                  colors: [Colors.orange[50]!, Colors.orange[100]!],
+                           ^^^^^^
+lib/screens/staff_student_details_screen.dart:320:48: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                  colors: [Colors.orange[50]!, Colors.orange[100]!],
+                                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:321:26: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                  begin: Alignment.topLeft,
+                         ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:322:24: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                  end: Alignment.bottomRight,
+                       ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:324:31: Error: The getter 'BorderRadius' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                borderRadius: BorderRadius.circular(8),
+                              ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:325:25: Error: The getter 'Border' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+                border: Border.all(color: Colors.orange[300]!, width: 1),
+                        ^^^^^^
+lib/screens/staff_student_details_screen.dart:325:43: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                border: Border.all(color: Colors.orange[300]!, width: 1),
+                                          ^^^^^^
+lib/screens/staff_student_details_screen.dart:327:22: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+              child: Column(
+                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:328:37: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                crossAxisAlignment: CrossAxisAlignment.start,
+                                    ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:329:31: Error: The getter 'MainAxisSize' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'MainAxisSize'.
+                mainAxisSize: MainAxisSize.min,
+                              ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:331:19: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/staff_student_details_screen.dart:333:28: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                    style: GoogleFonts.poppins(
+                           ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:335:35: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                      fontWeight: FontWeight.w600,
+                                  ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:336:30: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.orange[900],
+                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:339:19: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/staff_student_details_screen.dart:341:28: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                    style: GoogleFonts.inter(
+                           ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:343:30: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.green[700],
+                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:344:35: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                      fontWeight: FontWeight.w500,
+                                  ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:347:19: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/staff_student_details_screen.dart:349:28: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                    style: GoogleFonts.inter(
+                           ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:351:30: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.red[600],
+                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:352:35: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                      fontWeight: FontWeight.w500,
+                                  ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:356:21: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                    Text(
+                    ^^^^
+lib/screens/staff_student_details_screen.dart:358:30: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                      style: GoogleFonts.inter(
+                             ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:360:32: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                        color: Colors.blueGrey[600],
+                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:361:36: Error: The getter 'FontStyle' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontStyle'.
+                        fontStyle: FontStyle.italic,
+                                   ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:371:11: Error: The method 'Expanded' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Expanded'.
+          Expanded(
+          ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:372:20: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+            child: Container(
+                   ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:374:27: Error: The method 'BoxDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+              decoration: BoxDecoration(
+                          ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:375:27: Error: The method 'LinearGradient' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'LinearGradient'.
+                gradient: LinearGradient(
+                          ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:376:28: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                  colors: [Colors.purple[50]!, Colors.purple[100]!],
+                           ^^^^^^
+lib/screens/staff_student_details_screen.dart:376:48: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                  colors: [Colors.purple[50]!, Colors.purple[100]!],
+                                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:377:26: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                  begin: Alignment.topLeft,
+                         ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:378:24: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                  end: Alignment.bottomRight,
+                       ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:380:31: Error: The getter 'BorderRadius' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                borderRadius: BorderRadius.circular(8),
+                              ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:381:25: Error: The getter 'Border' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+                border: Border.all(color: Colors.purple[300]!, width: 1),
+                        ^^^^^^
+lib/screens/staff_student_details_screen.dart:381:43: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                border: Border.all(color: Colors.purple[300]!, width: 1),
+                                          ^^^^^^
+lib/screens/staff_student_details_screen.dart:383:22: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+              child: Column(
+                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:384:37: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                crossAxisAlignment: CrossAxisAlignment.start,
+                                    ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:385:31: Error: The getter 'MainAxisSize' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'MainAxisSize'.
+                mainAxisSize: MainAxisSize.min,
+                              ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:387:19: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/staff_student_details_screen.dart:389:28: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                    style: GoogleFonts.poppins(
+                           ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:391:35: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                      fontWeight: FontWeight.w600,
+                                  ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:392:30: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.purple[900],
+                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:395:19: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/staff_student_details_screen.dart:397:28: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                    style: GoogleFonts.inter(
+                           ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:399:30: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.green[700],
+                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:400:35: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                      fontWeight: FontWeight.w500,
+                                  ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:403:19: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/staff_student_details_screen.dart:405:28: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                    style: GoogleFonts.inter(
+                           ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:407:30: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.red[600],
+                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:408:35: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                      fontWeight: FontWeight.w500,
+                                  ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:412:21: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                    Text(
+                    ^^^^
+lib/screens/staff_student_details_screen.dart:414:30: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                      style: GoogleFonts.inter(
+                             ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:416:32: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                        color: Colors.blueGrey[600],
+                               ^^^^^^
+lib/screens/staff_student_details_screen.dart:417:36: Error: The getter 'FontStyle' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontStyle'.
+                        fontStyle: FontStyle.italic,
+                                   ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:431:7: Error: 'excel_package.Sheet' can't be used as a type because 'excel_package' doesn't refer to an import prefix.
+      excel_package.Sheet sheetObject = excel['Sheet1'];
+      ^^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:430:19: Error: The getter 'excel_package' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'excel_package'.
+      var excel = excel_package.Excel.createExcel();
+                  ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:466:37: Error: The getter 'excel_package' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'excel_package'.
+        var cell = sheetObject.cell(excel_package.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+                                    ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:508:39: Error: The getter 'excel_package' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'excel_package'.
+          var cell = sheetObject.cell(excel_package.CellIndex.indexByColumnRow(columnIndex: j, rowIndex: i + 1));
+                                      ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:514:28: Error: The method 'getApplicationDocumentsDirectory' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'getApplicationDocumentsDirectory'.
+      final output = await getApplicationDocumentsDirectory();
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:524:13: Error: The getter 'mounted' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'mounted'.
+        if (mounted) {
+            ^^^^^^^
+lib/screens/staff_student_details_screen.dart:525:11: Error: The getter 'ScaffoldMessenger' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ScaffoldMessenger'.
+          ScaffoldMessenger.of(context).showSnackBar(
+          ^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:525:32: Error: The getter 'context' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'context'.
+          ScaffoldMessenger.of(context).showSnackBar(
+                               ^^^^^^^
+lib/screens/staff_student_details_screen.dart:526:13: Error: The method 'SnackBar' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'SnackBar'.
+            SnackBar(
+            ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:527:24: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+              content: Text('Excel file saved to: $filePath'),
+                       ^^^^
+lib/screens/staff_student_details_screen.dart:535:11: Error: The getter 'mounted' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'mounted'.
+      if (mounted) {
+          ^^^^^^^
+lib/screens/staff_student_details_screen.dart:536:9: Error: The getter 'ScaffoldMessenger' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ScaffoldMessenger'.
+        ScaffoldMessenger.of(context).showSnackBar(
+        ^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:536:30: Error: The getter 'context' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'context'.
+        ScaffoldMessenger.of(context).showSnackBar(
+                             ^^^^^^^
+lib/screens/staff_student_details_screen.dart:537:11: Error: The method 'SnackBar' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'SnackBar'.
+          SnackBar(content: Text('Error: $e')),
+          ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:537:29: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+          SnackBar(content: Text('Error: $e')),
+                            ^^^^
+lib/screens/staff_student_details_screen.dart:544:16: Error: 'BuildContext' isn't a type.
+  Widget build(BuildContext context) {
+               ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:557:47: Error: Undefined name 'Colors'.
+        iconTheme: const IconThemeData(color: Colors.white),
+                                              ^^^^^^
+lib/screens/staff_student_details_screen.dart:557:26: Error: Couldn't find constructor 'IconThemeData'.
+        iconTheme: const IconThemeData(color: Colors.white),
+                         ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:561:30: Error: Couldn't find constructor 'EdgeInsets.all'.
+              padding: const EdgeInsets.all(8.0),
+                             ^^^
+lib/screens/staff_student_details_screen.dart:565:36: Error: Undefined name 'Icons'.
+                  icon: const Icon(Icons.download, size: 18),
+                                   ^^^^^
+lib/screens/staff_student_details_screen.dart:565:31: Error: Couldn't find constructor 'Icon'.
+                  icon: const Icon(Icons.download, size: 18),
+                              ^^^^
+lib/screens/staff_student_details_screen.dart:573:36: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                   ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:589:35: Error: Method not found: 'CircularProgressIndicator'.
+            ? const Center(child: CircularProgressIndicator())
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:589:21: Error: Couldn't find constructor 'Center'.
+            ? const Center(child: CircularProgressIndicator())
+                    ^^^^^^
+lib/screens/staff_student_details_screen.dart:600:40: Error: Couldn't find constructor 'EdgeInsets.all'.
+                        padding: const EdgeInsets.all(16.0),
+                                       ^^^
+lib/screens/staff_student_details_screen.dart:626:51: Error: Method not found: 'CircularProgressIndicator'.
+                            ? const Center(child: CircularProgressIndicator())
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:626:37: Error: Couldn't find constructor 'Center'.
+                            ? const Center(child: CircularProgressIndicator())
+                                    ^^^^^^
+lib/screens/staff_student_details_screen.dart:635:52: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                   ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:644:55: Error: Couldn't find constructor 'EdgeInsets.only'.
+                                        margin: const EdgeInsets.only(bottom: 12),
+                                                      ^^^^
+lib/screens/staff_student_details_screen.dart:649:58: Error: Couldn't find constructor 'EdgeInsets.all'.
+                                          padding: const EdgeInsets.all(16),
+                                                         ^^^
+lib/screens/staff_student_details_screen.dart:666:57: Error: Couldn't find constructor 'SizedBox'.
+                                                  const SizedBox(width: 12),
+                                                        ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:687:67: Error: Couldn't find constructor 'SizedBox'.
+                                                            const SizedBox(width: 8),
+                                                                  ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:696:67: Error: Couldn't find constructor 'SizedBox'.
+                                                            const SizedBox(width: 8),
+                                                                  ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:712:53: Error: Couldn't find constructor 'SizedBox'.
+                                              const SizedBox(height: 12),
+                                                    ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:718:70: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+                                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                                     ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:751:57: Error: Couldn't find constructor 'SizedBox'.
+                                                  const SizedBox(width: 12),
+                                                        ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:754:70: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+                                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                                     ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:789:53: Error: Couldn't find constructor 'SizedBox'.
+                                              const SizedBox(height: 12),
+                                                    ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:799:53: Error: Couldn't find constructor 'SizedBox'.
+                                              const SizedBox(height: 8),
+                                                    ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:801:53: Error: Couldn't find constructor 'SizedBox'.
+                                              const SizedBox(height: 12),
+                                                    ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:811:53: Error: Couldn't find constructor 'SizedBox'.
+                                              const SizedBox(height: 8),
+                                                    ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:545:12: Error: The method 'Scaffold' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Scaffold'.
+    return Scaffold(
+           ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:546:15: Error: The method 'AppBar' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'AppBar'.
+      appBar: AppBar(
+              ^^^^^^
+lib/screens/staff_student_details_screen.dart:547:16: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+        title: Text(
+               ^^^^
+lib/screens/staff_student_details_screen.dart:549:18: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+          style: GoogleFonts.poppins(
+                 ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:551:25: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+            fontWeight: FontWeight.w700,
+                        ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:552:20: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+            color: Colors.white,
+                   ^^^^^^
+lib/screens/staff_student_details_screen.dart:555:26: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+        backgroundColor: Colors.blue[800],
+                         ^^^^^^
+lib/screens/staff_student_details_screen.dart:560:13: Error: The method 'Padding' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Padding'.
+            Padding(
+            ^^^^^^^
+lib/screens/staff_student_details_screen.dart:562:22: Error: The method 'Center' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Center'.
+              child: Center(
+                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:563:24: Error: The getter 'ElevatedButton' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ElevatedButton'.
+                child: ElevatedButton.icon(
+                       ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:566:26: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  label: Text(
+                         ^^^^
+lib/screens/staff_student_details_screen.dart:568:28: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                           ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:568:74: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                                                                         ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:570:26: Error: The getter 'ElevatedButton' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ElevatedButton'.
+                  style: ElevatedButton.styleFrom(
+                         ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:571:38: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                    backgroundColor: Colors.green[600],
+                                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:572:38: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                    foregroundColor: Colors.white,
+                                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:580:13: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+      body: Container(
+            ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:581:21: Error: The method 'BoxDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+        decoration: BoxDecoration(
+                    ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:582:21: Error: The method 'LinearGradient' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'LinearGradient'.
+          gradient: LinearGradient(
+                    ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:583:22: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+            colors: [Colors.blue[50]!, Colors.cyan[50]!],
+                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:583:40: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+            colors: [Colors.blue[50]!, Colors.cyan[50]!],
+                                       ^^^^^^
+lib/screens/staff_student_details_screen.dart:584:20: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+            begin: Alignment.topLeft,
+                   ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:585:18: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+            end: Alignment.bottomRight,
+                 ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:591:19: Error: The method 'Center' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Center'.
+                ? Center(
+                  ^^^^^^
+lib/screens/staff_student_details_screen.dart:592:28: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                    child: Text(
+                           ^^^^
+lib/screens/staff_student_details_screen.dart:594:30: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                      style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700]),
+                             ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:594:71: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700]),
+                                                                      ^^^^^^
+lib/screens/staff_student_details_screen.dart:597:19: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+                : Column(
+                  ^^^^^^
+lib/screens/staff_student_details_screen.dart:599:23: Error: The method 'Padding' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Padding'.
+                      Padding(
+                      ^^^^^^^
+lib/screens/staff_student_details_screen.dart:601:32: Error: The method 'DropdownButtonFormField' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'DropdownButtonFormField'.
+                        child: DropdownButtonFormField<String>(
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:603:39: Error: The method 'InputDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'InputDecoration'.
+                          decoration: InputDecoration(
+                                      ^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:606:40: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                            fillColor: Colors.white,
+                                       ^^^^^^
+lib/screens/staff_student_details_screen.dart:607:37: Error: The method 'OutlineInputBorder' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'OutlineInputBorder'.
+                            border: OutlineInputBorder(
+                                    ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:608:45: Error: The getter 'BorderRadius' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                              borderRadius: BorderRadius.circular(12),
+                                            ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:612:36: Error: The method 'DropdownMenuItem' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'DropdownMenuItem'.
+                            return DropdownMenuItem(value: c, child: Text(c));
+                                   ^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:612:70: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                            return DropdownMenuItem(value: c, child: Text(c));
+                                                                     ^^^^
+lib/screens/staff_student_details_screen.dart:616:31: Error: The method 'setState' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+                              setState(() {
+                              ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:624:23: Error: The method 'Expanded' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Expanded'.
+                      Expanded(
+                      ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:628:35: Error: The method 'Center' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Center'.
+                                ? Center(
+                                  ^^^^^^
+lib/screens/staff_student_details_screen.dart:629:44: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                    child: Text(
+                                           ^^^^
+lib/screens/staff_student_details_screen.dart:631:46: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                      style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700]),
+                                             ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:631:87: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                      style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700]),
+                                                                                      ^^^^^^
+lib/screens/staff_student_details_screen.dart:634:35: Error: The getter 'ListView' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ListView'.
+                                : ListView.builder(
+                                  ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:642:46: Error: The method 'Card' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Card'.
+                                      return Card(
+                                             ^^^^
+lib/screens/staff_student_details_screen.dart:645:48: Error: The method 'RoundedRectangleBorder' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'RoundedRectangleBorder'.
+                                        shape: RoundedRectangleBorder(
+                                               ^^^^^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:646:57: Error: The getter 'BorderRadius' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                                          borderRadius: BorderRadius.circular(12),
+                                                        ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:648:48: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+                                        child: Container(
+                                               ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:650:50: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+                                          child: Column(
+                                                 ^^^^^^
+lib/screens/staff_student_details_screen.dart:651:65: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                                ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:654:47: Error: The method 'Row' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Row'.
+                                              Row(
+                                              ^^^
+lib/screens/staff_student_details_screen.dart:656:51: Error: The method 'CircleAvatar' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'CircleAvatar'.
+                                                  CircleAvatar(
+                                                  ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:657:70: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                    backgroundColor: Colors.blue[100],
+                                                                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:659:60: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                    child: Text(
+                                                           ^^^^
+lib/screens/staff_student_details_screen.dart:663:62: Error: The method 'TextStyle' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'TextStyle'.
+                                                      style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold, fontSize: 20),
+                                                             ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:663:79: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                      style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold, fontSize: 20),
+                                                                              ^^^^^^
+lib/screens/staff_student_details_screen.dart:663:109: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                      style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold, fontSize: 20),
+                                                                                          ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:667:51: Error: The method 'Expanded' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Expanded'.
+                                                  Expanded(
+                                                  ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:668:60: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+                                                    child: Column(
+                                                           ^^^^^^
+lib/screens/staff_student_details_screen.dart:669:75: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                          ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:671:57: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                        Text(
+                                                        ^^^^
+lib/screens/staff_student_details_screen.dart:673:66: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                          style: GoogleFonts.poppins(
+                                                                 ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:674:73: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                            fontWeight: FontWeight.w700,
+                                                                        ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:678:57: Error: The method 'Row' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Row'.
+                                                        Row(
+                                                        ^^^
+lib/screens/staff_student_details_screen.dart:680:61: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                            Text(
+                                                            ^^^^
+lib/screens/staff_student_details_screen.dart:682:70: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                              style: GoogleFonts.inter(
+                                                                     ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:684:72: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                                color: Colors.grey[600],
+                                                                       ^^^^^^
+lib/screens/staff_student_details_screen.dart:688:61: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+                                                            Container(
+                                                            ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:691:75: Error: The method 'BoxDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+                                                              decoration: BoxDecoration(
+                                                                          ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:692:72: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                                color: Colors.grey[400],
+                                                                       ^^^^^^
+lib/screens/staff_student_details_screen.dart:693:72: Error: The getter 'BoxShape' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BoxShape'.
+                                                                shape: BoxShape.circle,
+                                                                       ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:697:61: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                            Text(
+                                                            ^^^^
+lib/screens/staff_student_details_screen.dart:699:70: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                              style: GoogleFonts.inter(
+                                                                     ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:701:72: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                                color: Colors.blue[600],
+                                                                       ^^^^^^
+lib/screens/staff_student_details_screen.dart:702:77: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                                fontWeight: FontWeight.w500,
+                                                                            ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:714:47: Error: The method 'Row' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Row'.
+                                              Row(
+                                              ^^^
+lib/screens/staff_student_details_screen.dart:716:51: Error: The method 'Expanded' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Expanded'.
+                                                  Expanded(
+                                                  ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:717:60: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+                                                    child: Container(
+                                                           ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:719:67: Error: The method 'BoxDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+                                                      decoration: BoxDecoration(
+                                                                  ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:720:67: Error: The method 'LinearGradient' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'LinearGradient'.
+                                                        gradient: LinearGradient(
+                                                                  ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:721:68: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                          colors: [Colors.green[50]!, Colors.green[100]!],
+                                                                   ^^^^^^
+lib/screens/staff_student_details_screen.dart:721:87: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                          colors: [Colors.green[50]!, Colors.green[100]!],
+                                                                                      ^^^^^^
+lib/screens/staff_student_details_screen.dart:722:66: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                                                          begin: Alignment.topLeft,
+                                                                 ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:723:64: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                                                          end: Alignment.bottomRight,
+                                                               ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:725:71: Error: The getter 'BorderRadius' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                                                        borderRadius: BorderRadius.circular(8),
+                                                                      ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:726:65: Error: The getter 'Border' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+                                                        border: Border.all(color: Colors.green[300]!, width: 1),
+                                                                ^^^^^^
+lib/screens/staff_student_details_screen.dart:726:83: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                        border: Border.all(color: Colors.green[300]!, width: 1),
+                                                                                  ^^^^^^
+lib/screens/staff_student_details_screen.dart:728:62: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+                                                      child: Column(
+                                                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:729:77: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                            ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:731:59: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                          Text(
+                                                          ^^^^
+lib/screens/staff_student_details_screen.dart:733:68: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                            style: GoogleFonts.poppins(
+                                                                   ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:735:75: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                              fontWeight: FontWeight.w600,
+                                                                          ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:736:70: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                              color: Colors.green[900],
+                                                                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:739:59: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                          Text(
+                                                          ^^^^
+lib/screens/staff_student_details_screen.dart:741:68: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                            style: GoogleFonts.inter(
+                                                                   ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:743:75: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                              fontWeight: FontWeight.w700,
+                                                                          ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:744:70: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                              color: Colors.green[700],
+                                                                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:752:51: Error: The method 'Expanded' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Expanded'.
+                                                  Expanded(
+                                                  ^^^^^^^^
+lib/screens/staff_student_details_screen.dart:753:60: Error: The method 'Container' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+                                                    child: Container(
+                                                           ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:755:67: Error: The method 'BoxDecoration' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+                                                      decoration: BoxDecoration(
+                                                                  ^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:756:67: Error: The method 'LinearGradient' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'LinearGradient'.
+                                                        gradient: LinearGradient(
+                                                                  ^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:757:68: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                          colors: [Colors.red[50]!, Colors.red[100]!],
+                                                                   ^^^^^^
+lib/screens/staff_student_details_screen.dart:757:85: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                          colors: [Colors.red[50]!, Colors.red[100]!],
+                                                                                    ^^^^^^
+lib/screens/staff_student_details_screen.dart:758:66: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                                                          begin: Alignment.topLeft,
+                                                                 ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:759:64: Error: The getter 'Alignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Alignment'.
+                                                          end: Alignment.bottomRight,
+                                                               ^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:761:71: Error: The getter 'BorderRadius' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                                                        borderRadius: BorderRadius.circular(8),
+                                                                      ^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:762:65: Error: The getter 'Border' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+                                                        border: Border.all(color: Colors.red[300]!, width: 1),
+                                                                ^^^^^^
+lib/screens/staff_student_details_screen.dart:762:83: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                        border: Border.all(color: Colors.red[300]!, width: 1),
+                                                                                  ^^^^^^
+lib/screens/staff_student_details_screen.dart:764:62: Error: The method 'Column' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+                                                      child: Column(
+                                                             ^^^^^^
+lib/screens/staff_student_details_screen.dart:765:77: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                            ^^^^^^^^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:767:59: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                          Text(
+                                                          ^^^^
+lib/screens/staff_student_details_screen.dart:769:68: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                            style: GoogleFonts.poppins(
+                                                                   ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:771:75: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                              fontWeight: FontWeight.w600,
+                                                                          ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:772:70: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                              color: Colors.red[900],
+                                                                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:775:59: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                                          Text(
+                                                          ^^^^
+lib/screens/staff_student_details_screen.dart:777:68: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                            style: GoogleFonts.inter(
+                                                                   ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:779:75: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                              fontWeight: FontWeight.w700,
+                                                                          ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:780:70: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                              color: Colors.red[700],
+                                                                     ^^^^^^
+lib/screens/staff_student_details_screen.dart:791:47: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                              Text(
+                                              ^^^^
+lib/screens/staff_student_details_screen.dart:793:56: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                style: GoogleFonts.poppins(
+                                                       ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:795:63: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                  fontWeight: FontWeight.w600,
+                                                              ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:796:58: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                  color: Colors.blue[900],
+                                                         ^^^^^^
+lib/screens/staff_student_details_screen.dart:803:47: Error: The method 'Text' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                                              Text(
+                                              ^^^^
+lib/screens/staff_student_details_screen.dart:805:56: Error: The getter 'GoogleFonts' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'GoogleFonts'.
+                                                style: GoogleFonts.poppins(
+                                                       ^^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:807:63: Error: The getter 'FontWeight' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'FontWeight'.
+                                                  fontWeight: FontWeight.w600,
+                                                              ^^^^^^^^^^
+lib/screens/staff_student_details_screen.dart:808:58: Error: The getter 'Colors' isn't defined for the class '_StaffStudentDetailsScreenState'.
+ - '_StaffStudentDetailsScreenState' is from 'package:school_management/screens/staff_student_details_screen.dart' ('lib/screens/staff_student_details_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                                                  color: Colors.blue[900],
+                                                         ^^^^^^
+lib/screens/staff_pay_slips_screen.dart:117:61: Error: A value of type 'PaySlipViewScreen' can't be returned from a function with return type 'Widget'.
+ - 'PaySlipViewScreen' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+ - 'Widget' is from 'package:flutter/src/widgets/framework.dart' ('../../Documents/flutter/packages/flutter/lib/src/widgets/framework.dart').
+                                      builder: (context) => PaySlipViewScreen(
+                                                            ^
+lib/screens/pay_slip_view_screen.dart:24:5: Error: The method 'setState' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+    setState(() => _isGeneratingPDF = true);
+    ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:28:25: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final staffName = widget.paySlipData['STAFF'] ?? 'N/A';
+                        ^^^^^^
+lib/screens/pay_slip_view_screen.dart:29:25: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final monthYear = widget.paySlipData['MONTH'] ?? 'N/A';
+                        ^^^^^^
+lib/screens/pay_slip_view_screen.dart:30:40: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final workingDays = int.tryParse(widget.paySlipData['WORKING_DAYS']?.toString() ?? '0') ?? 0;
+                                       ^^^^^^
+lib/screens/pay_slip_view_screen.dart:31:39: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final leaveCount = int.tryParse(widget.paySlipData['LEAVE_COUNT']?.toString() ?? '0') ?? 0;
+                                      ^^^^^^
+lib/screens/pay_slip_view_screen.dart:32:40: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final payableDays = int.tryParse(widget.paySlipData['PAYABLE_DAYS']?.toString() ?? '0') ?? 0;
+                                       ^^^^^^
+lib/screens/pay_slip_view_screen.dart:33:38: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final salary = double.tryParse(widget.paySlipData['SALARY']?.toString() ?? '0.0') ?? 0.0;
+                                     ^^^^^^
+lib/screens/pay_slip_view_screen.dart:34:41: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final dailyRate = double.tryParse(widget.paySlipData['DAILY_RATE']?.toString() ?? '0.0') ?? 0.0;
+                                        ^^^^^^
+lib/screens/pay_slip_view_screen.dart:35:45: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+      final monthlySalary = double.tryParse(widget.paySlipData['MONTHLY_SALARY']?.toString() ?? '0.0') ?? 0.0;
+                                            ^^^^^^
+lib/screens/pay_slip_view_screen.dart:179:11: Error: The getter 'mounted' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'mounted'.
+      if (mounted) {
+          ^^^^^^^
+lib/screens/pay_slip_view_screen.dart:180:9: Error: The getter 'ScaffoldMessenger' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ScaffoldMessenger'.
+        ScaffoldMessenger.of(context).showSnackBar(
+        ^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:180:30: Error: The getter 'context' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'context'.
+        ScaffoldMessenger.of(context).showSnackBar(
+                             ^^^^^^^
+lib/screens/pay_slip_view_screen.dart:181:11: Error: The method 'SnackBar' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'SnackBar'.
+          SnackBar(
+          ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:182:22: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+            content: Text('Pay slip downloaded successfully', style: GoogleFonts.poppins()),
+                     ^^^^
+lib/screens/pay_slip_view_screen.dart:183:30: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+            backgroundColor: Colors.green[600],
+                             ^^^^^^
+lib/screens/pay_slip_view_screen.dart:188:11: Error: The getter 'mounted' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'mounted'.
+      if (mounted) {
+          ^^^^^^^
+lib/screens/pay_slip_view_screen.dart:189:9: Error: The getter 'ScaffoldMessenger' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ScaffoldMessenger'.
+        ScaffoldMessenger.of(context).showSnackBar(
+        ^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:189:30: Error: The getter 'context' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'context'.
+        ScaffoldMessenger.of(context).showSnackBar(
+                             ^^^^^^^
+lib/screens/pay_slip_view_screen.dart:190:11: Error: The method 'SnackBar' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'SnackBar'.
+          SnackBar(
+          ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:191:22: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+            content: Text('Error generating PDF: $e', style: GoogleFonts.poppins()),
+                     ^^^^
+lib/screens/pay_slip_view_screen.dart:192:30: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+            backgroundColor: Colors.red[600],
+                             ^^^^^^
+lib/screens/pay_slip_view_screen.dart:197:7: Error: The method 'setState' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'setState'.
+      setState(() => _isGeneratingPDF = false);
+      ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:211:16: Error: 'BuildContext' isn't a type.
+  Widget build(BuildContext context) {
+               ^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:232:24: Error: Couldn't find constructor 'EdgeInsets.all'.
+        padding: const EdgeInsets.all(16.0),
+                       ^^^
+lib/screens/pay_slip_view_screen.dart:238:30: Error: Couldn't find constructor 'EdgeInsets.all'.
+              padding: const EdgeInsets.all(16),
+                             ^^^
+lib/screens/pay_slip_view_screen.dart:255:25: Error: Couldn't find constructor 'SizedBox'.
+                  const SizedBox(height: 12),
+                        ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:261:19: Error: Couldn't find constructor 'SizedBox'.
+            const SizedBox(height: 24),
+                  ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:272:19: Error: Couldn't find constructor 'SizedBox'.
+            const SizedBox(height: 20),
+                  ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:287:19: Error: Couldn't find constructor 'SizedBox'.
+            const SizedBox(height: 24),
+                  ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:291:30: Error: Couldn't find constructor 'EdgeInsets.all'.
+              padding: const EdgeInsets.all(16),
+                             ^^^
+lib/screens/pay_slip_view_screen.dart:308:25: Error: Couldn't find constructor 'SizedBox'.
+                  const SizedBox(height: 8),
+                        ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:320:19: Error: Couldn't find constructor 'SizedBox'.
+            const SizedBox(height: 24),
+                  ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:327:34: Error: Undefined name 'Icons'.
+                icon: const Icon(Icons.download_sharp),
+                                 ^^^^^
+lib/screens/pay_slip_view_screen.dart:327:29: Error: Couldn't find constructor 'Icon'.
+                icon: const Icon(Icons.download_sharp),
+                            ^^^^
+lib/screens/pay_slip_view_screen.dart:335:34: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                 ^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:212:23: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final staffName = widget.paySlipData['STAFF'] ?? 'N/A';
+                      ^^^^^^
+lib/screens/pay_slip_view_screen.dart:213:23: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final monthYear = widget.paySlipData['MONTH'] ?? 'N/A';
+                      ^^^^^^
+lib/screens/pay_slip_view_screen.dart:216:38: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final workingDays = int.tryParse(widget.paySlipData['WORKING_DAYS']?.toString() ?? '0') ?? 0;
+                                     ^^^^^^
+lib/screens/pay_slip_view_screen.dart:217:37: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final leaveCount = int.tryParse(widget.paySlipData['LEAVE_COUNT']?.toString() ?? '0') ?? 0;
+                                    ^^^^^^
+lib/screens/pay_slip_view_screen.dart:218:38: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final payableDays = int.tryParse(widget.paySlipData['PAYABLE_DAYS']?.toString() ?? '0') ?? 0;
+                                     ^^^^^^
+lib/screens/pay_slip_view_screen.dart:219:36: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final salary = double.tryParse(widget.paySlipData['SALARY']?.toString() ?? '0.0') ?? 0.0;
+                                   ^^^^^^
+lib/screens/pay_slip_view_screen.dart:220:39: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final dailyRate = double.tryParse(widget.paySlipData['DAILY_RATE']?.toString() ?? '0.0') ?? 0.0;
+                                      ^^^^^^
+lib/screens/pay_slip_view_screen.dart:221:43: Error: The getter 'widget' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'widget'.
+    final monthlySalary = double.tryParse(widget.paySlipData['MONTHLY_SALARY']?.toString() ?? '0.0') ?? 0.0;
+                                          ^^^^^^
+lib/screens/pay_slip_view_screen.dart:223:12: Error: The method 'Scaffold' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Scaffold'.
+    return Scaffold(
+           ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:224:15: Error: The method 'AppBar' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'AppBar'.
+      appBar: AppBar(
+              ^^^^^^
+lib/screens/pay_slip_view_screen.dart:225:16: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+        title: Text(
+               ^^^^
+lib/screens/pay_slip_view_screen.dart:229:26: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+        backgroundColor: Colors.blue[600],
+                         ^^^^^^
+lib/screens/pay_slip_view_screen.dart:231:13: Error: The method 'SingleChildScrollView' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'SingleChildScrollView'.
+      body: SingleChildScrollView(
+            ^^^^^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:233:16: Error: The method 'Column' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+        child: Column(
+               ^^^^^^
+lib/screens/pay_slip_view_screen.dart:234:31: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+          crossAxisAlignment: CrossAxisAlignment.start,
+                              ^^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:237:13: Error: The method 'Container' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+            Container(
+            ^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:239:27: Error: The method 'BoxDecoration' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+              decoration: BoxDecoration(
+                          ^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:240:24: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                color: Colors.blue[50],
+                       ^^^^^^
+lib/screens/pay_slip_view_screen.dart:241:31: Error: The getter 'BorderRadius' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                borderRadius: BorderRadius.circular(8),
+                              ^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:242:25: Error: The getter 'Border' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+                border: Border.all(color: Colors.blue[300]!),
+                        ^^^^^^
+lib/screens/pay_slip_view_screen.dart:242:43: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                border: Border.all(color: Colors.blue[300]!),
+                                          ^^^^^^
+lib/screens/pay_slip_view_screen.dart:244:22: Error: The method 'Column' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+              child: Column(
+                     ^^^^^^
+lib/screens/pay_slip_view_screen.dart:245:37: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                crossAxisAlignment: CrossAxisAlignment.start,
+                                    ^^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:247:19: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/pay_slip_view_screen.dart:252:30: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.blue[900],
+                             ^^^^^^
+lib/screens/pay_slip_view_screen.dart:290:13: Error: The method 'Container' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+            Container(
+            ^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:292:27: Error: The method 'BoxDecoration' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+              decoration: BoxDecoration(
+                          ^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:293:24: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                color: Colors.green[50],
+                       ^^^^^^
+lib/screens/pay_slip_view_screen.dart:294:31: Error: The getter 'BorderRadius' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+                borderRadius: BorderRadius.circular(8),
+                              ^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:295:25: Error: The getter 'Border' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+                border: Border.all(color: Colors.green[300]!),
+                        ^^^^^^
+lib/screens/pay_slip_view_screen.dart:295:43: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                border: Border.all(color: Colors.green[300]!),
+                                          ^^^^^^
+lib/screens/pay_slip_view_screen.dart:297:22: Error: The method 'Column' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+              child: Column(
+                     ^^^^^^
+lib/screens/pay_slip_view_screen.dart:298:37: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+                crossAxisAlignment: CrossAxisAlignment.start,
+                                    ^^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:300:19: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/pay_slip_view_screen.dart:305:30: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.green[900],
+                             ^^^^^^
+lib/screens/pay_slip_view_screen.dart:309:19: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                  Text(
+                  ^^^^
+lib/screens/pay_slip_view_screen.dart:314:30: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                      color: Colors.green[700],
+                             ^^^^^^
+lib/screens/pay_slip_view_screen.dart:323:13: Error: The method 'SizedBox' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'SizedBox'.
+            SizedBox(
+            ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:325:22: Error: The getter 'ElevatedButton' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ElevatedButton'.
+              child: ElevatedButton.icon(
+                     ^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:328:24: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+                label: Text(
+                       ^^^^
+lib/screens/pay_slip_view_screen.dart:332:24: Error: The getter 'ElevatedButton' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'ElevatedButton'.
+                style: ElevatedButton.styleFrom(
+                       ^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:333:36: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                  backgroundColor: Colors.blue[600],
+                                   ^^^^^^
+lib/screens/pay_slip_view_screen.dart:334:36: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+                  foregroundColor: Colors.white,
+                                   ^^^^^^
+lib/screens/pay_slip_view_screen.dart:347:22: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+      padding: const EdgeInsets.symmetric(vertical: 6),
+                     ^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:346:12: Error: The method 'Padding' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Padding'.
+    return Padding(
+           ^^^^^^^
+lib/screens/pay_slip_view_screen.dart:348:14: Error: The method 'Row' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Row'.
+      child: Row(
+             ^^^
+lib/screens/pay_slip_view_screen.dart:349:28: Error: The getter 'MainAxisAlignment' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'MainAxisAlignment'.
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                           ^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:351:11: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+          Text(
+          ^^^^
+lib/screens/pay_slip_view_screen.dart:355:22: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+              color: Colors.grey[700],
+                     ^^^^^^
+lib/screens/pay_slip_view_screen.dart:358:11: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+          Text(
+          ^^^^
+lib/screens/pay_slip_view_screen.dart:362:22: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+              color: Colors.black87,
+                     ^^^^^^
+lib/screens/pay_slip_view_screen.dart:372:22: Error: Couldn't find constructor 'EdgeInsets.symmetric'.
+      padding: const EdgeInsets.symmetric(vertical: 8),
+                     ^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:371:12: Error: The method 'Padding' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Padding'.
+    return Padding(
+           ^^^^^^^
+lib/screens/pay_slip_view_screen.dart:373:14: Error: The method 'Row' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Row'.
+      child: Row(
+             ^^^
+lib/screens/pay_slip_view_screen.dart:374:28: Error: The getter 'MainAxisAlignment' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'MainAxisAlignment'.
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                           ^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:376:11: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+          Text(
+          ^^^^
+lib/screens/pay_slip_view_screen.dart:380:32: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+              color: isMuted ? Colors.grey[600] : Colors.grey[800],
+                               ^^^^^^
+lib/screens/pay_slip_view_screen.dart:380:51: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+              color: isMuted ? Colors.grey[600] : Colors.grey[800],
+                                                  ^^^^^^
+lib/screens/pay_slip_view_screen.dart:384:11: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+          Text(
+          ^^^^
+lib/screens/pay_slip_view_screen.dart:388:36: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+              color: isHighlight ? Colors.blue[700] : Colors.black87,
+                                   ^^^^^^
+lib/screens/pay_slip_view_screen.dart:388:55: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+              color: isHighlight ? Colors.blue[700] : Colors.black87,
+                                                      ^^^^^^
+lib/screens/pay_slip_view_screen.dart:399:19: Error: 'Widget' isn't a type.
+    required List<Widget> children,
+                  ^^^^^^
+lib/screens/pay_slip_view_screen.dart:402:22: Error: Couldn't find constructor 'EdgeInsets.all'.
+      padding: const EdgeInsets.all(16),
+                     ^^^
+lib/screens/pay_slip_view_screen.dart:418:17: Error: Couldn't find constructor 'SizedBox'.
+          const SizedBox(height: 12),
+                ^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:401:12: Error: The method 'Container' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Container'.
+    return Container(
+           ^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:403:19: Error: The method 'BoxDecoration' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'BoxDecoration'.
+      decoration: BoxDecoration(
+                  ^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:404:17: Error: The getter 'Border' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Border'.
+        border: Border.all(color: Colors.grey[300]!),
+                ^^^^^^
+lib/screens/pay_slip_view_screen.dart:404:35: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+        border: Border.all(color: Colors.grey[300]!),
+                                  ^^^^^^
+lib/screens/pay_slip_view_screen.dart:405:23: Error: The getter 'BorderRadius' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'BorderRadius'.
+        borderRadius: BorderRadius.circular(8),
+                      ^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:407:14: Error: The method 'Column' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Column'.
+      child: Column(
+             ^^^^^^
+lib/screens/pay_slip_view_screen.dart:408:29: Error: The getter 'CrossAxisAlignment' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'CrossAxisAlignment'.
+        crossAxisAlignment: CrossAxisAlignment.start,
+                            ^^^^^^^^^^^^^^^^^^
+lib/screens/pay_slip_view_screen.dart:410:11: Error: The method 'Text' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing method, or defining a method named 'Text'.
+          Text(
+          ^^^^
+lib/screens/pay_slip_view_screen.dart:415:22: Error: The getter 'Colors' isn't defined for the class '_PaySlipViewScreenState'.
+ - '_PaySlipViewScreenState' is from 'package:school_management/screens/pay_slip_view_screen.dart' ('lib/screens/pay_slip_view_screen.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'Colors'.
+              color: Colors.blue[900],
+                     ^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildRelease'.
+> Process 'command 'C:\Users\Jagadeesh\Documents\flutter\bin\flutter.bat'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 16s
+Running Gradle task 'assembleRelease'...                           17.5s
+Gradle task assembleRelease failed with exit code 1

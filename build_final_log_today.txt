@@ -1,0 +1,21 @@
+
+Running Gradle task 'assembleRelease'...                        
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring project ':webview_flutter_android'.
+> java.util.concurrent.ExecutionException: org.gradle.api.GradleException: Failed to create Jar file C:\Users\Jagadeesh\.gradle\caches\jars-9\18366b31678c0171857be093a3b8ec22\bcprov-jdk18on-1.79.jar.
+> Failed to notify project evaluation listener.
+   > Could not get unknown property 'android' for project ':webview_flutter_android' of type org.gradle.api.Project.
+   > Could not get unknown property 'android' for project ':webview_flutter_android' of type org.gradle.api.Project.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s
+Running Gradle task 'assembleRelease'...                         2,406ms
+Gradle task assembleRelease failed with exit code 1

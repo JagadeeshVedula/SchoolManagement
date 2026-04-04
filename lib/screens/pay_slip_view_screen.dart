@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'dart:html' as html;
+import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
+import 'package:school_management/utils/platform_file_saver.dart';
+import 'package:flutter/services.dart';
 
 class PaySlipViewScreen extends StatefulWidget {
   final Map<String, dynamic> paySlipData;
@@ -197,14 +199,10 @@ class _PaySlipViewScreenState extends State<PaySlipViewScreen> {
     }
   }
 
-  void _downloadFileWeb(List<int> bytes, String fileName) {
+  Future<void> _downloadFileWeb(List<int> bytes, String fileName) async {
     try {
-      final blob = html.Blob([bytes], 'application/pdf');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute('download', fileName)
-        ..click();
-      html.Url.revokeObjectUrl(url);
+      final uint8List = Uint8List.fromList(bytes);
+      await PlatformFileSaver.saveFile(uint8List, fileName, 'application/pdf');
     } catch (e) {
       print('Error preparing web download: $e');
     }

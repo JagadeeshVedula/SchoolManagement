@@ -3,10 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:school_management/services/supabase_service.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html;
+import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
+import 'package:school_management/utils/platform_file_saver.dart';
 import 'dart:io' show File;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 
 class AccountsTab extends StatefulWidget {
   const AccountsTab({super.key});
@@ -231,31 +232,16 @@ class _AccountsTabState extends State<AccountsTab> {
     if (bytes == null) return;
 
     final fileName = 'Day_Transactions_${DateFormat('yyyy-MM-dd').format(_selectedDate)}.xlsx';
-
-    if (kIsWeb) {
-      final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute("download", fileName)
-        ..click();
-      html.Url.revokeObjectUrl(url);
-    } else {
-      try {
-        final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsBytes(bytes);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Downloaded to ${file.path}')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error saving file: $e')),
-          );
-        }
-      }
+    final uint8List = Uint8List.fromList(bytes);
+    await PlatformFileSaver.saveFile(uint8List, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Accounts export saved successfully', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.green[600],
+        ),
+      );
     }
   }
 

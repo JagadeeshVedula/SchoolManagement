@@ -10,7 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
-import 'dart:html' as html;
+import 'package:school_management/utils/platform_file_saver.dart';
+import 'package:flutter/services.dart';
 
 class ReportTab extends StatefulWidget {
   const ReportTab({super.key});
@@ -380,40 +381,14 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
       }
 
       final fileName = 'School_Fee_Report_${DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now())}.xlsx';
-      
-      // Platform-specific download
-      if (kIsWeb) {
-        // Web: create download link
-        _downloadFileWeb(bytes, fileName);
-      } else {
-        // Mobile/Desktop: save to Downloads directory
-        try {
-          final directory = await getDownloadsDirectory();
-          if (directory == null) {
-            // Fallback to documents directory
-            final docDir = await getApplicationDocumentsDirectory();
-            final file = File('${docDir.path}/$fileName');
-            await file.writeAsBytes(bytes);
-          } else {
-            final file = File('${directory.path}/$fileName');
-            await file.writeAsBytes(bytes);
-          }
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error saving file: $e')),
-          );
-          return;
-        }
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Report downloaded: $fileName')),
-      );
+      await _downloadFile(bytes, fileName);
     } catch (e) {
       print('Error downloading report: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error downloading report: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating report: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -462,49 +437,25 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
 
   // #region Helper and Build Methods
 
-  void _downloadFileWeb(List<int> bytes, String fileName) {
-    // Web download using Blob and download link
-    try {
-      // Determine MIME type based on file extension
-      String mimeType = 'application/octet-stream';
-      if (fileName.endsWith('.pdf')) {
-        mimeType = 'application/pdf';
-      } else if (fileName.endsWith('.xlsx')) {
-        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      }
-      
-      // Create a Uint8List from the bytes to ensure proper byte handling
-      final uint8List = Uint8List.fromList(bytes);
-      final blob = html.Blob([uint8List], mimeType);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..target = 'blank'
-        ..download = fileName;
-      html.document.body?.append(anchor);
-      anchor.click();
-      html.Url.revokeObjectUrl(url);
-      anchor.remove();
-    } catch (e) {
-      print('Error preparing web download: $e');
-    }
-  }
 
   Future<void> _downloadFile(List<int> bytes, String fileName) async {
-    if (kIsWeb) {
-      _downloadFileWeb(bytes, fileName);
-    } else {
-      try {
-        final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsBytes(bytes);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Downloaded: $fileName')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving file: $e')),
-        );
-      }
+    final uint8List = Uint8List.fromList(bytes);
+    String mimeType = 'application/octet-stream';
+    if (fileName.toLowerCase().endsWith('.pdf')) {
+      mimeType = 'application/pdf';
+    } else if (fileName.toLowerCase().endsWith('.xlsx')) {
+      mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+    
+    await PlatformFileSaver.saveFile(uint8List, fileName, mimeType);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('File download process completed', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.green[600],
+        ),
+      );
     }
   }
 

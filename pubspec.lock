@@ -188,11 +188,9 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_web_plugins:
-    dependency: "direct overridden"
-    description:
-      path: flutter_web_plugins_stub
-      relative: true
-    source: path
+    dependency: transitive
+    description: flutter
+    source: sdk
     version: "0.0.0"
   functions_client:
     dependency: transitive

@@ -7,9 +7,10 @@ import 'package:excel/excel.dart' as excel_pkg;
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io' show File;
-import 'dart:typed_data' show Uint8List;
-import 'dart:html' as html;
+import 'package:school_management/utils/platform_file_saver.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:typed_data' show Uint8List;
 
 
 class DueReportTab extends StatefulWidget {
@@ -327,30 +328,16 @@ class _DueReportTabState extends State<DueReportTab> {
 
     final fileName = 'Due_Report_${DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now())}.xlsx';
 
-    if (kIsWeb) {
-      final uint8List = Uint8List.fromList(bytes);
-      final blob = html.Blob([uint8List], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..target = 'blank'
-        ..download = fileName;
-      html.document.body?.append(anchor);
-      anchor.click();
-      html.Url.revokeObjectUrl(url);
-      anchor.remove();
-    } else {
-      try {
-        final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsBytes(bytes);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Downloaded: $fileName')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving file: $e')),
-        );
-      }
+    final uint8List = Uint8List.fromList(bytes);
+    await PlatformFileSaver.saveFile(uint8List, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Excel file saved successfully', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.green[600],
+        ),
+      );
     }
   }
 }

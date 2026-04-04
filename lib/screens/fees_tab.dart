@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html;
+import 'package:school_management/utils/platform_file_saver.dart';
 import 'package:flutter/services.dart';
 
 class FeesTab extends StatefulWidget {
@@ -304,69 +304,40 @@ class _FeesTabState extends State<FeesTab> {
   }
 
   Future<void> _downloadFile(List<int> bytes, String fileName) async {
-    try {
-      if (kIsWeb) {
-        // Web: use html.Blob download
-        _downloadFileWeb(bytes, fileName);
-      } else {
-        // Mobile/Desktop: save to Downloads or Documents directory
-        try {
-          final directory = await getDownloadsDirectory();
-          if (directory == null) {
-            // Fallback to documents directory
-            final docDir = await getApplicationDocumentsDirectory();
-            final file = File('${docDir.path}/$fileName');
-            await file.writeAsBytes(bytes);
-          } else {
-            final file = File('${directory.path}/$fileName');
-            await file.writeAsBytes(bytes);
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error saving file: $e')),
-            );
-          }
-          return;
-        }
-      }
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Downloaded: $fileName')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: $e'), backgroundColor: Colors.red),
-        );
-      }
+    final uint8List = Uint8List.fromList(bytes);
+    String mimeType = 'application/octet-stream';
+    if (fileName.toLowerCase().endsWith('.pdf')) {
+      mimeType = 'application/pdf';
+    } else if (fileName.toLowerCase().endsWith('.xlsx')) {
+      mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+    
+    await PlatformFileSaver.saveFile(uint8List, fileName, mimeType);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('File saved successfully', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.green[600],
+        ),
+      );
     }
   }
 
-  void _downloadFileWeb(List<int> bytes, String fileName) {
+  Future<void> _downloadFileWeb(List<int> bytes, String fileName) async {
     // Web download using Blob and download link
     try {
       // Determine MIME type based on file extension
       String mimeType = 'application/octet-stream';
-      if (fileName.endsWith('.pdf')) {
+      if (fileName.toLowerCase().endsWith('.pdf')) {
         mimeType = 'application/pdf';
-      } else if (fileName.endsWith('.xlsx')) {
+      } else if (fileName.toLowerCase().endsWith('.xlsx')) {
         mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       }
       
       // Create a Uint8List from the bytes to ensure proper byte handling
       final uint8List = Uint8List.fromList(bytes);
-      final blob = html.Blob([uint8List], mimeType);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..target = 'blank'
-        ..download = fileName;
-      html.document.body?.append(anchor);
-      anchor.click();
-      html.Url.revokeObjectUrl(url);
-      anchor.remove();
+      await PlatformFileSaver.saveFile(uint8List, fileName, mimeType);
     } catch (e) {
       print('Error preparing web download: $e');
     }

@@ -4,7 +4,9 @@ import 'package:school_management/models/student.dart';
 import 'package:school_management/services/supabase_service.dart';
 import 'package:excel/excel.dart' as excel_package;
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:intl/intl.dart';
+import 'package:school_management/utils/platform_file_saver.dart';
 
 class StaffStudentDetailsScreen extends StatefulWidget {
   final String staffName;
@@ -23,6 +25,7 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
   Map<String, List<Map<String, dynamic>>> _feesMap = {};
   Map<String, double> _duesMap = {};
   Map<String, Map<String, dynamic>> _busHostelFeesMap = {};
+  Map<String, Map<int, Map<String, dynamic>>> _termLastPaidDataMap = {};
 
   @override
   void initState() {
@@ -59,42 +62,126 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
       if (studentNames.isNotEmpty) {
         feesMap = await SupabaseService.getFeesForStudents(studentNames);
       }
+      
       Map<String, double> duesMap = {};
-      Map<String, double> routeFees = {};
       Map<String, Map<String, dynamic>> busHostelFeesMap = {};
+      Map<String, Map<int, Map<String, dynamic>>> termLastPaidDataMap = {};
+      
       final classBase = className.split('-').first;
       final structure = await SupabaseService.getFeeStructureByClass(classBase);
       final totalFee = structure != null ? (double.tryParse((structure['FEE'] as dynamic).toString()) ?? 0.0) : 0.0;
+      
+      Map<String, double> routeFees = {};
       
       for (final s in students) {
         final concession = s.schoolFeeConcession.toDouble();
         final termFees = SupabaseService.calculateTermFees(totalFee, concession);
         final studentFees = feesMap[s.name] ?? [];
         
+        Map<int, Map<String, dynamic>> termLastPaidDatesMap = {};
         double studentTotalDue = 0.0;
+        
+        // 1. School Fees (Terms 1, 2, 3)
         for (int term = 1; term <= 3; term++) {
-          final termKeyFull = 'term $term';
           double paidAmount = 0;
+          List<Map<String, dynamic>> termPayments = [];
+          
           for (final fee in studentFees) {
-            final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
-            final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
-            if (feeType.contains('school fee') && termNo.contains(termKeyFull)) {
-              paidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+            final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase();
+            final termNoDb = (fee['TERM NO'] as String? ?? '').toLowerCase();
+            
+            // Loosen matching: Check if fee type contains 'school' and termNo contains 'term' + term number
+            bool isSchoolFee = feeType.contains('school');
+            bool isCorrectTerm = termNoDb.contains('term') && termNoDb.contains(term.toString());
+            
+            if (isSchoolFee && isCorrectTerm) {
+              paidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0.0;
+              termPayments.add(fee);
             }
           }
-          final termFee = termFees[term]!;
-          if (paidAmount < termFee) {
-            studentTotalDue += (termFee - paidAmount);
+
+          String? lastPaidDate;
+          Map<String, dynamic>? lastPayment;
+          if (termPayments.isNotEmpty) {
+            termPayments.sort((a, b) {
+              DateTime parseDate(Map<String, dynamic> f) {
+                // Try created_at timestamp first
+                if (f['created_at'] != null) {
+                   try { return DateTime.parse(f['created_at'].toString()); } catch (_) {}
+                }
+                // Try DATE column (text)
+                if (f['DATE'] != null) {
+                  try {
+                    return DateFormat('dd-MM-yyyy').parse(f['DATE'].toString());
+                  } catch (_) {
+                    try {
+                      return DateFormat('yyyy-MM-dd').parse(f['DATE'].toString());
+                    } catch (_) {}
+                  }
+                }
+                return DateTime(2000);
+              }
+              return parseDate(b).compareTo(parseDate(a));
+            });
+            lastPayment = termPayments.first;
+            
+            // Extract the date properly from whichever column is available
+            final dynamic rawDate = lastPayment['DATE'] ?? lastPayment['created_at'];
+            if (rawDate != null) {
+              final String dateStr = rawDate.toString();
+              if (dateStr.length > 10) {
+                try {
+                  lastPaidDate = DateFormat('dd-MM-yyyy').format(DateTime.parse(dateStr));
+                } catch (_) {
+                  lastPaidDate = dateStr.split('T').first;
+                }
+              } else {
+                lastPaidDate = dateStr;
+              }
+            }
           }
+
+          final termFee = termFees[term]!;
+          final termDue = (termFee - paidAmount).clamp(0, double.infinity);
+          
+          termLastPaidDatesMap[term] = {
+            'Total': termFee,
+            'Paid': paidAmount,
+            'Due': termDue,
+            'Date': lastPaidDate,
+            'Payment': lastPayment,
+          };
+          
+          studentTotalDue += termDue;
         }
+        termLastPaidDataMap[s.name] = termLastPaidDatesMap;
         
-        // Calculate bus fees
+        // 2. Bus Fees
         double busFeeTotal = 0;
         double busPaidAmount = 0;
-        if (s.busRoute != null && s.busRoute!.isNotEmpty) {
-          busPaidAmount = studentFees
+        String? busLastPaidDate;
+        Map<String, dynamic>? latestBusPayment;
+        
+        if (s.busFacility?.toUpperCase() == 'YES' && s.busRoute != null && s.busRoute!.isNotEmpty) {
+          final busFees = studentFees
               .where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('bus fee'))
-              .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+              .toList();
+          
+          busPaidAmount = busFees.fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+          
+          if (busFees.isNotEmpty) {
+            busFees.sort((a, b) {
+              final dateA = a['created_at'] != null ? DateTime.parse(a['created_at'].toString()) : DateTime(2000);
+              final dateB = b['created_at'] != null ? DateTime.parse(b['created_at'].toString()) : DateTime(2000);
+              return dateB.compareTo(dateA);
+            });
+            latestBusPayment = busFees.first;
+            final latestDate = latestBusPayment['created_at'];
+            if (latestDate != null) {
+              busLastPaidDate = DateFormat('dd-MM-yyyy').format(DateTime.parse(latestDate.toString()));
+            }
+          }
+
           if (!routeFees.containsKey(s.busRoute!)) {
             routeFees[s.busRoute!] = await SupabaseService.getBusFeeByRoute(s.busRoute!);
           }
@@ -102,39 +189,65 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
         }
         double busFeeDue = (busFeeTotal - busPaidAmount).clamp(0, double.infinity);
         studentTotalDue += busFeeDue;
-        
-        // Calculate hostel fees
+
+        // 3. Hostel Fees
         double hostelFeeTotal = 0;
         double hostelPaidAmount = 0;
+        String? hostelLastPaidDate;
+        Map<String, dynamic>? latestHostelPayment;
+        
         if (s.hostelFacility?.toUpperCase() == 'YES' && s.hostelType != null && s.hostelType!.isNotEmpty) {
-          hostelPaidAmount = studentFees
+          final hostelFees = studentFees
               .where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('hostel fee'))
-              .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+              .toList();
+
+          hostelPaidAmount = hostelFees.fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+
+          if (hostelFees.isNotEmpty) {
+            hostelFees.sort((a, b) {
+              final dateA = a['created_at'] != null ? DateTime.parse(a['created_at'].toString()) : DateTime(2000);
+              final dateB = b['created_at'] != null ? DateTime.parse(b['created_at'].toString()) : DateTime(2000);
+              return dateB.compareTo(dateA);
+            });
+            latestHostelPayment = hostelFees.first;
+            final latestDate = latestHostelPayment['created_at'];
+            if (latestDate != null) {
+              hostelLastPaidDate = DateFormat('dd-MM-yyyy').format(DateTime.parse(latestDate.toString()));
+            }
+          }
           hostelFeeTotal = await SupabaseService.getHostelFeeByClassAndType(classBase, s.hostelType!);
         }
+        
         double hostelFeeDue = (hostelFeeTotal - hostelPaidAmount).clamp(0, double.infinity);
         studentTotalDue += hostelFeeDue;
         
         duesMap[s.name] = studentTotalDue;
+        
         busHostelFeesMap[s.name] = {
           'busAvailed': s.busFacility?.toUpperCase() == 'YES',
+          'busRoute': s.busRoute ?? 'N/A',
           'busFeeTotal': busFeeTotal,
           'busPaid': busPaidAmount,
           'busDue': busFeeDue,
-          'busRoute': s.busRoute ?? 'N/A',
+          'busLastPaid': busLastPaidDate,
+          'busPayment': latestBusPayment,
           'hostelAvailed': s.hostelFacility?.toUpperCase() == 'YES',
+          'hostelType': s.hostelType ?? 'N/A',
           'hostelFeeTotal': hostelFeeTotal,
           'hostelPaid': hostelPaidAmount,
           'hostelDue': hostelFeeDue,
-          'hostelType': s.hostelType ?? 'N/A',
+          'hostelLastPaid': hostelLastPaidDate,
+          'hostelPayment': latestHostelPayment,
         };
       }
-
+      
       setState(() {
         _students = students;
         _feesMap = feesMap;
         _duesMap = duesMap;
         _busHostelFeesMap = busHostelFeesMap;
+        _termLastPaidDataMap = termLastPaidDataMap;
+        _isLoading = false;
       });
     } catch (e) {
       print('Error fetching students: $e');
@@ -152,38 +265,12 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
     return total;
   }
 
-  Map<int, Map<String, double>> _calculateTermBreakdown(Student student) {
-    final fees = _feesMap[student.name] ?? [];
-    final concession = student.schoolFeeConcession.toDouble();
-    
-    // Initialize term data
-    Map<int, Map<String, double>> termData = {
-      1: {'Total': 0, 'Paid': 0, 'Due': 0},
-      2: {'Total': 0, 'Paid': 0, 'Due': 0},
-      3: {'Total': 0, 'Paid': 0, 'Due': 0},
+  Map<int, Map<String, dynamic>> _calculateTermBreakdown(Student student) {
+    return _termLastPaidDataMap[student.name] ?? {
+      1: {'Total': 0.0, 'Paid': 0.0, 'Due': 0.0, 'Date': null},
+      2: {'Total': 0.0, 'Paid': 0.0, 'Due': 0.0, 'Date': null},
+      3: {'Total': 0.0, 'Paid': 0.0, 'Due': 0.0, 'Date': null},
     };
-
-    // This would normally get the total fee from structure, for now using a default
-    double totalFee = 50000; // Default value, should be fetched from fee structure
-    final termFees = SupabaseService.calculateTermFees(totalFee, concession);
-
-    for (int term = 1; term <= 3; term++) {
-      termData[term]!['Total'] = termFees[term] ?? 0.0;
-      
-      double paidAmount = 0;
-      for (final fee in fees) {
-        final feeType = (fee['FEE TYPE'] as String? ?? '').toLowerCase().trim();
-        final termNo = (fee['TERM NO'] as String? ?? '').toLowerCase().trim();
-        if (feeType.contains('school fee') && termNo.contains('term $term')) {
-          paidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
-        }
-      }
-      
-      termData[term]!['Paid'] = paidAmount;
-      termData[term]!['Due'] = (termData[term]!['Total']! - paidAmount).clamp(0, double.infinity);
-    }
-
-    return termData;
   }
 
   Map<String, dynamic> _calculateBusAndHostelFees(Student student) {
@@ -201,7 +288,7 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
     };
   }
 
-  Widget _buildTermsRow(Map<int, Map<String, double>> termBreakdown) {
+  Widget _buildTermsRow(Map<int, Map<String, dynamic>> termBreakdown) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -248,10 +335,66 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (termBreakdown[term]?['Date'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Date: ${termBreakdown[term]?['Date']}',
+                              style: GoogleFonts.inter(
+                                fontSize: 8,
+                                color: Colors.blueGrey[600],
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                final payment = termBreakdown[term]?['Payment'];
+                                if (payment != null) {
+                                  _showReceipt(payment);
+                                }
+                              },
+                              child: Icon(Icons.receipt, size: 12, color: Colors.blue[600]),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  void _showReceipt(Map<String, dynamic> payment) {
+    // Navigate to a screen or dialog that shows the receipt
+    // Since we are in staff_student_details_screen, we can't easily access FeesTab's dialog
+    // But we can show a simple dialog here
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Payment Receipt', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Receipt Date: ${payment['DATE']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text('Fee Type: ${payment['FEE TYPE']}'),
+            Text('Term No: ${payment['TERM NO']}'),
+            const Divider(),
+            Text('Amount Paid: ₹${payment['AMOUNT']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -301,6 +444,32 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                  if (busHostelInfo['busLastPaid'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Date: ${busHostelInfo['busLastPaid']}',
+                            style: GoogleFonts.inter(
+                              fontSize: 8,
+                              color: Colors.blueGrey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              final payment = busHostelInfo['busPayment'];
+                              if (payment != null) {
+                                _showReceipt(payment);
+                              }
+                            },
+                            child: Icon(Icons.receipt, size: 12, color: Colors.orange[600]),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -348,6 +517,32 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                  if (busHostelInfo['hostelLastPaid'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Date: ${busHostelInfo['hostelLastPaid']}',
+                            style: GoogleFonts.inter(
+                              fontSize: 8,
+                              color: Colors.blueGrey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              final payment = busHostelInfo['hostelPayment'];
+                              if (payment != null) {
+                                _showReceipt(payment);
+                              }
+                            },
+                            child: Icon(Icons.receipt, size: 12, color: Colors.purple[600]),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -371,20 +566,25 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
         'Term 1 Total',
         'Term 1 Paid',
         'Term 1 Due',
+        'Term 1 Paid Date',
         'Term 2 Total',
         'Term 2 Paid',
         'Term 2 Due',
+        'Term 2 Paid Date',
         'Term 3 Total',
         'Term 3 Paid',
         'Term 3 Due',
+        'Term 3 Paid Date',
         'Bus Route',
         'Bus Total',
         'Bus Paid',
         'Bus Due',
+        'Bus Paid Date',
         'Hostel Type',
         'Hostel Total',
         'Hostel Paid',
         'Hostel Due',
+        'Hostel Paid Date',
         'Total Due',
       ];
 
@@ -408,20 +608,25 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
           termBreakdown[1]?['Total'] ?? 0,
           termBreakdown[1]?['Paid'] ?? 0,
           termBreakdown[1]?['Due'] ?? 0,
+          termBreakdown[1]?['Date'] ?? 'N/A',
           termBreakdown[2]?['Total'] ?? 0,
           termBreakdown[2]?['Paid'] ?? 0,
           termBreakdown[2]?['Due'] ?? 0,
+          termBreakdown[2]?['Date'] ?? 'N/A',
           termBreakdown[3]?['Total'] ?? 0,
           termBreakdown[3]?['Paid'] ?? 0,
           termBreakdown[3]?['Due'] ?? 0,
+          termBreakdown[3]?['Date'] ?? 'N/A',
           busHostelInfo['busRoute'],
           busHostelInfo['busFeeTotal'],
           busHostelInfo['busPaid'],
           busHostelInfo['busDue'],
+          busHostelInfo['busLastPaid'] ?? 'N/A',
           busHostelInfo['hostelType'],
           busHostelInfo['hostelFeeTotal'],
           busHostelInfo['hostelPaid'],
           busHostelInfo['hostelDue'],
+          busHostelInfo['hostelLastPaid'] ?? 'N/A',
           _duesMap[student.name] ?? 0,
         ];
 
@@ -431,25 +636,21 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
         }
       }
 
-      // Save file
-      final output = await getApplicationDocumentsDirectory();
-      final fileName = 'StudentDetails_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final filePath = '${output.path}/$fileName';
+      // Save file using PlatformFileSaver
+      final bytes = excel.encode();
+      if (bytes != null) {
+        final uint8List = Uint8List.fromList(bytes);
+        final fileName = 'StudentDetails_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        await PlatformFileSaver.saveFile(uint8List, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      }
       
-      List<int>? fileBytes = excel.encode();
-      if (fileBytes != null) {
-        File(filePath)
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(fileBytes);
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Excel file saved to: $filePath'),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel file export process completed'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       print('Error exporting to Excel: $e');
@@ -596,12 +797,27 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
                                                             fontSize: 16,
                                                           ),
                                                         ),
-                                                        Text(
-                                                          student.className,
-                                                          style: GoogleFonts.inter(
-                                                            fontSize: 12,
-                                                            color: Colors.grey[600],
-                                                          ),
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              student.className,
+                                                              style: GoogleFonts.inter(
+                                                                fontSize: 12,
+                                                                color: Colors.grey[600],
+                                                              ),
+                                                            ),
+                                                            const SizedBox(width: 8),
+                                                            Icon(Icons.phone, size: 10, color: Colors.blue[600]),
+                                                            const SizedBox(width: 4),
+                                                            Text(
+                                                              student.parentMobile,
+                                                              style: GoogleFonts.inter(
+                                                                fontSize: 12,
+                                                                color: Colors.blue[600],
+                                                                fontWeight: FontWeight.w600,
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
                                                       ],
                                                     ),

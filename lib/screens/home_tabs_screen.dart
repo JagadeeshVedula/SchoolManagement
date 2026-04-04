@@ -10,7 +10,6 @@ import 'package:school_management/screens/report_tab.dart';
 import 'package:school_management/screens/diesel_data_screen.dart';
 import 'package:school_management/screens/leave_requests_approval_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html;
 import 'package:school_management/screens/salary_slips_screen.dart';
 import 'package:school_management/screens/accounts_tab.dart';
 import 'package:school_management/models/user_role.dart';

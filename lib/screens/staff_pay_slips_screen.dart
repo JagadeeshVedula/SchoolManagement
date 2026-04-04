@@ -28,7 +28,7 @@ class _StaffPaySlipsScreenState extends State<StaffPaySlipsScreen> {
   Future<void> _fetchPaySlips() async {
     setState(() => _isLoading = true);
     try {
-      final paySlips = await SupabaseService.getPaySlipsForStaff(widget.staffName);
+      final paySlips = await SupabaseService.getPaySlipsForStaff(widget.staffName.trim());
       setState(() {
         _paySlips = paySlips;
         _isLoading = false;

@@ -35,6 +35,3 @@ flutter:
   assets:
     - assets/images/
 
-dependency_overrides:
-  flutter_web_plugins:
-    path: ./flutter_web_plugins_stub
