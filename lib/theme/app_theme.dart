@@ -29,7 +29,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.05),
