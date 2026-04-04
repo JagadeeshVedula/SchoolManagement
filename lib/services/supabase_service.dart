@@ -2154,4 +2154,43 @@ class SupabaseService {
       return null;
     }
   }
+  // Fetch all unique bus numbers from TRANSPORT table
+  static Future<List<String>> getBusNumbersList() async {
+    try {
+      final response = await client
+          .from('TRANSPORT')
+          .select('BusNumber')
+          .neq('BusNumber', null);
+      
+      final busNumbers = <String>{};
+      for (var item in response as List) {
+        final busNo = item['BusNumber']?.toString();
+        if (busNo != null && busNo.isNotEmpty) {
+          busNumbers.add(busNo);
+        }
+      }
+      final result = busNumbers.toList()..sort();
+      return result;
+    } catch (e) {
+      print('Error fetching bus numbers: $e');
+      return [];
+    }
+  }
+
+  // Fetch students by bus number
+  static Future<List<Student>> getStudentsByBusNo(String busNo) async {
+    try {
+      final response = await client
+          .from('STUDENTS')
+          .select()
+          .eq('BusNo', busNo);
+      
+      return (response as List)
+          .map((json) => Student.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching students by bus number: $e');
+      return [];
+    }
+  }
 }

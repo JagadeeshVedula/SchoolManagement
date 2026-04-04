@@ -53,13 +53,20 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   List<Map<String, dynamic>> _dailyReportData = [];
   bool _isDailyLoading = false;
 
+  // Bus Due Report State
+  String? _selectedBusNumber;
+  List<String> _busNumbers = [];
+  List<Map<String, dynamic>> _busDueReportData = [];
+  bool _isBusDueLoading = false;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _loadClasses();
     _loadStaff();
     _loadDailyReportData(); // Initial load for daily report tab
+    _loadBusNumbers(); // Load bus numbers for bus due report tab
     _dieselDateRange = DateTimeRange(
       start: DateTime.now().subtract(const Duration(days: 7)),
       end: DateTime.now(),
@@ -89,6 +96,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             break;
           case 5: // Daily Report
             if (_dailyReportData.isEmpty) _loadDailyReportData();
+            break;
+          case 6: // Bus Due Report
+            if (_busNumbers.isEmpty) _loadBusNumbers();
             break;
         }
       }
@@ -298,6 +308,104 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
       setState(() => _isDailyLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading daily report: $e')),
+      );
+    }
+  }
+
+  Future<void> _loadBusNumbers() async {
+    final busNumbers = await SupabaseService.getBusNumbersList();
+    setState(() {
+      _busNumbers = busNumbers;
+    });
+  }
+
+  Future<void> _loadBusDueReportData() async {
+    if (_selectedBusNumber == null) return;
+    setState(() => _isBusDueLoading = true);
+    try {
+      final students = await SupabaseService.getStudentsByBusNo(_selectedBusNumber!);
+      final List<Map<String, dynamic>> reportData = [];
+      
+      // Batch fetch all fees for these students to optimize
+      final studentNames = students.map((s) => s.name).toList();
+      final allFeesByStudent = await SupabaseService.getFeesForStudents(studentNames);
+      
+      // Cache for fee structures
+      final feeStructureCache = <String, Map<String, dynamic>>{};
+
+      for (final student in students) {
+        final fees = allFeesByStudent[student.name] ?? [];
+        
+        // 1. Bus Fee Logic
+        final busTotalFee = await SupabaseService.getBusFeeByRoute(student.busRoute ?? '');
+        final busConcession = student.busFeeConcession;
+        final busEffectiveTotal = (busTotalFee - busConcession).clamp(0, double.infinity);
+        final busPaidFee = fees
+            .where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('bus fee'))
+            .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+        final busPendingFee = (busEffectiveTotal - busPaidFee).clamp(0, double.infinity);
+
+        // 2. School Fee Logic
+        final classNameOnly = student.className.split('-').first;
+        if (!feeStructureCache.containsKey(classNameOnly)) {
+          feeStructureCache[classNameOnly] = await SupabaseService.getFeeStructureByClass(classNameOnly) ?? {};
+        }
+        final feeStructure = feeStructureCache[classNameOnly]!;
+        final schoolTotalFee = double.tryParse(feeStructure['FEE']?.toString() ?? '0') ?? 0;
+        final schoolConcession = student.schoolFeeConcession;
+        final schoolEffectiveTotal = (schoolTotalFee - schoolConcession).clamp(0, double.infinity);
+        final schoolPaidFee = fees
+            .where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('school fee'))
+            .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+        final schoolPendingFee = (schoolEffectiveTotal - schoolPaidFee).clamp(0, double.infinity);
+
+        // 3. Last Paid Date
+        String lastPaidDateStr = 'No Payments';
+        if (fees.isNotEmpty) {
+          DateTime? latestDate;
+          for (final f in fees) {
+             final dateStr = f['DATE'] as String?;
+             if (dateStr == null) continue;
+             DateTime? d = DateFormat('dd-MM-yyyy').tryParse(dateStr);
+             d ??= DateFormat('yyyy-MM-dd').tryParse(dateStr);
+             if (d != null) {
+               if (latestDate == null || d.isAfter(latestDate)) {
+                 latestDate = d;
+               }
+             }
+          }
+          if (latestDate != null) {
+            lastPaidDateStr = DateFormat('dd-MM-yyyy').format(latestDate);
+          }
+        }
+        
+        reportData.add({
+          'Student Name': student.name,
+          'Class': student.className,
+          'Route': student.busRoute ?? 'N/A',
+          'Bus Total': busTotalFee,
+          'Bus Concession': busConcession,
+          'Bus Paid': busPaidFee,
+          'Bus Pending': busPendingFee,
+          'School Total': schoolTotalFee,
+          'School Concession': schoolConcession,
+          'School Paid': schoolPaidFee,
+          'School Pending': schoolPendingFee,
+          'Parent Mobile': student.parentMobile ?? 'N/A',
+          'Overall Total': busTotalFee + schoolTotalFee,
+          'Overall Due': busPendingFee + schoolPendingFee,
+          'Last Paid Date': lastPaidDateStr,
+        });
+      }
+      
+      setState(() {
+        _busDueReportData = reportData;
+        _isBusDueLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isBusDueLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading bus due report: $e')),
       );
     }
   }
@@ -563,6 +671,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               Tab(text: 'Staff Leave Report'),
               Tab(text: 'Due Report'),
               Tab(text: 'Daily Report'),
+              Tab(text: 'Bus Due Report'),
             ],
           ),
         ),
@@ -576,6 +685,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               _buildStaffLeaveReportTab(),
               DueReportTab(staffList: _staffList),
               _buildDailyReportTab(),
+              _buildBusDueReportTab(),
             ],
           ),
         ),
@@ -1467,10 +1577,187 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
      }
   }
 
+  Future<void> _downloadBusDueExcel() async {
+    if (_busDueReportData.isEmpty) return;
+    final excel = excel_pkg.Excel.createExcel();
+    final sheet = excel['Bus Due Report'];
+    
+    sheet.appendRow(['Bus Due Report - Bus No: $_selectedBusNumber']);
+    sheet.appendRow([]);
+    sheet.appendRow(['Student Name', 'Class', 'Route', 'Last Paid', 'Bus Total', 'Bus Paid', 'Bus Due', 'School Total', 'School Paid', 'School Due', 'Parent Mobile', 'Overall Fee', 'Overall Due']);
+    
+    for (var data in _busDueReportData) {
+      sheet.appendRow([
+        data['Student Name'],
+        data['Class'],
+        data['Route'],
+        data['Last Paid Date'],
+        data['Bus Total'],
+        data['Bus Paid'],
+        data['Bus Pending'],
+        data['School Total'],
+        data['School Paid'],
+        data['School Pending'],
+        data['Parent Mobile'],
+        data['Overall Total'],
+        data['Overall Due']
+      ]);
+    }
+    
+    final bytes = excel.encode();
+    if (bytes != null) {
+      await _downloadFile(bytes, 'Bus_Due_Report_${_selectedBusNumber}_${DateFormat('yyyyMMdd').format(DateTime.now())}.xlsx');
+    }
+  }
+
   String _formatAmount(double? amount) {
 
     if (amount == null) return '0';
     return amount.toStringAsFixed(2);
+  }
+
+  Widget _buildBusDueReportTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedBusNumber,
+                    decoration: InputDecoration(
+                      labelText: 'Select Bus Number',
+                      labelStyle: GoogleFonts.poppins(fontSize: 14),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.directions_bus, color: Color(0xFF800000)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                    ),
+                    items: _busNumbers.map((bus) => DropdownMenuItem(value: bus, child: Text(bus, style: GoogleFonts.poppins()))).toList(),
+                    onChanged: (val) {
+                      setState(() => _selectedBusNumber = val);
+                      _loadBusDueReportData();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: _busDueReportData.isEmpty ? null : _downloadBusDueExcel,
+                  icon: const Icon(Icons.download_outlined, size: 18),
+                  label: Text('Export Excel', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (_isBusDueLoading)
+            const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+          else if (_selectedBusNumber == null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    Icon(Icons.directions_bus, size: 64, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text('Please select a bus to view the report', style: GoogleFonts.poppins(color: Colors.grey[500])),
+                  ],
+                ),
+              ),
+            )
+          else if (_busDueReportData.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    Icon(Icons.person_off, size: 64, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text('No students found for this bus', style: GoogleFonts.poppins(color: Colors.grey[500])),
+                  ],
+                ),
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(const Color(0xFF800000)),
+                  headingTextStyle: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+                  dataTextStyle: GoogleFonts.inter(fontSize: 13),
+                  columns: const [
+                    DataColumn(label: Text('Student Name')),
+                    DataColumn(label: Text('Class')),
+                    DataColumn(label: Text('Route')),
+                    DataColumn(label: Text('Last Paid')),
+                    DataColumn(label: Text('Bus Total')),
+                    DataColumn(label: Text('Bus Paid')),
+                    DataColumn(label: Text('Bus Due')),
+                    DataColumn(label: Text('School Total')),
+                    DataColumn(label: Text('School Paid')),
+                    DataColumn(label: Text('School Due')),
+                    DataColumn(label: Text('Parent Mobile')),
+                    DataColumn(label: Text('Overall Fee')),
+                    DataColumn(label: Text('Overall Due')),
+                  ],
+                  rows: _busDueReportData.map((data) {
+                    return DataRow(cells: [
+                      DataCell(Text(data['Student Name'] ?? '')),
+                      DataCell(Text(data['Class'] ?? '')),
+                      DataCell(Text(data['Route'] ?? '')),
+                      DataCell(Text(data['Last Paid Date'] ?? 'N/A')),
+                      DataCell(Text('Rs.${data['Bus Total']}')),
+                      DataCell(Text('Rs.${data['Bus Paid']}', style: const TextStyle(color: Colors.green))),
+                      DataCell(Text('Rs.${data['Bus Pending']}', style: const TextStyle(color: Colors.red))),
+                      DataCell(Text('Rs.${data['School Total']}')),
+                      DataCell(Text('Rs.${data['School Paid']}', style: const TextStyle(color: Colors.green))),
+                      DataCell(Text('Rs.${data['School Pending']}', style: const TextStyle(color: Colors.red))),
+                      DataCell(Text(data['Parent Mobile'] ?? '')),
+                      DataCell(Text('Rs.${data['Overall Total']}', style: const TextStyle(fontWeight: FontWeight.bold))),
+                      DataCell(Text('Rs.${data['Overall Due']}', style: const TextStyle(color: Color(0xFF800000), fontWeight: FontWeight.bold))),
+                    ]);
+                  }).toList(),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
   // #endregion
 
