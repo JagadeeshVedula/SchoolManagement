@@ -59,10 +59,15 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   List<Map<String, dynamic>> _busDueReportData = [];
   bool _isBusDueLoading = false;
 
+  // Due Statement State
+  DateTime _selectedDueStatementDate = DateTime.now();
+  List<Map<String, dynamic>> _dueStatementReportData = [];
+  bool _isDueStatementLoading = false;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
     _loadClasses();
     _loadStaff();
     _loadDailyReportData(); // Initial load for daily report tab
@@ -99,6 +104,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             break;
           case 6: // Bus Due Report
             if (_busNumbers.isEmpty) _loadBusNumbers();
+            break;
+          case 7: // Due Statement
+            if (_dueStatementReportData.isEmpty) _loadDueStatementReportData();
             break;
         }
       }
@@ -410,6 +418,174 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
     }
   }
 
+  Future<void> _loadDueStatementReportData() async {
+    setState(() => _isDueStatementLoading = true);
+    try {
+      final students = await SupabaseService.getAllStudents();
+      
+      // Fetch all fees - filter in Dart because DATE column is often stored as dd-MM-yyyy string
+      final res = await SupabaseService.client.from('FEES').select();
+      final List<Map<String, dynamic>> allFeesFromDb = (res as List).cast<Map<String, dynamic>>();
+      
+      final normalizedSelectedDate = DateTime(_selectedDueStatementDate.year, _selectedDueStatementDate.month, _selectedDueStatementDate.day);
+      
+      final List<Map<String, dynamic>> allFees = allFeesFromDb.where((f) {
+        final dateStr = f['DATE'] as String?;
+        if (dateStr == null) return false;
+        
+        DateTime? feeDate;
+        try {
+          feeDate = DateFormat('dd-MM-yyyy').parse(dateStr);
+        } catch (_) {
+          try {
+            feeDate = DateFormat('yyyy-MM-dd').parse(dateStr);
+          } catch (_) {}
+        }
+        
+        if (feeDate == null) return false;
+        final normalizedFeeDate = DateTime(feeDate.year, feeDate.month, feeDate.day);
+        return !normalizedFeeDate.isAfter(normalizedSelectedDate);
+      }).toList();
+
+      // Pre-fetch all fee structures to avoid multiple calls
+      final feeStructuresResponse = await SupabaseService.client.from('FEE STRUCTURE').select();
+      final transportResponse = await SupabaseService.client.from('TRANSPORT').select();
+      final hostelResponse = await SupabaseService.client.from('HOSTEL').select();
+      final booksResponse = await SupabaseService.client.from('BOOKS').select();
+      final uniformResponse = await SupabaseService.client.from('UNIFORM').select();
+
+      final feeStructures = (feeStructuresResponse as List).cast<Map<String, dynamic>>();
+      final transportFees = (transportResponse as List).cast<Map<String, dynamic>>();
+      final hostelFees = (hostelResponse as List).cast<Map<String, dynamic>>();
+      final booksFees = (booksResponse as List).cast<Map<String, dynamic>>();
+      final uniformFees = (uniformResponse as List).cast<Map<String, dynamic>>();
+
+      // Categories
+      double schoolRaw = 0, schoolPaid = 0, schoolConcession = 0;
+      double busRaw = 0, busPaid = 0, busConcession = 0;
+      double hostelRaw = 0, hostelPaid = 0, hostelConcession = 0;
+      double bookRaw = 0, bookPaid = 0; 
+      double adminRaw = 0, adminPaid = 0, adminConcession = 0;
+
+      for (final student in students) {
+        final classNameOnly = student.className.split('-').first;
+        final gender = student.gender ?? 'Male';
+
+        // 1. School Fee
+        final fs = feeStructures.firstWhere((f) => f['CLASS'] == classNameOnly, orElse: () => {});
+        if (fs.isNotEmpty) {
+          final rawFee = double.tryParse(fs['FEE']?.toString() ?? '0') ?? 0;
+          schoolRaw += rawFee;
+          schoolConcession += student.schoolFeeConcession;
+        }
+
+        // 2. Bus Fee
+        if (student.busFacility?.toLowerCase() == 'yes' && student.busRoute != null && student.busRoute!.isNotEmpty) {
+          final ts = transportFees.firstWhere((t) => t['Route'] == student.busRoute, orElse: () => {});
+          if (ts.isNotEmpty) {
+            final rawFee = double.tryParse(ts['Fees']?.toString() ?? '0') ?? 0;
+            busRaw += rawFee;
+            busConcession += student.busFeeConcession;
+          }
+        }
+
+        // 3. Hostel Fee
+        if (student.hostelFacility?.toLowerCase() == 'yes') {
+          final hs = hostelFees.firstWhere((h) => h['CLASS'] == classNameOnly, orElse: () => {});
+          if (hs.isNotEmpty) {
+            final rawFee = double.tryParse(hs['HOSTEL_FEE']?.toString() ?? '0') ?? 0;
+            hostelRaw += rawFee;
+            hostelConcession += student.hostelFeeConcession;
+          }
+        }
+
+        // 4. Book Fee
+        final bs = booksFees.firstWhere((b) => b['CLASS'] == classNameOnly, orElse: () => {});
+        if (bs.isNotEmpty) {
+          bookRaw += double.tryParse(bs['BOOKS FEE']?.toString() ?? '0') ?? 0;
+        }
+
+        // 5. Administration Fee (Logic: Total = Count*500, Paid = Count(YES)*500, Concession = Count(NO)*500)
+        adminRaw += 500;
+        if (student.adminFee?.toUpperCase() == 'YES') {
+          adminPaid += 500;
+        } else {
+          adminConcession += 500;
+        }
+
+        // Calculate Paid amounts for other student fees
+        final studentFees = allFees.where((f) => f['STUDENT NAME'] == student.name);
+        for (final fee in studentFees) {
+          final type = (fee['FEE TYPE'] as String? ?? '').toLowerCase();
+          final amt = double.tryParse(fee['AMOUNT']?.toString() ?? '0') ?? 0;
+          
+          if (type.contains('school fee')) schoolPaid += amt;
+          else if (type.contains('bus fee')) busPaid += amt;
+          else if (type.contains('hostel')) hostelPaid += amt;
+          else if (type.contains('book')) bookPaid += amt;
+          // Note: Administration Fee "Paid" is derived from student's ADMIN_FEE column status
+        }
+      }
+
+      final reportData = [
+        {
+          'Category': 'School Fee',
+          'Total Fee': schoolRaw,
+          'Total Paid': schoolPaid,
+          'Concession': schoolConcession,
+          'Total Pending': schoolRaw - schoolPaid - schoolConcession
+        },
+        {
+          'Category': 'Administration Fee',
+          'Total Fee': adminRaw,
+          'Total Paid': adminPaid,
+          'Concession': adminConcession,
+          'Total Pending': adminRaw - adminPaid - adminConcession
+        },
+        {
+          'Category': 'Bus Fee',
+          'Total Fee': busRaw,
+          'Total Paid': busPaid,
+          'Concession': busConcession,
+          'Total Pending': busRaw - busPaid - busConcession
+        },
+        {
+          'Category': 'Hostel Fee',
+          'Total Fee': hostelRaw,
+          'Total Paid': hostelPaid,
+          'Concession': hostelConcession,
+          'Total Pending': hostelRaw - hostelPaid - hostelConcession
+        },
+        {
+          'Category': 'Book Fee',
+          'Total Fee': bookRaw,
+          'Total Paid': bookPaid,
+          'Concession': 0.0,
+          'Total Pending': bookRaw - bookPaid
+        },
+        {
+          'Category': 'GRAND TOTAL',
+          'Total Fee': schoolRaw + adminRaw + busRaw + hostelRaw + bookRaw,
+          'Total Paid': schoolPaid + adminPaid + busPaid + hostelPaid + bookPaid,
+          'Concession': schoolConcession + adminConcession + busConcession + hostelConcession,
+          'Total Pending': (schoolRaw + adminRaw + busRaw + hostelRaw + bookRaw) - 
+                          (schoolPaid + adminPaid + busPaid + hostelPaid + bookPaid) - 
+                          (schoolConcession + adminConcession + busConcession + hostelConcession)
+        },
+      ];
+
+      setState(() {
+        _dueStatementReportData = reportData;
+        _isDueStatementLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isDueStatementLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading due statement: $e')),
+      );
+    }
+  }
+
   // #endregion
 
   // #region Excel Export Methods
@@ -672,6 +848,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               Tab(text: 'Due Report'),
               Tab(text: 'Daily Report'),
               Tab(text: 'Bus Due Report'),
+              Tab(text: 'Due Statement'),
             ],
           ),
         ),
@@ -687,6 +864,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               DueReportTab(staffList: _staffList),
               _buildDailyReportTab(),
               _buildBusDueReportTab(),
+              _buildDueStatementTab(),
             ],
           ),
         ),
@@ -1611,9 +1789,161 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
     }
   }
 
-  String _formatAmount(double? amount) {
+  Widget _buildDueStatementTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Select Date',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _selectedDueStatementDate,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2030),
+              );
+              if (picked != null) {
+                setState(() {
+                  _selectedDueStatementDate = picked;
+                  _dueStatementReportData = [];
+                });
+                _loadDueStatementReportData();
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: Color(0xFF800000)),
+                  const SizedBox(width: 12),
+                  Text(
+                    DateFormat('dd MMMM yyyy').format(_selectedDueStatementDate),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (_isDueStatementLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_dueStatementReportData.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Consolidated Due Statement',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1E293B),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _downloadGenericExcel(_dueStatementReportData, 'Due_Statement'),
+                  icon: const Icon(Icons.download),
+                  label: const Text('Export Excel'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: DataTable(
+                  headingRowColor: MaterialStateProperty.all(const Color(0xFFF8FAFC)),
+                  columns: [
+                    DataColumn(label: Text('Category', style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
+                    DataColumn(label: Text('Total Fee', style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
+                    DataColumn(label: Text('Total Paid', style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
+                    DataColumn(label: Text('Concession', style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
+                    DataColumn(label: Text('Total Pending', style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
+                  ],
+                  rows: _dueStatementReportData.map((data) {
+                    final isGrandTotal = data['Category'] == 'GRAND TOTAL';
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(
+                          data['Category'].toString(),
+                          style: GoogleFonts.inter(
+                            fontWeight: isGrandTotal ? FontWeight.w700 : FontWeight.w500,
+                            color: isGrandTotal ? const Color(0xFF800000) : const Color(0xFF475569),
+                          ),
+                        )),
+                        DataCell(Text(
+                          '₹${_formatAmount(data['Total Fee'] as double?)}',
+                          style: GoogleFonts.inter(fontWeight: isGrandTotal ? FontWeight.bold : FontWeight.normal),
+                        )),
+                        DataCell(Text(
+                          '₹${_formatAmount(data['Total Paid'] as double?)}',
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF10B981),
+                            fontWeight: isGrandTotal ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        )),
+                        DataCell(Text(
+                          '₹${_formatAmount(data['Concession'] as double?)}',
+                          style: GoogleFonts.inter(
+                            color: Colors.orange[700],
+                            fontWeight: isGrandTotal ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        )),
+                        DataCell(Text(
+                          '₹${_formatAmount(data['Total Pending'] as double?)}',
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFFEF4444),
+                            fontWeight: isGrandTotal ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        )),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ] else
+            const Center(child: Text('Click Generate or select a date to view data')),
+        ],
+      ),
+    );
+  }
 
-    if (amount == null) return '0';
+  String _formatAmount(double? amount) {
+    if (amount == null) return '0.00';
     return amount.toStringAsFixed(2);
   }
 

@@ -257,6 +257,7 @@ class _RegisterTabState extends State<RegisterTab> {
       'Bus Facility': _sBusFacility ? 'Yes' : null,
       'Hostel Facility': _sHostelFacility ? 'Yes' : null,
       'HOSTELTYPE': _sHostelFacility ? _sHostelType : null,
+      'ADMIN_FEE': _sAdminFee ? 'YES' : 'NO',
     };
     data['DOJ'] = _selectedJoiningDate != null ? DateFormat('dd-MM-yyyy').format(_selectedJoiningDate!) : null;
     final ok = await SupabaseService.insertStudent(data);

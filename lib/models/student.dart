@@ -16,6 +16,7 @@ class Student {
   final String? busFacility;
   final String? hostelFacility;
   final String? hostelType;
+  final String? adminFee;
   final String? doj;
 
   Student({
@@ -36,6 +37,7 @@ class Student {
     this.busFacility,
     this.hostelFacility,
     this.hostelType,
+    this.adminFee,
     this.doj,
   });
 
@@ -59,6 +61,7 @@ class Student {
       busFacility: json['Bus Facility'] as String?,
       hostelFacility: json['Hostel Facility'] as String?,
       hostelType: json['HOSTELTYPE'] as String?,
+      adminFee: json['ADMIN_FEE'] as String?,
       doj: json['DOJ'] as String?,
     );
   }
@@ -83,6 +86,7 @@ class Student {
       'Bus Facility': busFacility,
       'Hostel Facility': hostelFacility,
       'HOSTELTYPE': hostelType,
+      'ADMIN_FEE': adminFee,
       'DOJ': doj,
     };
   }
@@ -105,6 +109,7 @@ class Student {
     String? busFacility,
     String? hostelFacility,
     String? hostelType,
+    String? adminFee,
     String? doj,
   }) {
     return Student(
@@ -125,6 +130,7 @@ class Student {
       busFacility: busFacility ?? this.busFacility,
       hostelFacility: hostelFacility ?? this.hostelFacility,
       hostelType: hostelType ?? this.hostelType,
+      adminFee: adminFee ?? this.adminFee,
       doj: doj ?? this.doj,
     );
   }
