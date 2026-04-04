@@ -1,6 +1,6 @@
 {
-    "name": "school_management",
-    "short_name": "school_management",
+    "name": "Nalanda School management system",
+    "short_name": "Nalanda School management system",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
