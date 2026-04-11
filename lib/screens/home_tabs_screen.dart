@@ -413,17 +413,16 @@ class StudentDataWidget extends StatefulWidget {
 }
 
 class _StudentDataWidgetState extends State<StudentDataWidget> {
-  late Future<List<String>> _classesFuture;
+  late Future<Map<String, List<String>>> _classDataFuture;
+  Map<String, List<String>> _classData = {};
   String? _selectedClass;
   String? _selectedSection;
-  List<String> _sections = [];
   late Future<List<Student>> _studentsFuture;
 
   @override
   void initState() {
     super.initState();
-    _classesFuture = SupabaseService.getClassesFromFeeStructure();
-    _sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
+    _classDataFuture = SupabaseService.getUniqueClassesAndSections();
     _studentsFuture = Future.value([]);
   }
 
@@ -431,7 +430,12 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
     setState(() {
       _selectedClass = className;
       _selectedSection = null;
-      _studentsFuture = Future.value([]);
+      if (className != null && _classData[className] != null && _classData[className]!.isEmpty) {
+        // Immediately load students for classes without sections (like NURSERY)
+        _studentsFuture = SupabaseService.getStudentsByClass(className);
+      } else {
+        _studentsFuture = Future.value([]);
+      }
     });
   }
 
@@ -439,12 +443,14 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
     setState(() {
       _selectedSection = sectionName;
       if (_selectedClass != null && sectionName != null) {
-        final fullClassName = '$_selectedClass-$sectionName';
-        if (widget.parentMobile != null && widget.parentMobile!.isNotEmpty) {
+        // Special handling for flexible S BATCH matching
+        if (sectionName.toUpperCase().contains('BATCH')) {
+           _studentsFuture = SupabaseService.getStudentsByClass('$_selectedClass-$sectionName');
+        } else if (widget.parentMobile != null && widget.parentMobile!.isNotEmpty) {
           _studentsFuture = SupabaseService.getStudentsByClassAndParentMobile(
-              fullClassName, widget.parentMobile!);
+              '$_selectedClass-$sectionName', widget.parentMobile!);
         } else {
-          _studentsFuture = SupabaseService.getStudentsByClass(fullClassName);
+          _studentsFuture = SupabaseService.getStudentsByClass('$_selectedClass-$sectionName');
         }
       } else {
         _studentsFuture = Future.value([]);
@@ -470,8 +476,8 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
             ),
           ),
           padding: const EdgeInsets.all(16.0),
-          child: FutureBuilder<List<String>>(
-            future: _classesFuture,
+          child: FutureBuilder<Map<String, List<String>>>(
+            future: _classDataFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
@@ -484,7 +490,9 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                 return Text('Error loading classes: ${snapshot.error}');
               }
 
-              final classes = snapshot.data ?? [];
+              _classData = snapshot.data ?? {};
+              final classes = _classData.keys.toList();
+              final currentSections = _selectedClass != null ? (_classData[_selectedClass] ?? <String>[]) : <String>[];
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,7 +537,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: _selectedClass == null ? Colors.grey[200] : Colors.white,
+                                color: (_selectedClass == null || currentSections.isEmpty) ? Colors.grey[200] : Colors.white,
                                 border: Border.all(color: Color(0xFFB91C1C).withOpacity(0.3), width: 2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -538,11 +546,11 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                                 value: _selectedSection,
                                 hint: Text('Select', style: GoogleFonts.inter(color: Colors.grey)),
                                 underline: const SizedBox(),
-                                items: _sections.map((section) => DropdownMenuItem<String>(
+                                items: currentSections.map((section) => DropdownMenuItem<String>(
                                   value: section,
                                   child: Text(section),
                                 )).toList(),
-                                onChanged: _selectedClass == null ? null : _onSectionSelected,
+                                onChanged: (_selectedClass == null || currentSections.isEmpty) ? null : _onSectionSelected,
                               ),
                             ),
                           ],
@@ -557,7 +565,7 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
         ),
 
         // Student List
-        if (_selectedClass != null && _selectedSection != null)
+        if (_selectedClass != null && (_selectedSection != null || (_classData[_selectedClass] ?? []).isEmpty))
           Expanded(
             child: FutureBuilder<List<Student>>(
               future: _studentsFuture,

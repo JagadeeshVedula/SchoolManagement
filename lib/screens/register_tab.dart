@@ -24,7 +24,7 @@ class _RegisterTabState extends State<RegisterTab> {
   Uint8List? _sImageBytes;
   String? _sClass;
   String? _sSection;
-  List<String> _sections = [];
+  Map<String, List<String>> _classData = {};
   final _sFather = TextEditingController();
   final _sMother = TextEditingController();
   final _sParentMobile = TextEditingController();
@@ -90,12 +90,11 @@ class _RegisterTabState extends State<RegisterTab> {
 
   Future<void> _loadClasses() async {
     try {
-      final classes = await SupabaseService.getClassesFromFeeStructure();
-      final sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
+      final classData = await SupabaseService.getUniqueClassesAndSections();
       if(mounted) {
         setState(() {
-          _classes = classes..sort();
-          _sections = sections;
+          _classData = classData;
+          _classes = classData.keys.toList();
         });
       }
     } catch (e) {
@@ -238,7 +237,7 @@ class _RegisterTabState extends State<RegisterTab> {
   }
 
   Future<void> _submitStudent() async {
-    if (_sName.text.trim().isEmpty || _sClass == null || _sSection == null || _sGender == null) {
+    if (_sName.text.trim().isEmpty || _sClass == null || (_sSection == null && _sClass != 'NURSERY' && _sClass != 'S BATCH') || _sGender == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter student name, select class, section, and gender')));
       return;
     }
@@ -254,7 +253,7 @@ class _RegisterTabState extends State<RegisterTab> {
     final data = {
       'Name': _sName.text.trim(),
       'ROLL_NO': _sRollNo.text.trim(),
-      'Class': '$_sClass-$_sSection',
+      'Class': (_sClass == 'NURSERY' || _sClass == 'S BATCH') ? _sClass! : '$_sClass-$_sSection',
       'Father Name': _sFather.text.trim(),
       'Mother Name': _sMother.text.trim(),
       'Parent Mobile': _sParentMobile.text.trim(),
@@ -770,8 +769,8 @@ class _RegisterTabState extends State<RegisterTab> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _sSection,
-                          items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                          onChanged: (v) {
+                          items: (_sClass != null ? (_classData[_sClass] ?? []) : <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (_sClass == null || (_classData[_sClass] ?? []).isEmpty) ? null : (v) {
                             setState(() {
                               _sSection = v;
                             });
@@ -779,7 +778,7 @@ class _RegisterTabState extends State<RegisterTab> {
                           decoration: InputDecoration(
                             labelText: 'Section',
                             filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
+                            fillColor: (_sClass == null || (_classData[_sClass] ?? []).isEmpty) ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
                             prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF800000)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1322,6 +1321,9 @@ class _RegisterTabState extends State<RegisterTab> {
                               _perfStudent = null;
                               _perfStudents = [];
                             });
+                            if (v == 'NURSERY' || v == 'S BATCH') {
+                              _loadStudentsForClass(v!);
+                            }
                           },
                           decoration: InputDecoration(
                             labelText: 'Class',
@@ -1339,8 +1341,8 @@ class _RegisterTabState extends State<RegisterTab> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _perfSection,
-                          items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                          onChanged: (v) {
+                          items: (_perfClass != null ? (_classData[_perfClass] ?? []) : <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (_perfClass == null || (_classData[_perfClass] ?? []).isEmpty) ? null : (v) {
                             setState(() {
                               _perfSection = v;
                               _perfStudent = null;
@@ -1353,7 +1355,7 @@ class _RegisterTabState extends State<RegisterTab> {
                           decoration: InputDecoration(
                             labelText: 'Section',
                             filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
+                            fillColor: (_perfClass == null || (_classData[_perfClass] ?? []).isEmpty) ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
                             prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFFF59E0B)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

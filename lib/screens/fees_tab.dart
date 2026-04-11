@@ -48,7 +48,7 @@ class _FeesTabState extends State<FeesTab> {
   String? _selectedDueType; // 'School'
   String? _selectedDueClass;
   String? _selectedDueSection;
-  List<String> _dueSections = [];
+  Map<String, List<String>> _classData = {}; // Store Map of class -> list of sections
   List<Student> _dueStudents = [];
   final Map<String, bool> _dueTerms = {'Term1': false, 'Term2': false, 'Term3': false};
   
@@ -77,13 +77,11 @@ class _FeesTabState extends State<FeesTab> {
   }
 
   Future<void> _loadDropdownData() async {
-    final classes = await SupabaseService.getClassesFromFeeStructure();
-    final sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
+    final classData = await SupabaseService.getUniqueClassesAndSections();
     if (mounted) {
       setState(() {
-        _classes = classes..sort();
-        _sections = sections;
-        _dueSections = sections;
+        _classData = classData;
+        _classes = classData.keys.toList();
       });
     }
   }
@@ -95,6 +93,10 @@ class _FeesTabState extends State<FeesTab> {
       _students = [];
       _selectedStudent = null;
     });
+    if (className != null && _classData[className] != null && _classData[className]!.isEmpty) {
+      final students = await SupabaseService.getStudentsByClass(className!);
+      setState(() => _students = students);
+    }
   }
 
   Future<void> _onSectionSelectedInFees(String? sectionName) async {
@@ -117,6 +119,10 @@ class _FeesTabState extends State<FeesTab> {
       _selectedDueSection = null;
       _dueStudents = [];
     });
+    if (className != null && _classData[className] != null && _classData[className]!.isEmpty) {
+      final students = await SupabaseService.getStudentsByClass(className!);
+      setState(() => _dueStudents = students);
+    }
   }
 
   Future<void> _onSectionSelectedInDues(String? sectionName) async {
@@ -2265,12 +2271,12 @@ class _FeesTabState extends State<FeesTab> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _selectedSection,
-                          items: _sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                          onChanged: _selectedClass == null ? null : _onSectionSelectedInFees,
+                          items: (_selectedClass != null ? (_classData[_selectedClass] ?? []) : <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (_selectedClass == null || (_classData[_selectedClass] ?? []).isEmpty) ? null : _onSectionSelectedInFees,
                           decoration: InputDecoration(
                             labelText: 'Section',
                             filled: true,
-                            fillColor: _selectedClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
+                            fillColor: (_selectedClass == null || (_classData[_selectedClass] ?? []).isEmpty) ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
                             prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF800000)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -2286,7 +2292,7 @@ class _FeesTabState extends State<FeesTab> {
                     width: double.infinity, 
                     height: 56,
                     child: ElevatedButton.icon( 
-                      onPressed: (_selectedClass != null && _selectedSection != null) ? _openStudentSearchDialog : null,
+                      onPressed: (_selectedClass != null && (_selectedSection != null || _selectedClass == 'NURSERY' || _selectedClass == 'S BATCH')) ? _openStudentSearchDialog : null,
                       icon: const Icon(Icons.search_outlined), 
                       label: Text('Search & Select Student', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)), 
                       style: ElevatedButton.styleFrom( 
@@ -2627,12 +2633,12 @@ class _FeesTabState extends State<FeesTab> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _selectedDueSection,
-                          items: _dueSections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                          onChanged: _selectedDueClass == null ? null : _onSectionSelectedInDues,
+                          items: (_selectedDueClass != null ? (_classData[_selectedDueClass] ?? []) : <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (_selectedDueClass == null || (_classData[_selectedDueClass] ?? []).isEmpty) ? null : _onSectionSelectedInDues,
                           decoration: InputDecoration(
                             labelText: 'Section',
                             filled: true,
-                            fillColor: _selectedDueClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
+                            fillColor: (_selectedDueClass == null || (_classData[_selectedDueClass] ?? []).isEmpty) ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
                             prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFFF43F5E)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

@@ -28,12 +28,22 @@ class _StudentDataTabState extends State<StudentDataTab> {
     _classCountsFuture = _allStudentsFuture.then((students) {
       final Map<String, int> classCounts = {};
       for (var student in students) {
-        final className = student.className.split('-').first; // Group by class, ignore section
-        classCounts[className] = (classCounts[className] ?? 0) + 1;
+        String className = student.className;
+        String groupedName;
+        
+        if (className.toUpperCase().contains('BATCH')) {
+          groupedName = className.trim();
+        } else {
+          groupedName = className.split('-').first.trim();
+        }
+        
+        classCounts[groupedName] = (classCounts[groupedName] ?? 0) + 1;
       }
-      // Sort the map by class name
+      
+      // Sort the map by class name using custom sort
+      final sortedClasses = SupabaseService.sortClassList(classCounts.keys.toList());
       return Map.fromEntries(
-          classCounts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
+          sortedClasses.map((c) => MapEntry(c, classCounts[c]!)));
     });
   }
 

@@ -63,14 +63,33 @@ class SupabaseService {
     }
   }
 
-  // Fetch all students
+  // Fetch all students (handles pagination for large datasets)
   static Future<List<Student>> getAllStudents() async {
     try {
-      final response = await client.from('STUDENTS').select();
-      final students = (response as List)
-          .map((e) => Student.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return students;
+      List<Student> allStudents = [];
+      int offset = 0;
+      const int limit = 1000;
+      bool hasMore = true;
+
+      while (hasMore) {
+        final response = await client
+            .from('STUDENTS')
+            .select()
+            .range(offset, offset + limit - 1);
+
+        final students = (response as List)
+            .map((e) => Student.fromJson(e as Map<String, dynamic>))
+            .toList();
+        
+        allStudents.addAll(students);
+        
+        if (students.length < limit) {
+          hasMore = false;
+        } else {
+          offset += limit;
+        }
+      }
+      return allStudents;
     } catch (e) {
       print('Error fetching all students: $e');
       return [];
@@ -117,7 +136,8 @@ class SupabaseService {
       final response = await client
           .from('STUDENTS')
           .select()
-          .eq('Parent Mobile', parentMobile);
+          .eq('Parent Mobile', parentMobile)
+          .limit(5000);
 
       final students = (response as List)
           .map((e) => Student.fromJson(e as Map<String, dynamic>))
@@ -145,42 +165,88 @@ class SupabaseService {
     }
   }
 
-  // Fetch unique classes from STUDENTS table
+  // Fetch unique classes from STUDENTS table (handles large datasets)
   static Future<List<String>> getUniqueClasses() async {
     try {
-      final response = await client.from('STUDENTS').select('Class');
       final classes = <String>{};
-      for (var item in response as List) {
-        final className = item['Class'] as String?;
-        if (className != null && className.isNotEmpty) {
-          classes.add(className);
+      int offset = 0;
+      const int limit = 1000;
+      bool hasMore = true;
+
+      while (hasMore) {
+        final response = await client
+            .from('STUDENTS')
+            .select('Class')
+            .range(offset, offset + limit - 1);
+        
+        final list = response as List;
+        for (var item in list) {
+          final className = item['Class'] as String?;
+          if (className != null && className.isNotEmpty) {
+            classes.add(className);
+          }
+        }
+
+        if (list.length < limit) {
+          hasMore = false;
+        } else {
+          offset += limit;
         }
       }
-      return classes.toList()..sort();
+      return sortClassList(classes.toList());
     } catch (e) {
       print('Error fetching classes: $e');
       return [];
     }
   }
 
-  // Fetch unique classes and sections from STUDENTS table
+  // Fetch unique classes and sections from STUDENTS table (handles large datasets)
   static Future<Map<String, List<String>>> getUniqueClassesAndSections() async {
     try {
-      final response = await client.from('STUDENTS').select('Class');
       final classSections = <String, Set<String>>{};
-      for (var item in response as List) {
-        final className = item['Class'] as String?;
-        if (className != null && className.contains('-')) {
-          final parts = className.split('-');
-          final classPart = parts[0];
-          final sectionPart = parts[1];
-          if (classPart.isNotEmpty && sectionPart.isNotEmpty) {
-            classSections.putIfAbsent(classPart, () => <String>{}).add(sectionPart);
+      int offset = 0;
+      const int limit = 1000;
+      bool hasMore = true;
+
+      while (hasMore) {
+        final response = await client
+            .from('STUDENTS')
+            .select('Class')
+            .range(offset, offset + limit - 1);
+        
+        final list = response as List;
+        for (var item in list) {
+          final className = item['Class'] as String?;
+          if (className != null) {
+            if (className.toUpperCase().contains('BATCH')) {
+              classSections.putIfAbsent(className, () => <String>{});
+            } else if (className.contains('-')) {
+              final parts = className.split('-');
+              final classPart = parts[0].trim();
+              final sectionPart = parts[1].trim();
+              if (classPart.isNotEmpty && sectionPart.isNotEmpty) {
+                classSections.putIfAbsent(classPart, () => <String>{}).add(sectionPart);
+              }
+            } else if (className.isNotEmpty) {
+              // Handle classes without sections (like NURSERY, S BATCH)
+              classSections.putIfAbsent(className, () => <String>{});
+            }
           }
+        }
+
+        if (list.length < limit) {
+          hasMore = false;
+        } else {
+          offset += limit;
         }
       }
       // Convert the Set to a sorted List for consistent ordering
-      return classSections.map((key, value) => MapEntry(key, value.toList()..sort()));
+      final sortedData = <String, List<String>>{};
+      final sortedClasses = sortClassList(classSections.keys.toList());
+      for (var c in sortedClasses) {
+        sortedData[c] = classSections[c]!.toList()..sort();
+      }
+      return sortedData;
     } catch (e) {
       print('Error fetching classes and sections: $e');
       return {};
@@ -190,10 +256,16 @@ class SupabaseService {
   // Fetch students by class
   static Future<List<Student>> getStudentsByClass(String className) async {
     try {
-      final response = await client
-          .from('STUDENTS')
-          .select()
-          .eq('Class', className);
+      var query = client.from('STUDENTS').select();
+      
+      if (className.toUpperCase().contains('BATCH')) {
+        // Find students with this specific batch name
+        query = query.eq('Class', className);
+      } else {
+        query = query.eq('Class', className);
+      }
+      
+      final response = await query.limit(5000);
 
       final students = (response as List)
           .map((e) => Student.fromJson(e as Map<String, dynamic>))
@@ -211,7 +283,8 @@ class SupabaseService {
       final response = await client
           .from('STUDENTS')
           .select()
-          .like('Class', '$classPrefix-%');
+          .or('Class.eq.$classPrefix,Class.like.$classPrefix-%')
+          .limit(5000);
 
       final students = (response as List)
           .map((e) => Student.fromJson(e as Map<String, dynamic>))
@@ -231,7 +304,8 @@ class SupabaseService {
           .from('STUDENTS')
           .select()
           .eq('Class', className)
-          .eq('Parent Mobile', parentMobile);
+          .eq('Parent Mobile', parentMobile)
+          .limit(5000);
 
       final students = (response as List)
           .map((e) => Student.fromJson(e as Map<String, dynamic>))
@@ -2249,7 +2323,8 @@ class SupabaseService {
       final response = await client
           .from('STUDENTS')
           .select()
-          .eq('BusNo', busNo);
+          .eq('BusNo', busNo)
+          .limit(5000);
       
       return (response as List)
           .map((json) => Student.fromJson(json as Map<String, dynamic>))
@@ -2349,5 +2424,41 @@ class SupabaseService {
         'hostelFee': 0,
       };
     }
+  }
+
+  // Custom sort for classes: NURSERY -> LKG -> UKG -> I -> II ...
+  static List<String> sortClassList(List<String> classes) {
+    const classOrder = [
+      'NURSERY', 'LKG', 'UKG', 'PRE-KG', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'
+    ];
+    
+    classes.sort((a, b) {
+      // Helper to get pure class name for sorting (e.g. "VI" from "VI- S BATCH")
+      String clean(String s) => s.split(RegExp(r'[- ]')).first.toUpperCase();
+      
+      int idxA = classOrder.indexOf(clean(a));
+      int idxB = classOrder.indexOf(clean(b));
+      
+      if (idxA != -1 && idxB != -1) {
+        if (idxA != idxB) return idxA.compareTo(idxB);
+        return a.compareTo(b); // Same class category, sort full name
+      }
+      
+      if (idxA != -1) return -1;
+      if (idxB != -1) return 1;
+      
+      // Try numeric sort
+      int? numA = int.tryParse(clean(a));
+      int? numB = int.tryParse(clean(b));
+      if (numA != null && numB != null) {
+        if (numA != numB) return numA.compareTo(numB);
+        return a.compareTo(b);
+      }
+      if (numA != null) return -1;
+      if (numB != null) return 1;
+      
+      return a.compareTo(b);
+    });
+    return classes;
   }
 }

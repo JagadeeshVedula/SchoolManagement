@@ -25,8 +25,8 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   // Fee Report State
   String? _selectedFeeType = 'School Fee'; // Only 'School Fee' now
   String? _selectedFeeSection;
-  List<String> _sections = [];
   String? _selectedFeeClass;
+  Map<String, List<String>> _classData = {};
   List<String> _classes = [];
   List<Map<String, dynamic>> _feeReportData = [];
   bool _isFeeLoading = false;
@@ -114,12 +114,11 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   }
 
   Future<void> _loadClasses() async {
-    final classes = await SupabaseService.getClassesFromFeeStructure();
-    final sections = List.generate(26, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
+    final classData = await SupabaseService.getUniqueClassesAndSections();
     if (mounted) {
       setState(() {
-        _classes = classes..sort();
-        _sections = sections;
+        _classData = classData;
+        _classes = classData.keys.toList();
       });
     }
   }
@@ -959,21 +958,19 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
                           value: null,
                           child: Text('All Sections'),
                         ),
-                        ..._sections.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                        ...((_selectedFeeClass != null ? (_classData[_selectedFeeClass] ?? []) : <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList()),
                       ],
-                      onChanged: _selectedFeeClass == null
-                          ? null
-                          : (value) {
-                              setState(() {
-                                _selectedFeeSection = value;
-                                _feeReportData = [];
-                              });
-                              _loadFeeReportData();
-                            },
+                      onChanged: (_selectedFeeClass == null || (_classData[_selectedFeeClass] ?? []).isEmpty) ? null : (v) {
+                        setState(() {
+                          _selectedFeeSection = v;
+                          _feeReportData = [];
+                        });
+                        _loadFeeReportData();
+                      },
                       decoration: InputDecoration(
                         labelText: 'Section',
                         filled: true,
-                        fillColor: _selectedFeeClass == null ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
+                        fillColor: (_selectedFeeClass == null || (_classData[_selectedFeeClass] ?? []).isEmpty) ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9),
                         prefixIcon: const Icon(Icons.grid_view_outlined, color: Color(0xFF800000)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
