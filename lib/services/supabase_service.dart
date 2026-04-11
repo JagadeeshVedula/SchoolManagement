@@ -1864,20 +1864,39 @@ class SupabaseService {
       if (studentNames.isNotEmpty) {
         final studentsData = await client
             .from('STUDENTS')
-            .select('Name, Class')
+            .select('Name, Class, "Bus Facility", "BusNo"')
             .in_('Name', studentNames);
         
         final studentsList = (studentsData as List).cast<Map<String, dynamic>>();
         for (final s in studentsList) {
-          studentClassMap[s['Name'] as String] = s['Class'] as String? ?? 'N/A';
+          final className = (s['Class'] as String? ?? 'N/A').trim();
+          final busFacility = s['Bus Facility']?.toString().toUpperCase() ?? 'NO';
+          final busNo = s['BusNo']?.toString() ?? '';
+          final displayClass = (busFacility == 'YES' && busNo.isNotEmpty) ? '$className-$busNo' : className;
+          studentClassMap[s['Name'] as String] = displayClass;
         }
       }
 
+      final Map<String, Map<String, dynamic>> studentAggregates = {};
+
       for (final fee in (feesResponse as List)) {
         final f = fee as Map<String, dynamic>;
-        final sName = (f['STUDENT NAME'] as String? ?? 'N/A');
+        final sName = (f['STUDENT NAME'] as String? ?? 'N/A').trim();
         final sClass = studentClassMap[sName] ?? 'N/A';
+        final amount = double.tryParse(f['AMOUNT'].toString()) ?? 0.0;
         final feeType = (f['FEE TYPE'] as String? ?? 'School Fee').trim();
+        
+        if (!studentAggregates.containsKey(sName)) {
+          studentAggregates[sName] = {
+            'description': '$sName-$sClass',
+            'amount': 0.0,
+            'type': 'credit',
+            'categories': <String>{},
+            'subcategories': <String>{},
+          };
+        }
+        
+        studentAggregates[sName]!['amount'] += amount;
         
         String category = 'School';
         if (feeType.contains('Bus Fee')) category = 'Bus';
@@ -1886,12 +1905,22 @@ class SupabaseService {
         else if (feeType.contains('Uniform Fee')) category = 'Uniform';
         else if (feeType.contains('Administration fee')) category = 'Admin';
         
+        (studentAggregates[sName]!['categories'] as Set<String>).add(category);
+        (studentAggregates[sName]!['subcategories'] as Set<String>).add(feeType);
+      }
+
+      // Convert Sets to formatted strings before adding to transactions
+      for (final sName in studentAggregates.keys) {
+        final data = studentAggregates[sName]!;
+        final categories = (data['categories'] as Set<String>).toList()..sort();
+        final subcategories = (data['subcategories'] as Set<String>).toList()..sort();
+        
         transactions.add({
-          'description': '$sName - $sClass',
-          'amount': double.tryParse(f['AMOUNT'].toString()) ?? 0.0,
-          'type': 'credit',
-          'category': category,
-          'subcategory': feeType,
+          'description': data['description'],
+          'amount': data['amount'],
+          'type': data['type'],
+          'category': categories.join(', '),
+          'subcategory': subcategories.join(', '),
         });
       }
 
