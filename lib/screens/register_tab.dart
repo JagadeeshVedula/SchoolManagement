@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:file_picker/file_picker.dart';
+import 'package:excel/excel.dart' as excel_pkg;
 
 class RegisterTab extends StatefulWidget {
   const RegisterTab({super.key});
@@ -71,6 +73,7 @@ class _RegisterTabState extends State<RegisterTab> {
   bool _isSubmittingPerf = false;
   bool _isSubmittingStaff = false;
   bool _isSubmittingBus = false;
+  bool _isBulkUploadingPerf = false;
 
   List<String> _classes = [];
   List<String> _busRoutes = [];
@@ -439,6 +442,101 @@ class _RegisterTabState extends State<RegisterTab> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to register bus')));
     }
+  }
+
+  Future<void> _pickAndUploadPerformanceExcel() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['xlsx', 'xls'],
+    );
+
+    if (result != null) {
+      setState(() => _isBulkUploadingPerf = true);
+      try {
+        Uint8List? bytes;
+        if (kIsWeb) {
+          bytes = result.files.first.bytes;
+        } else {
+          bytes = await result.files.first.xFile.readAsBytes();
+        }
+
+        if (bytes == null) throw 'Could not read file';
+
+        var excel = excel_pkg.Excel.decodeBytes(bytes);
+        List<Map<String, dynamic>> performances = [];
+
+        for (var table in excel.tables.keys) {
+          var sheet = excel.tables[table]!;
+          if (sheet.maxRows <= 1) continue; // Skip empty sheets
+
+          // Use the first row as header to find column indices
+          var header = sheet.rows.first;
+          Map<String, int> colMap = {};
+          for (int i = 0; i < header.length; i++) {
+            if (header[i] != null) {
+              colMap[header[i]!.value.toString().trim()] = i;
+            }
+          }
+
+          // Expected headers: Student Name, Assessment, Telugu, English, Hindi, Maths, Science, Social, Computers
+          for (int i = 1; i < sheet.maxRows; i++) {
+            var row = sheet.rows[i];
+            
+            String? studentName = _getCellValue(row, colMap, 'Student Name');
+            String? assessment = _getCellValue(row, colMap, 'Assessment');
+
+            if (studentName == null || assessment == null) continue;
+
+            final data = {
+              'Student Name': studentName,
+              'Assessment': assessment,
+            };
+
+            for (var subject in _subjects) {
+              String? marks = _getCellValue(row, colMap, subject);
+              if (marks == null) {
+                // Try with " Marks" suffix
+                marks = _getCellValue(row, colMap, '$subject Marks');
+              }
+
+              if (marks != null && marks.trim().isNotEmpty) {
+                data[subject] = 'Yes';
+                data['$subject Marks'] = marks.trim();
+              }
+            }
+
+            performances.add(data);
+          }
+        }
+
+        if (performances.isEmpty) {
+          throw 'No valid performance records found in Excel';
+        }
+
+        final ok = await SupabaseService.insertPerformances(performances);
+        if (ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Successfully uploaded ${performances.length} records')),
+          );
+          setState(() {
+            _currentPage = 0;
+          });
+        } else {
+          throw 'Failed to insert records into database';
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      } finally {
+        setState(() => _isBulkUploadingPerf = false);
+      }
+    }
+  }
+
+  String? _getCellValue(List<excel_pkg.Data?> row, Map<String, int> colMap, String colName) {
+    if (!colMap.containsKey(colName)) return null;
+    int idx = colMap[colName]!;
+    if (idx >= row.length || row[idx] == null) return null;
+    return row[idx]!.value?.toString();
   }
 
   @override
@@ -1367,19 +1465,43 @@ class _RegisterTabState extends State<RegisterTab> {
                     ],
                   ),
                   const SizedBox(height: 16),
+
                   SizedBox(
                     width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton.icon(
-                      onPressed: _openStudentSearchDialog,
-                      icon: const Icon(Icons.search_outlined),
-                      label: Text('Search & Select Student', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF59E0B).withOpacity(0.1),
-                        foregroundColor: const Color(0xFFD97706),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 0,
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _openStudentSearchDialog,
+                            icon: const Icon(Icons.search_outlined),
+                            label: Text('Search Student', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF59E0B).withOpacity(0.1),
+                              foregroundColor: const Color(0xFFD97706),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isBulkUploadingPerf ? null : _pickAndUploadPerformanceExcel,
+                            icon: _isBulkUploadingPerf 
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Icon(Icons.upload_file_outlined),
+                            label: Text(_isBulkUploadingPerf ? 'Uploading...' : 'Bulk Upload', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   if (_perfStudent != null) ...[  

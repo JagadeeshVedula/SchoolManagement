@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:school_management/models/student.dart';
-import 'package:school_management/screens/fees_tab.dart';
-import 'package:school_management/screens/home_tabs_screen.dart';
 import 'package:school_management/services/supabase_service.dart';
+import 'package:school_management/models/student.dart';
+import 'package:school_management/screens/student_detail_screen.dart';
+import 'package:excel/excel.dart' as excel_pkg;
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html;
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class StudentDataTab extends StatefulWidget {
   const StudentDataTab({super.key});
@@ -13,186 +18,347 @@ class StudentDataTab extends StatefulWidget {
 }
 
 class _StudentDataTabState extends State<StudentDataTab> {
-  bool _showFullDataView = false;
-  late Future<Map<String, int>> _classCountsFuture;
-  late Future<List<Student>> _allStudentsFuture;
+  late Future<Map<String, List<String>>> _classDataFuture;
+  Map<String, List<String>> _classData = {};
+  String? _selectedClass;
+  String? _selectedSection;
+  List<Student> _allFilteredStudents = [];
+  List<Student> _displayStudents = [];
+  bool _isLoading = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadStatistics();
+    _classDataFuture = SupabaseService.getUniqueClassesAndSections();
   }
 
-  void _loadStatistics() {
-    _allStudentsFuture = SupabaseService.getAllStudents();
-    _classCountsFuture = _allStudentsFuture.then((students) {
-      final Map<String, int> classCounts = {};
-      for (var student in students) {
-        String className = student.className;
-        String groupedName;
+  Future<void> _loadStudents() async {
+    setState(() => _isLoading = true);
+    try {
+      List<Student> students = [];
+      if (_selectedClass != null) {
+        String queryClass = (_selectedClass == 'NURSERY' || _selectedClass == 'S BATCH') 
+            ? _selectedClass! 
+            : (_selectedSection != null ? '$_selectedClass-$_selectedSection' : _selectedClass!);
         
-        if (className.toUpperCase().contains('BATCH')) {
-          groupedName = className.trim();
+        if (_selectedSection != null || (_classData[_selectedClass] ?? []).isEmpty) {
+           students = await SupabaseService.getStudentsByClass(queryClass);
         } else {
-          groupedName = className.split('-').first.trim();
+           // If class selected but no section yet, maybe fetch all students of that class prefix?
+           // The user said "directly show class and section filter", so usually they select both.
+           // But if they haven't selected section, we'll wait or fetch prefix.
+           students = await SupabaseService.getStudentsByClassPrefix(_selectedClass!);
         }
-        
-        classCounts[groupedName] = (classCounts[groupedName] ?? 0) + 1;
+      } else {
+        // No filter, maybe don't load everything automatically to avoid lag, 
+        // or load everything? User mentioned export without filters exports all.
+        // Let's not load anything until filtered for performance, unless they search.
       }
       
-      // Sort the map by class name using custom sort
-      final sortedClasses = SupabaseService.sortClassList(classCounts.keys.toList());
-      return Map.fromEntries(
-          sortedClasses.map((c) => MapEntry(c, classCounts[c]!)));
+      setState(() {
+        _allFilteredStudents = students;
+        _displayStudents = students;
+        _searchController.clear();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading students: $e')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _onSearch(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _displayStudents = _allFilteredStudents;
+      } else {
+        _displayStudents = _allFilteredStudents
+            .where((s) => s.name.toLowerCase().contains(query.toLowerCase()) || 
+                          (s.rollNo?.toLowerCase().contains(query.toLowerCase()) ?? false))
+            .toList();
+      }
     });
+  }
+
+  Future<void> _exportToExcel() async {
+    setState(() => _isLoading = true);
+    try {
+      List<Student> studentsToExport = [];
+      if (_selectedClass == null && _searchController.text.isEmpty) {
+        // Export complete student data
+        studentsToExport = await SupabaseService.getAllStudents();
+      } else {
+        // Export filtered data
+        studentsToExport = _displayStudents;
+      }
+
+      if (studentsToExport.isEmpty) {
+        throw 'No data to export';
+      }
+
+      var excel = excel_pkg.Excel.createExcel();
+      var sheet = excel.sheets[excel.getDefaultSheet()]!;
+
+      // Headers
+      List<String> headers = ['Name', 'Roll No', 'Class', 'Father Name', 'Mother Name', 'Parent Mobile', 'Gender', 'Address', 'DOJ', 'Bus Facility', 'Route', 'BusNo', 'Hostel Facility', 'Hostel Type'];
+      sheet.appendRow(headers);
+
+      for (var s in studentsToExport) {
+        sheet.appendRow([
+          s.name,
+          s.rollNo ?? '',
+          s.className,
+          s.fatherName,
+          s.motherName,
+          s.parentMobile,
+          s.gender ?? '',
+          s.address ?? '',
+          s.doj ?? '',
+          s.busFacility ?? 'No',
+          s.busRoute ?? '',
+          s.busNo ?? '',
+          s.hostelFacility ?? 'No',
+          s.hostelType ?? '',
+        ]);
+      }
+
+      var fileBytes = excel.save();
+      if (fileBytes != null) {
+        String fileName = "Student_Data_${DateTime.now().millisecondsSinceEpoch}.xlsx";
+        if (kIsWeb) {
+          final blob = html.Blob([fileBytes]);
+          final url = html.Url.createObjectUrlFromBlob(blob);
+          final anchor = html.AnchorElement(href: url)
+            ..setAttribute("download", fileName)
+            ..click();
+          html.Url.revokeObjectUrl(url);
+        } else {
+          final directory = await getApplicationDocumentsDirectory();
+          final file = File('${directory.path}/$fileName');
+          await file.writeAsBytes(fileBytes);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('File saved to ${file.path}')));
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showFullDataView) {
-      // Show the original student data screen with class/section filters
-      return const StudentDataWidget();
-    } else {
-      // Show the new statistics view
-      return _buildStatisticsView();
-    }
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Column(
+        children: [
+          _buildFilterHeader(),
+          Expanded(
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF800000)))
+              : _buildStudentList(),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildStatisticsView() {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [const Color(0xFF800000).withOpacity(0.05), const Color(0xFFB91C1C).withOpacity(0.1)],
-          ),
+  Widget _buildFilterHeader() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF800000), Color(0xFFB91C1C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: FutureBuilder<List<dynamic>>(
-          future: Future.wait([_allStudentsFuture, _classCountsFuture]),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Student Records',
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 20),
+          FutureBuilder<Map<String, List<String>>>(
+            future: _classDataFuture,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              _classData = snapshot.data!;
+              final classes = _classData.keys.toList();
+              final sections = _selectedClass != null ? (_classData[_selectedClass] ?? []) : [];
 
-            final allStudents = snapshot.data![0] as List<Student>;
-            final classCounts = snapshot.data![1] as Map<String, int>;
-
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              return Column(
                 children: [
-                  Text(
-                    'Student Statistics',
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF800000),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Summary Cards
                   Row(
                     children: [
                       Expanded(
-                        child: _buildStatCard(
-                          'Total Students',
-                          allStudents.length.toString(),
-                          Icons.people,
-                          const Color(0xFF800000),
+                        child: _buildDropdown(
+                          value: _selectedClass,
+                          hint: 'Select Class',
+                          items: classes,
+                          onChanged: (v) {
+                            setState(() {
+                              _selectedClass = v;
+                              _selectedSection = null;
+                            });
+                            _loadStudents();
+                          },
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: _buildStatCard(
-                          'Total Classes',
-                          classCounts.keys.length.toString(),
-                          Icons.school,
-                          Colors.green,
+                        child: _buildDropdown(
+                          value: _selectedSection,
+                          hint: 'Select Section',
+                          items: sections.cast<String>(),
+                          onChanged: (_selectedClass == null || sections.isEmpty) ? null : (v) {
+                            setState(() => _selectedSection = v);
+                            _loadStudents();
+                          },
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  // Class Strength Table
-                  Text(
-                    'Class Strength',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF800000),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: _onSearch,
+                          decoration: InputDecoration(
+                            hintText: 'Search by name or roll no...',
+                            hintStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          style: const TextStyle(color: Colors.white),
                         ),
-                      ],
-                    ),
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Class')),
-                        DataColumn(label: Text('Number of Students'), numeric: true),
-                      ],
-                      rows: classCounts.entries.map((entry) {
-                        return DataRow(cells: [
-                          DataCell(Text(entry.key)),
-                          DataCell(Text(entry.value.toString())),
-                        ]);
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Button to switch to full data view
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => setState(() => _showFullDataView = true),
-                      icon: const Icon(Icons.grid_view_rounded),
-                      label: const Text('Show Full Student Data'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepOrange,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: _exportToExcel,
+                        icon: const Icon(Icons.download_rounded),
+                        label: const Text('Export'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF800000),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            );
-          },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required String hint,
+    required List<String> items,
+    required ValueChanged<String?>? onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          hint: Text(hint, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          onChanged: onChanged,
+          dropdownColor: const Color(0xFF800000),
+          iconEnabledColor: Colors.white,
+          style: const TextStyle(color: Colors.white),
+          isExpanded: true,
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+  Widget _buildStudentList() {
+    if (_displayStudents.isEmpty) {
+      return Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(title, style: GoogleFonts.poppins(color: Colors.grey[600])),
-            Text(value, style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
+            Icon(Icons.person_search_rounded, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              _selectedClass == null ? 'Select a class to view students' : 'No students found matching your criteria',
+              style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 16),
+            ),
           ],
         ),
-      ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _displayStudents.length,
+      itemBuilder: (context, index) {
+        final student = _displayStudents[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: student.photoUrl != null && student.photoUrl!.isNotEmpty
+                ? CircleAvatar(radius: 28, backgroundImage: NetworkImage(student.photoUrl!))
+                : CircleAvatar(
+                    radius: 28,
+                    backgroundColor: const Color(0xFF800000).withOpacity(0.1),
+                    child: const Icon(Icons.person, color: Color(0xFF800000)),
+                  ),
+            title: Text(
+              student.name,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text('Roll No: ${student.rollNo ?? 'N/A'} • Class: ${student.className}'),
+                Text('Father: ${student.fatherName}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+              ],
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => StudentDetailScreen(student: student)),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -432,6 +432,17 @@ class SupabaseService {
     }
   }
 
+  // Insert multiple performance records into PERFORMANCE table
+  static Future<bool> insertPerformances(List<Map<String, dynamic>> perfDataList) async {
+    try {
+      await client.from('PERFORMANCE').insert(perfDataList);
+      return true;
+    } catch (e) {
+      print('Error inserting multiple performances: $e');
+      return false;
+    }
+  }
+
   // Upload student photo to Supabase Storage
   static Future<String?> uploadStudentPhoto(String fileName, Uint8List bytes) async {
     try {

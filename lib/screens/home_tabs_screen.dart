@@ -19,6 +19,7 @@ import 'package:school_management/screens/miscellaneous_screen.dart';
 import 'package:school_management/screens/Attendance.dart';
 import 'package:school_management/screens/Events.dart';
 import 'package:school_management/screens/staff_student_details_screen.dart';
+import 'package:school_management/screens/dashboard_tab.dart';
 import 'package:school_management/widgets/chat_bot_widget.dart';
 
 class HomeTabsScreen extends StatefulWidget {
@@ -46,8 +47,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
   @override
   void initState() {
     super.initState();
-    // HomeTabsScreen is only used by admin, always 12 tabs
-    _lastTabCount = 12;
+    // HomeTabsScreen is only used by admin, always 13 tabs
+    _lastTabCount = 13;
     // Initialize with index 0 to avoid RangeError
     _tabController =
         TabController(length: _lastTabCount, initialIndex: 0, vsync: this);
@@ -116,10 +117,8 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final userRole =
-        UserRole.roles.firstWhere((role) => role.id == widget.role);
-    // HomeTabsScreen is only used by admin with 9 tabs
     final baseTabs = <Tab>[
+      const Tab(text: 'Dashboard'),
       const Tab(text: 'Student Data'),
       const Tab(text: 'Register'),
       const Tab(text: 'Staff Data'),
@@ -129,6 +128,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
     ];
 
     final baseViews = <Widget>[
+      const DashboardTab(),
       const StudentDataTab(),
       const RegisterTab(),
       const Center(child: StaffDataWidget()),
@@ -136,6 +136,9 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       const Center(child: FeesTab()),
       const Center(child: ReportTab()),
     ];
+
+    final userRole =
+        UserRole.roles.firstWhere((role) => role.id == widget.role);
 
     // Always add Salary Slips and Pending Requests tabs for admin
     final tabs = [
@@ -385,6 +388,7 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
 
   IconData _getTabIcon(int index) {
     const icons = [
+      Icons.dashboard,
       Icons.person,
       Icons.app_registration,
       Icons.people,
@@ -402,344 +406,6 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
   }
 }
 
-// Student Data Widget - Fetches from Supabase with class filter
-class StudentDataWidget extends StatefulWidget {
-  final String? parentMobile;
-
-  const StudentDataWidget({super.key, this.parentMobile});
-
-  @override
-  State<StudentDataWidget> createState() => _StudentDataWidgetState();
-}
-
-class _StudentDataWidgetState extends State<StudentDataWidget> {
-  late Future<Map<String, List<String>>> _classDataFuture;
-  Map<String, List<String>> _classData = {};
-  String? _selectedClass;
-  String? _selectedSection;
-  late Future<List<Student>> _studentsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _classDataFuture = SupabaseService.getUniqueClassesAndSections();
-    _studentsFuture = Future.value([]);
-  }
-
-  void _onClassSelected(String? className) {
-    setState(() {
-      _selectedClass = className;
-      _selectedSection = null;
-      if (className != null && _classData[className] != null && _classData[className]!.isEmpty) {
-        // Immediately load students for classes without sections (like NURSERY)
-        _studentsFuture = SupabaseService.getStudentsByClass(className);
-      } else {
-        _studentsFuture = Future.value([]);
-      }
-    });
-  }
-
-  void _onSectionSelected(String? sectionName) {
-    setState(() {
-      _selectedSection = sectionName;
-      if (_selectedClass != null && sectionName != null) {
-        // Special handling for flexible S BATCH matching
-        if (sectionName.toUpperCase().contains('BATCH')) {
-           _studentsFuture = SupabaseService.getStudentsByClass('$_selectedClass-$sectionName');
-        } else if (widget.parentMobile != null && widget.parentMobile!.isNotEmpty) {
-          _studentsFuture = SupabaseService.getStudentsByClassAndParentMobile(
-              '$_selectedClass-$sectionName', widget.parentMobile!);
-        } else {
-          _studentsFuture = SupabaseService.getStudentsByClass('$_selectedClass-$sectionName');
-        }
-      } else {
-        _studentsFuture = Future.value([]);
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Class Filter Dropdown with gradient header
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF800000), Color(0xFFB91C1C)], // Maroon Gradient
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-          ),
-          padding: const EdgeInsets.all(16.0),
-          child: FutureBuilder<Map<String, List<String>>>(
-            future: _classDataFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 60,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Text('Error loading classes: ${snapshot.error}');
-              }
-
-              _classData = snapshot.data ?? {};
-              final classes = _classData.keys.toList();
-              final currentSections = _selectedClass != null ? (_classData[_selectedClass] ?? <String>[]) : <String>[];
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Class', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                border: Border.all(color: Color(0xFFB91C1C).withOpacity(0.3), width: 2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: DropdownButton<String>(
-                                isExpanded: true,
-                                value: _selectedClass,
-                                hint: Text('Select', style: GoogleFonts.inter(color: Colors.grey)),
-                                underline: const SizedBox(),
-                                items: classes.map((className) => DropdownMenuItem<String>(
-                                  value: className,
-                                  child: Text(className),
-                                )).toList(),
-                                onChanged: _onClassSelected,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Section', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: (_selectedClass == null || currentSections.isEmpty) ? Colors.grey[200] : Colors.white,
-                                border: Border.all(color: Color(0xFFB91C1C).withOpacity(0.3), width: 2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: DropdownButton<String>(
-                                isExpanded: true,
-                                value: _selectedSection,
-                                hint: Text('Select', style: GoogleFonts.inter(color: Colors.grey)),
-                                underline: const SizedBox(),
-                                items: currentSections.map((section) => DropdownMenuItem<String>(
-                                  value: section,
-                                  child: Text(section),
-                                )).toList(),
-                                onChanged: (_selectedClass == null || currentSections.isEmpty) ? null : _onSectionSelected,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-
-        // Student List
-        if (_selectedClass != null && (_selectedSection != null || (_classData[_selectedClass] ?? []).isEmpty))
-          Expanded(
-            child: FutureBuilder<List<Student>>(
-              future: _studentsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error_outline,
-                              size: 48, color: Colors.red),
-                          const SizedBox(height: 16),
-                          Text('Error loading students: ${snapshot.error}',
-                              textAlign: TextAlign.center),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                final students = snapshot.data ?? [];
-
-                if (students.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.school,
-                              size: 48, color: Color(0xFF800000)),
-                          const SizedBox(height: 12),
-                          const Text('No students found in this class'),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: students.length,
-                  itemBuilder: (context, index) {
-                    final student = students[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16.0),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: Colors.white,
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16.0),
-                          leading: student.photoUrl != null && student.photoUrl!.isNotEmpty
-                              ? CircleAvatar(
-                                  backgroundImage: NetworkImage(student.photoUrl!),
-                                )
-                              : Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF800000).withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.person, color: Color(0xFF800000)),
-                                ),
-                          title: Text(
-                            student.name,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF0F172A),
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.school_outlined, size: 14, color: Color(0xFF64748B)),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Class: ${student.className}',
-                                    style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
-                                  ),
-                                  if (student.rollNo != null && student.rollNo!.isNotEmpty) ...[
-                                    const SizedBox(width: 8),
-                                    const Icon(Icons.numbers, size: 14, color: Color(0xFF64748B)),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Roll No: ${student.rollNo}',
-                                      style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  const Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Father: ${student.fatherName}',
-                                    style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          trailing: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF800000).withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF800000)),
-                          ),
-                          onTap: () {
-                            // Navigate to student detail screen
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    StudentDetailScreen(student: student),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          )
-        else
-          Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.info_outline,
-                        size: 48, color: Color(0xFF800000)),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Select a class and section to view students',
-                      style: GoogleFonts.inter(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
 
 // Staff Data Widget - Fetches staff from Supabase STAFF table
 class StaffDataWidget extends StatefulWidget {

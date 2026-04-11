@@ -147,106 +147,109 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
     try {
       final List<Student> students;
       if (_selectedFeeSection != null) {
-        // Fetch for a specific section
         students = await SupabaseService.getStudentsByClass('$_selectedFeeClass-$_selectedFeeSection');
       } else {
-        // Fetch for all sections of a class
         students = await SupabaseService.getStudentsByClassPrefix(_selectedFeeClass!);
       }
-      final reportData = <Map<String, dynamic>>[];
-      
-      // --- OPTIMIZATION START ---
-      // 1. Batch fetch all fees for the selected students
-      final studentNames = students.map((s) => s.name).toList();
-      final allFeesByStudent = await SupabaseService.getFeesForStudents(studentNames);
 
-      // 2. Pre-fetch and cache fee structures, books fees, and uniform fees to avoid loops
-      final feeStructureCache = <String, Map<String, dynamic>>{};
-      final booksFeeCache = <String, double>{};
-      final uniformFeeCache = <String, double>{}; // Key: "ClassName-Gender"
-
-      for (final student in students) {
-        final classNameOnly = student.className.split('-').first;
-        if (!feeStructureCache.containsKey(classNameOnly)) {
-          feeStructureCache[classNameOnly] = await SupabaseService.getFeeStructureByClass(classNameOnly) ?? {};
-          booksFeeCache[classNameOnly] = await SupabaseService.getBooksFeeByClass(classNameOnly);
-        }
-        final genderKey = '${classNameOnly}-${student.gender ?? 'Male'}';
-        if (!uniformFeeCache.containsKey(genderKey)) {
-          uniformFeeCache[genderKey] = await SupabaseService.getUniformFeeByClassAndGender(classNameOnly, student.gender ?? 'Male');
-        }
+      if (students.isEmpty) {
+        setState(() {
+          _feeReportData = [];
+          _isFeeLoading = false;
+        });
+        return;
       }
-      // --- OPTIMIZATION END ---
+
+      // --- OPTIMIZED BATCH FETCHING ---
+      final studentNames = students.map((s) => s.name).toList();
       
+      // Fetch all required data in parallel
+      final futures = await Future.wait([
+        SupabaseService.getFeesForStudents(studentNames),
+        SupabaseService.client.from('FEE STRUCTURE').select(),
+        SupabaseService.client.from('TRANSPORT').select(),
+        SupabaseService.client.from('BOOKS').select(),
+        SupabaseService.client.from('UNIFORM').select(),
+      ].map((e) => e as Future<dynamic>));
+
+      final allFeesByStudent = futures[0] as Map<String, List<Map<String, dynamic>>>;
+      final feeStructures = futures[1] as List;
+      final transportFees = futures[2] as List;
+      final booksData = futures[3] as List;
+      final uniformData = futures[4] as List;
+
+      // Create lookup maps for performance
+      final feeStructureMap = {for (var f in feeStructures) f['CLASS']: f};
+      final transportMap = {for (var t in transportFees) t['Route']: double.tryParse(t['Fees'].toString()) ?? 0.0};
+      final booksMap = {for (var b in booksData) b['CLASS']: double.tryParse(b['BOOKS FEE'].toString()) ?? 0.0};
+      final uniformMap = {for (var u in uniformData) '${u['CLASS']}-${u['GENDER']}': double.tryParse(u['UNIFORM FEE'].toString()) ?? 0.0};
+
+      final reportData = <Map<String, dynamic>>[];
+
       for (final student in students) {
-        final fees = allFeesByStudent[student.name] ?? []; // Use pre-fetched fees
+        final fees = allFeesByStudent[student.name] ?? [];
         final classNameOnly = student.className.split('-').first;
-        final feeStructure = feeStructureCache[classNameOnly]!;
+        final feeStructure = feeStructureMap[classNameOnly] ?? {};
+        
         if (feeStructure.isEmpty) continue;
 
         final totalFee = double.tryParse(feeStructure['FEE']?.toString() ?? '0') ?? 0;
         final concession = student.schoolFeeConcession;
-        
         final termFees = SupabaseService.calculateTermFees(totalFee, concession);
 
-        final busFee = await SupabaseService.getStudentBusFee(student.name);
-        final busFeeCheckPaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').contains('Bus Fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
-        final busFeedue = busFee > 0 ? (busFee - busFeeCheckPaid).clamp(0, double.infinity) : 0;
+        // Bus Fee
+        double busFeeFull = 0;
+        if (student.busFacility?.toLowerCase() == 'yes' && student.busRoute != null) {
+          final rawBusFee = transportMap[student.busRoute] ?? 0.0;
+          busFeeFull = (rawBusFee - student.busFeeConcession).clamp(0, double.infinity);
+        }
+        final busFeePaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('bus fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
+        final busFeeDue = (busFeeFull - busFeePaid).clamp(0, double.infinity);
 
-        final booksFeeFull = booksFeeCache[classNameOnly]!;
-        final booksFeePaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').contains('Books Fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
-        final booksFeedue = booksFeeFull > 0 ? (booksFeeFull - booksFeePaid).clamp(0, double.infinity) : 0;
+        // Books Fee
+        final booksFeeFull = booksMap[classNameOnly] ?? 0.0;
+        final booksFeePaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('books fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
+        final booksFeeDue = (booksFeeFull - booksFeePaid).clamp(0, double.infinity);
 
-        final uniformFeeFull = uniformFeeCache['${classNameOnly}-${student.gender ?? 'Male'}']!;
-        final uniformFeePaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').contains('Uniform Fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
-        final uniformFeedue = uniformFeeFull > 0 ? (uniformFeeFull - uniformFeePaid).clamp(0, double.infinity) : 0;
+        // Uniform Fee
+        final gender = student.gender ?? 'Male';
+        final uniformFeeFull = uniformMap['$classNameOnly-$gender'] ?? 0.0;
+        final uniformFeePaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').toLowerCase().contains('uniform fee')).fold<double>(0, (sum, f) => sum + (double.tryParse(f['AMOUNT']?.toString() ?? '0') ?? 0));
+        final uniformFeeDue = (uniformFeeFull - uniformFeePaid).clamp(0, double.infinity);
 
-        // Build term data for each term (single row per student with term1, term2, term3 columns)
         final Map<String, dynamic> termData = {
           'Student Name': student.name,
           'Class': student.className,
-          'Gender': student.gender ?? 'N/A',
+          'Gender': gender,
+          'Bus Fee': busFeeFull,
+          'Bus Fee Paid': busFeePaid,
+          'Bus Fee Due': busFeeDue,
+          'Books Fee': booksFeeFull,
+          'Books Fee Paid': booksFeePaid,
+          'Books Fee Due': booksFeeDue,
+          'Uniform Fee': uniformFeeFull,
+          'Uniform Fee Paid': uniformFeePaid,
+          'Uniform Fee Due': uniformFeeDue,
         };
 
-        // Process each term
+        // Term calculations
         for (int term = 1; term <= 3; term++) {
           final termKey = 'Term $term';
-          double termPaidAmount = 0;
-
+          double termPaid = 0;
           for (final fee in fees) {
-            final feeType = (fee['FEE TYPE'] as String? ?? '').trim().toLowerCase();
-            final termNo = (fee['TERM NO'] as String? ?? '').trim();
-
-            if (feeType == 'school fee' && termNo.contains(termKey)) {
-              termPaidAmount += double.tryParse((fee['AMOUNT'] as dynamic).toString()) ?? 0;
+            final type = (fee['FEE TYPE'] as String? ?? '').toLowerCase();
+            final termNo = (fee['TERM NO'] as String? ?? '');
+            if (type.contains('school fee') && termNo.contains(termKey)) {
+              termPaid += double.tryParse(fee['AMOUNT']?.toString() ?? '0') ?? 0;
             }
           }
-
-          final termFee = termFees[term] ?? 0;
-          final termDue = (termFee - termPaidAmount).clamp(0, double.infinity);
-          
+          final termFee = termFees[term] ?? 0.0;
           termData['Term$term Fee'] = termFee;
-          termData['Term$term Paid'] = termPaidAmount;
-          termData['Term$term Due'] = termDue;
+          termData['Term$term Paid'] = termPaid;
+          termData['Term$term Due'] = (termFee - termPaid).clamp(0, double.infinity);
         }
 
-        // Add Bus Fee details
-        termData['Bus Fee'] = busFee;
-        termData['Bus Fee Paid'] = busFeeCheckPaid;
-        termData['Bus Fee Due'] = busFeedue;
-
-        // Add Books Fee details
-        termData['Books Fee'] = booksFeeFull;
-        termData['Books Fee Paid'] = booksFeePaid;
-        termData['Books Fee Due'] = booksFeedue;
-
-        // Add Uniform Fee details
-        termData['Uniform Fee'] = uniformFeeFull;
-        termData['Uniform Fee Paid'] = uniformFeePaid;
-        termData['Uniform Fee Due'] = uniformFeedue;
-
-        // Calculate overall status
-        final totalDue = termData['Term1 Due'] + termData['Term2 Due'] + termData['Term3 Due'] + busFeedue + booksFeedue + uniformFeedue;
+        final totalDue = termData['Term1 Due'] + termData['Term2 Due'] + termData['Term3 Due'] + busFeeDue + booksFeeDue + uniformFeeDue;
         termData['Overall Status'] = totalDue <= 0 ? 'PAID' : 'PENDING';
 
         reportData.add(termData);
@@ -257,6 +260,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         _isFeeLoading = false;
       });
     } catch (e) {
+      print('Error loading report: $e');
       setState(() => _isFeeLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading report: $e')),
