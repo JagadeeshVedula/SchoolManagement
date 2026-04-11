@@ -40,6 +40,33 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Student Photo
+            if (widget.student.photoUrl != null && widget.student.photoUrl!.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF800000), width: 2),
+                  image: DecorationImage(
+                    image: NetworkImage(widget.student.photoUrl!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            else
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF800000).withOpacity(0.1),
+                  border: Border.all(color: const Color(0xFF800000), width: 2),
+                ),
+                child: const Icon(Icons.person, size: 60, color: Color(0xFF800000)),
+              ),
             // Student Information Card
             Container(
               margin: const EdgeInsets.all(16),
@@ -61,6 +88,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildInfoRow('Name:', widget.student.name),
+                  if (widget.student.rollNo != null && widget.student.rollNo!.isNotEmpty)
+                    _buildInfoRow('Roll No:', widget.student.rollNo!),
                   _buildInfoRow('Class:', widget.student.className),
                   _buildInfoRow('Father Name:', widget.student.fatherName),
                   _buildInfoRow('Mother Name:', widget.student.motherName),

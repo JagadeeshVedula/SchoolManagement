@@ -1,6 +1,8 @@
 class Student {
   final int? id;
   final String name;
+  final String? rollNo;
+  final String? photoUrl;
   final String className;
   final String fatherName;
   final String motherName;
@@ -22,6 +24,8 @@ class Student {
   Student({
     this.id,
     required this.name,
+    this.rollNo,
+    this.photoUrl,
     required this.className,
     required this.fatherName,
     required this.motherName,
@@ -46,6 +50,8 @@ class Student {
     return Student(
       id: json['id'] as int?,
       name: json['Name'] as String? ?? '',
+      rollNo: json['ROLL_NO'] as String?,
+      photoUrl: json['PHOTO_URL'] as String?,
       className: json['Class'] as String? ?? '',
       fatherName: json['Father Name'] as String? ?? '',
       motherName: json['Mother Name'] as String? ?? '',
@@ -71,6 +77,8 @@ class Student {
     return {
       'id': id,
       'Name': name,
+      'ROLL_NO': rollNo,
+      'PHOTO_URL': photoUrl,
       'Class': className,
       'Father Name': fatherName,
       'Mother Name': motherName,
@@ -94,6 +102,8 @@ class Student {
   Student copyWith({
     int? id,
     String? name,
+    String? rollNo,
+    String? photoUrl,
     String? className,
     String? fatherName,
     String? motherName,
@@ -115,6 +125,8 @@ class Student {
     return Student(
       id: id ?? this.id,
       name: name ?? this.name,
+      rollNo: rollNo ?? this.rollNo,
+      photoUrl: photoUrl ?? this.photoUrl,
       className: className ?? this.className,
       fatherName: fatherName ?? this.fatherName,
       motherName: motherName ?? this.motherName,
@@ -135,3 +147,4 @@ class Student {
     );
   }
 }
+

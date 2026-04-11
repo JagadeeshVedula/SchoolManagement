@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:school_management/models/student.dart';
@@ -322,6 +323,23 @@ class SupabaseService {
     } catch (e) {
       print('Error inserting performance: $e');
       return false;
+    }
+  }
+
+  // Upload student photo to Supabase Storage
+  static Future<String?> uploadStudentPhoto(String fileName, Uint8List bytes) async {
+    try {
+      final path = 'student_photos/$fileName';
+      await client.storage.from('students').uploadBinary(
+        path, 
+        bytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
+      final String publicUrl = client.storage.from('students').getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      print('Error uploading photo: $e');
+      return null;
     }
   }
 

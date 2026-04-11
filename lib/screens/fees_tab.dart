@@ -145,6 +145,7 @@ class _FeesTabState extends State<FeesTab> {
     final selectedTermNos = _termSelections.entries.where((e) => e.value).map((e) => 'Term ${e.key}').join(',');
     final data = {
       'STUDENT NAME': _selectedStudent!.name,
+      'ROLL_NO': _selectedStudent!.rollNo ?? '',
       'TERM MONTH': _selectedTermMonth ?? '',
       'TERM YEAR': _termYear.text.trim(),
       'FEE TYPE': _feeType.text.trim().isEmpty ? (_selectedPaymentType ?? '') : _feeType.text.trim(),
@@ -755,7 +756,7 @@ class _FeesTabState extends State<FeesTab> {
             child: Table(
               children: [
                 _infoRow('Receipt No', receiptNo, 'Receipt Date', receiptDate),
-                _infoRow('Adm No', admNo, 'Roll No', '-'),
+                _infoRow('Adm No', admNo, 'Roll No', student.rollNo ?? '-'),
                 _infoRow('Name', student.name, 'Class/Section', classSection),
                 _infoRow('Father Name', student.fatherName, 'F-Mobile No', student.parentMobile),
               ],
@@ -988,7 +989,7 @@ class _FeesTabState extends State<FeesTab> {
                   padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   child: pw.Table(children: [
                     _pdfInfoRow('Receipt No', receiptNo, 'Receipt Date', receiptDate),
-                    _pdfInfoRow('Adm No', admNo, 'Roll No', '-'),
+                    _pdfInfoRow('Adm No', admNo, 'Roll No', student.rollNo ?? '-'),
                     _pdfInfoRow('Name', student.name, 'Class/Section', student.className),
                     _pdfInfoRow('Father Name', student.fatherName, 'F-Mobile No', student.parentMobile),
                   ]),

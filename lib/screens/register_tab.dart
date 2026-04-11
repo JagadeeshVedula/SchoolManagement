@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:school_management/services/supabase_service.dart';
 import 'package:school_management/models/student.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class RegisterTab extends StatefulWidget {
   const RegisterTab({super.key});
@@ -16,6 +19,9 @@ class _RegisterTabState extends State<RegisterTab> {
 
   // Student registration controllers
   final _sName = TextEditingController();
+  final _sRollNo = TextEditingController();
+  XFile? _sImage;
+  Uint8List? _sImageBytes;
   String? _sClass;
   String? _sSection;
   List<String> _sections = [];
@@ -208,6 +214,7 @@ class _RegisterTabState extends State<RegisterTab> {
   @override
   void dispose() {
     _sName.dispose();
+    _sRollNo.dispose();
     _sFather.dispose();
     _sMother.dispose();
     _sParentMobile.dispose();
@@ -246,6 +253,7 @@ class _RegisterTabState extends State<RegisterTab> {
     setState(() => _isSubmittingStudent = true);
     final data = {
       'Name': _sName.text.trim(),
+      'ROLL_NO': _sRollNo.text.trim(),
       'Class': '$_sClass-$_sSection',
       'Father Name': _sFather.text.trim(),
       'Mother Name': _sMother.text.trim(),
@@ -259,6 +267,16 @@ class _RegisterTabState extends State<RegisterTab> {
       'HOSTELTYPE': _sHostelFacility ? _sHostelType : null,
       'ADMIN_FEE': _sAdminFee ? 'YES' : 'NO',
     };
+
+    // Upload photo if selected
+    if (_sImageBytes != null) {
+      final fileName = '${_sName.text.trim()}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final photoUrl = await SupabaseService.uploadStudentPhoto(fileName, _sImageBytes!);
+      if (photoUrl != null) {
+        data['PHOTO_URL'] = photoUrl;
+      }
+    }
+
     data['DOJ'] = _selectedJoiningDate != null ? DateFormat('dd-MM-yyyy').format(_selectedJoiningDate!) : null;
     final ok = await SupabaseService.insertStudent(data);
     
@@ -296,7 +314,7 @@ class _RegisterTabState extends State<RegisterTab> {
     setState(() => _isSubmittingStudent = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student registered successfully')));
-      _sName.clear(); _sFather.clear(); _sMother.clear(); _sParentMobile.clear(); _sAddress.clear();
+      _sName.clear(); _sRollNo.clear(); _sFather.clear(); _sMother.clear(); _sParentMobile.clear(); _sAddress.clear();
       setState(() { 
         _sGender = null; 
         _sClass = null;
@@ -310,6 +328,8 @@ class _RegisterTabState extends State<RegisterTab> {
         _selectedJoiningDate = null;
         _sHostelFee = 0;
         _sAdminFee = false;
+        _sImage = null;
+        _sImageBytes = null;
         _loadClasses(); 
         _currentPage = 0; 
       });
@@ -637,6 +657,87 @@ class _RegisterTabState extends State<RegisterTab> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _sRollNo,
+                    decoration: InputDecoration(
+                      labelText: 'Roll No',
+                      hintText: 'Enter roll number',
+                      prefixIcon: const Icon(Icons.numbers, color: Color(0xFF800000)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Photo Upload Section
+                  GestureDetector(
+                    onTap: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                      if (image != null) {
+                        final bytes = await image.readAsBytes();
+                        setState(() {
+                          _sImage = image;
+                          _sImageBytes = bytes;
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              image: _sImageBytes != null
+                                  ? DecorationImage(image: MemoryImage(_sImageBytes!), fit: BoxFit.cover)
+                                  : null,
+                            ),
+                            child: _sImageBytes == null
+                                ? const Icon(Icons.camera_alt, color: Color(0xFF800000))
+                                : null,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _sImage == null ? 'Upload Student Photo' : 'Photo Selected',
+                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  'Optional - Click to choose',
+                                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_sImageBytes != null)
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed: () => setState(() {
+                                _sImage = null;
+                                _sImageBytes = null;
+                              }),
+                            ),
+                        ],
                       ),
                     ),
                   ),

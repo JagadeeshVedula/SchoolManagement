@@ -624,6 +624,18 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16.0),
+                          leading: student.photoUrl != null && student.photoUrl!.isNotEmpty
+                              ? CircleAvatar(
+                                  backgroundImage: NetworkImage(student.photoUrl!),
+                                )
+                              : Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF800000).withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.person, color: Color(0xFF800000)),
+                                ),
                           title: Text(
                             student.name,
                             style: GoogleFonts.poppins(
@@ -644,6 +656,15 @@ class _StudentDataWidgetState extends State<StudentDataWidget> {
                                     'Class: ${student.className}',
                                     style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
                                   ),
+                                  if (student.rollNo != null && student.rollNo!.isNotEmpty) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.numbers, size: 14, color: Color(0xFF64748B)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Roll No: ${student.rollNo}',
+                                      style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+                                    ),
+                                  ],
                                 ],
                               ),
                               Row(
