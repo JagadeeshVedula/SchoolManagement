@@ -97,7 +97,7 @@ class SupabaseService {
       final response = await client
           .from('STUDENTS')
           .select()
-          .eq('Parent Mobile', parentMobile);
+          .eq('"Parent Mobile"', parentMobile);
 
       final students = (response as List)
           .map((e) => Student.fromJson(e as Map<String, dynamic>))
@@ -115,7 +115,7 @@ class SupabaseService {
       final response = await client
           .from('STUDENTS')
           .select()
-          .eq('Parent Mobile', parentMobile)
+          .eq('"Parent Mobile"', parentMobile)
           .limit(1);
 
       return (response as List).isNotEmpty;
@@ -211,7 +211,7 @@ class SupabaseService {
           .from('STUDENTS')
           .select()
           .eq('Class', className)
-          .eq('Parent Mobile', parentMobile);
+          .eq('"Parent Mobile"', parentMobile);
 
       final students = (response as List)
           .map((e) => Student.fromJson(e as Map<String, dynamic>))
@@ -1183,26 +1183,54 @@ class SupabaseService {
     }
   }
 
-  // Staff Authentication - Verify staff credentials from CRED table
-  static Future<Map<String, dynamic>?> staffLogin(String username, String password) async {
+  // Parent Authentication - Verify parent login using Parent Mobile from STUDENTS table
+  static Future<bool> parentLogin(String mobile, String password) async {
     try {
+      final trimmedMobile = mobile.trim();
+      print('DEBUG: parentLogin attempt - mobile: $trimmedMobile');
+      
+      // Clean mobile of any non-digit characters for password verification
+      final numericMobile = trimmedMobile.replaceAll(RegExp(r'\D'), '');
+      if (numericMobile.length < 5) {
+        throw 'Mobile number must be at least 10 digits.';
+      }
+      
+      // Password must be last 5 digits of the numeric mobile
+      final expectedPassword = numericMobile.substring(numericMobile.length - 5);
+      if (password != expectedPassword) {
+        throw 'Password must be the last 5 digits of your mobile ($expectedPassword).';
+      }
+
+      // Clean mobile for searching (remove spaces, common prefixes)
+      String searchMobile = numericMobile;
+      if (searchMobile.startsWith('91') && searchMobile.length > 10) {
+        searchMobile = searchMobile.substring(2);
+      } else if (searchMobile.startsWith('0')) {
+        searchMobile = searchMobile.substring(1);
+      }
+      
+      print('DEBUG: searching for mobile part: $searchMobile');
+
+      // Check if mobile exists in STUDENTS table
+      // We check for any record matching the last 10 digits
       final response = await client
-          .from('CRED')
-          .select()
-          .eq('USERNAME', username)
-          .eq('PASSWORD', password)
-          .eq('ROLE', 'STAFF')
+          .from('STUDENTS')
+          .select('"Parent Mobile"')
+          .ilike('"Parent Mobile"', '%$searchMobile')
           .limit(1);
 
-      if ((response as List).isNotEmpty) {
-        return response[0] as Map<String, dynamic>;
+      if ((response as List).isEmpty) {
+        throw 'Mobile number not found in our records.';
       }
-      return null;
+      
+      return true;
     } catch (e) {
-      print('Error during staff login: $e');
-      return null;
+      print('Error during parent login: $e');
+      rethrow; // Rethrow to show in UI
     }
   }
+
+  // Staff Authentication - Verify staff credentials from CRED table
 
   // Get staff details by mobile number
   static Future<Map<String, dynamic>?> getStaffByMobile(String mobile) async {

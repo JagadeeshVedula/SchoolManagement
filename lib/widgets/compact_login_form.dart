@@ -75,42 +75,19 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
       }
     }
 
-    // Staff login - validate credentials against CRED table with ROLE='STAFF'
-    if (widget.userRole.id == 'staff') {
+    // Parent login - validate against STUDENTS table
+    if (widget.userRole.id == 'parent') {
       try {
-        final staffCred = await SupabaseService.staffLogin(username, password);
-        print('DEBUG: staffCred = $staffCred');
-        if (staffCred != null && mounted) {
-          // Get staff details from STAFF table using Mobile Number from CRED
-          final mobileNumber = staffCred['Mobile Number'] ?? '';
-          print('DEBUG: Extracted Mobile Number from staffCred = $mobileNumber');
-          
-          if (mobileNumber.isEmpty) {
-            print('DEBUG: Mobile Number is empty! Available keys in staffCred: ${staffCred.keys}');
-          }
-          
-          final staffDetails = await SupabaseService.getStaffByMobile(mobileNumber);
-          print('DEBUG: staffDetails = $staffDetails');
-          
-          if (staffDetails == null) {
-            print('DEBUG: staffDetails is NULL! Mobile lookup failed for mobile: $mobileNumber');
-          }
-          
+        final isValid = await SupabaseService.parentLogin(username, password);
+        if (isValid && mounted) {
           setState(() {
             _isLoading = false;
           });
-
-          if (mounted) {
-            // Navigate to staff dashboard
-            Navigator.pushReplacementNamed(
-              context,
-              '/staff-dashboard',
-              arguments: {
-                'staffCred': staffCred,
-                'staffDetails': staffDetails ?? {},
-              },
-            );
-          }
+          // Navigate to parent dashboard
+          Navigator.pushReplacementNamed(context, '/parent-home', arguments: {
+            'parentMobile': username,
+          });
+          return;
         } else {
           if (mounted) {
             setState(() {
@@ -118,7 +95,7 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Invalid staff credentials'),
+                content: const Text('Invalid parent mobile or password'),
                 backgroundColor: widget.userRole.color,
               ),
             );
@@ -131,7 +108,7 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Login error: $e'),
+              content: Text(e.toString().replaceAll('Exception: ', '')),
               backgroundColor: Colors.red[600],
             ),
           );
@@ -220,7 +197,7 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
               TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(
-                  labelText: 'Username / ID',
+                  labelText: widget.userRole.id == 'parent' ? 'Parent Mobile' : 'Username / ID',
                   labelStyle: GoogleFonts.inter(
                     color: const Color(0xFF718096),
                     fontSize: 14,

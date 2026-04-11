@@ -7,8 +7,15 @@ import 'package:school_management/services/supabase_service.dart';
 
 class StudentDetailScreen extends StatefulWidget {
   final Student student;
+  final String? initialView; // 'data' or 'performance'
+  final bool isParentView;
 
-  const StudentDetailScreen({super.key, required this.student});
+  const StudentDetailScreen({
+    super.key, 
+    required this.student, 
+    this.initialView,
+    this.isParentView = false,
+  });
 
   @override
   State<StudentDetailScreen> createState() => _StudentDetailScreenState();
@@ -25,6 +32,18 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     super.initState();
     _assessmentsFuture = SupabaseService.getAssessmentsForStudent(widget.student.name);
     _performanceFuture = Future.value([]);
+    
+    // If initial view is performance, load the first assessment automatically
+    if (widget.initialView == 'performance') {
+      _assessmentsFuture.then((assessments) {
+        if (assessments.isNotEmpty && mounted) {
+          setState(() {
+            _selectedAssessment = assessments.first;
+            _performanceFuture = SupabaseService.getStudentPerformanceByAssessment(widget.student.name, _selectedAssessment!);
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -41,7 +60,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         child: Column(
           children: [
             // Student Information Card
-            Container(
+            if (widget.initialView == null || widget.initialView == 'data')
+              Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -85,38 +105,40 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                 ],
               ),
             ),
-            // Absent Checkbox
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange[200]!),
-                ),
-                child: CheckboxListTile(
-                  title: Text('Is Absent Today', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                  value: _isAbsent,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _isAbsent = value ?? false;
-                    });
-                    if (_isAbsent) {
-                      _sendAbsenceNotification();
-                    }
-                  },
-                  activeColor: Colors.orange,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  secondary: const Icon(Icons.sms),
+            // Absent Checkbox - HIDE FOR PARENTS
+            if (!widget.isParentView)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: CheckboxListTile(
+                    title: Text('Is Absent Today', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    value: _isAbsent,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _isAbsent = value ?? false;
+                      });
+                      if (_isAbsent) {
+                        _sendAbsenceNotification();
+                      }
+                    },
+                    activeColor: Colors.orange,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    secondary: const Icon(Icons.sms),
+                  ),
                 ),
               ),
-            ),
 
             // Performance Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
+            if (widget.initialView == null || widget.initialView == 'performance')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
                 'Academic Performance',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
@@ -126,9 +148,10 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
             ),
 
             // Assessment selector and Performance Data (filtered by Assessment)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: FutureBuilder<List<String>>(
+            if (widget.initialView == null || widget.initialView == 'performance')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: FutureBuilder<List<String>>(
                 future: _assessmentsFuture,
                 builder: (context, snap) {
                   if (snap.connectionState == ConnectionState.waiting) {
@@ -185,11 +208,12 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     ],
                   );
                 },
-              ),
+                ),
             ),
 
-            FutureBuilder<List<Performance>>(
-              future: _performanceFuture,
+            if (widget.initialView == null || widget.initialView == 'performance')
+              FutureBuilder<List<Performance>>(
+                future: _performanceFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
@@ -209,7 +233,6 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                 }
 
                 final performances = snapshot.data ?? [];
-
                 if (performances.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -220,70 +243,199 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   );
                 }
 
-                // Display subject name and grade for each record
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: performances.length,
-                    itemBuilder: (context, index) {
-                      final perf = performances[index];
-                      final subjectMarks = [
-                        if (perf.teluguMarks != null && perf.teluguMarks!.isNotEmpty) 'Telugu: ${perf.teluguMarks}',
-                        if (perf.englishMarks != null && perf.englishMarks!.isNotEmpty) 'English: ${perf.englishMarks}',
-                        if (perf.hindiMarks != null && perf.hindiMarks!.isNotEmpty) 'Hindi: ${perf.hindiMarks}',
-                        if (perf.mathsMarks != null && perf.mathsMarks!.isNotEmpty) 'Maths: ${perf.mathsMarks}',
-                        if (perf.scienceMarks != null && perf.scienceMarks!.isNotEmpty) 'Science: ${perf.scienceMarks}',
-                        if (perf.socialMarks != null && perf.socialMarks!.isNotEmpty) 'Social: ${perf.socialMarks}',
-                        if (perf.computersMarks != null && perf.computersMarks!.isNotEmpty) 'Computers: ${perf.computersMarks}',
-                      ];
-
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Assessment: ${perf.assessment}',
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blue[800]),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 8,
-                                children: subjectMarks.map((mark) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green[50],
-                                      border: Border.all(color: Colors.green[300]!),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      mark,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.green[800],
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                return Column(
+                  children: performances.map((perf) => _buildPerformanceCard(perf)).toList(),
                 );
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPerformanceCard(Performance perf) {
+    // Parse marks and prepare data for the chart
+    final List<Map<String, dynamic>> subjectData = [
+      {'name': 'Telugu', 'marks': double.tryParse(perf.teluguMarks ?? '0') ?? 0},
+      {'name': 'English', 'marks': double.tryParse(perf.englishMarks ?? '0') ?? 0},
+      {'name': 'Hindi', 'marks': double.tryParse(perf.hindiMarks ?? '0') ?? 0},
+      {'name': 'Maths', 'marks': double.tryParse(perf.mathsMarks ?? '0') ?? 0},
+      {'name': 'Science', 'marks': double.tryParse(perf.scienceMarks ?? '0') ?? 0},
+      {'name': 'Social', 'marks': double.tryParse(perf.socialMarks ?? '0') ?? 0},
+      {'name': 'Computers', 'marks': double.tryParse(perf.computersMarks ?? '0') ?? 0},
+    ].where((sub) => (sub['marks'] as num) > 0).toList();
+
+    if (subjectData.isEmpty) return const SizedBox();
+
+    double total = 0;
+    for (var sub in subjectData) {
+      total += sub['marks'] as num;
+    }
+    final avg = total / subjectData.length;
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with Score Summary
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.blue[600],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      perf.assessment,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Overall Average: ${avg.toStringAsFixed(1)}%',
+                      style: GoogleFonts.inter(
+                        color: Colors.blue[100],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${total.toInt()} Total',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Custom Bar Chart
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Subject-wise Analysis',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey[900],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ...subjectData.map((sub) => _buildStatBar(sub['name'], (sub['marks'] as num).toDouble())),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatBar(String label, double score) {
+    // Determine color based on score
+    Color color;
+    if (score >= 90) color = const Color(0xFF10B981); // Emerald
+    else if (score >= 75) color = const Color(0xFF3B82F6); // Blue
+    else if (score >= 50) color = const Color(0xFFF59E0B); // Amber
+    else color = const Color(0xFFEF4444); // Red
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.blueGrey[800],
+                ),
+              ),
+              Text(
+                '${score.toInt()}/100',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Stack(
+            children: [
+              Container(
+                height: 10,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOutCubic,
+                    height: 10,
+                    width: constraints.maxWidth * (score / 100),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [color.withOpacity(0.7), color],
+                      ),
+                      borderRadius: BorderRadius.circular(5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:school_management/screens/role_selection_screen.dart';
 import 'package:school_management/screens/home_tabs_screen.dart';
 import 'package:school_management/screens/staff_dashboard_screen.dart';
+import 'package:school_management/screens/parent_home_screen.dart';
 // Importing custom app theme configuration
 import 'package:school_management/theme/app_theme.dart';
 // Importing Supabase service for database initialization
@@ -36,7 +37,7 @@ class SchoolManagementApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // MaterialApp is the root widget that provides material design components
     return MaterialApp(
-      title: 'School Management System', // App name shown in device app switcher
+      title: 'Nalanda Parent App', // App name shown in device app switcher
       theme: AppTheme.lightTheme, // Custom light theme for the app
       darkTheme: AppTheme.darkTheme, // Custom dark theme for the app
       themeMode: ThemeMode.light, // Default to light theme
@@ -68,6 +69,14 @@ class SchoolManagementApp extends StatelessWidget {
               staffCred: staffCred,
               staffDetails: staffDetails,
             ),
+            settings: settings,
+          );
+        }
+        if (settings.name == '/parent-home') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          final parentMobile = args != null && args['parentMobile'] is String ? args['parentMobile'] as String : '';
+          return MaterialPageRoute(
+            builder: (_) => ParentHomeScreen(parentMobile: parentMobile),
             settings: settings,
           );
         }

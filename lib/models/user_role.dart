@@ -25,12 +25,12 @@ class UserRole {
   // Static getter that returns a list of all available user roles
   // Using getter instead of static final List for better encapsulation
   static List<UserRole> get roles => [
-        // Staff role definition
+        // Parent role definition
         UserRole(
-          id: 'staff',
-          title: 'Staff',
-          description: 'Staff member access for leave and payslips',
-          icon: Icons.person_4, // Staff person icon
+          id: 'parent',
+          title: 'Parent',
+          description: 'Parent access for students performance',
+          icon: Icons.family_restroom, // Parent/Family icon
           color: Color(0xFF2563EB), // Blue color
           gradientStart: Color(0xFF3B82F6), // Lighter blue
           gradientEnd: Color(0xFF60A5FA), // Light blue

@@ -124,7 +124,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                       ),
                       const SizedBox(height: 4), // Small space between text lines
                       Text( // App name text
-                        'School Management System',
+                        'Nalanda Parent App',
                         style: GoogleFonts.poppins(
                           color: Colors.white, // Solid white color
                           fontSize: 36, // Large font size for emphasis
@@ -192,7 +192,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                   },
                   child: Center( // Center the footer text
                     child: Text(
-                      'School Management System © 2025',
+                      'Nalanda Parent App © 2025',
                       style: GoogleFonts.inter(
                         color: Colors.white.withOpacity(0.6), // Subtle white color
                         fontSize: 14, // Small font size
