@@ -76,6 +76,25 @@ class SupabaseService {
     }
   }
 
+  // Search students by name
+  static Future<List<Student>> searchStudentsByName(String query) async {
+    try {
+      final response = await client
+          .from('STUDENTS')
+          .select()
+          .ilike('Name', '%$query%')
+          .limit(10);
+
+      final students = (response as List)
+          .map((e) => Student.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return students;
+    } catch (e) {
+      print('Error searching students by name: $e');
+      return [];
+    }
+  }
+
   // Fetch all staff
   static Future<List<Staff>> getAllStaff() async {
     try {
@@ -2191,6 +2210,97 @@ class SupabaseService {
     } catch (e) {
       print('Error fetching students by bus number: $e');
       return [];
+    }
+  }
+  
+  // Fetch all fee structures
+  static Future<List<Map<String, dynamic>>> getAllFeeStructures() async {
+    try {
+      final response = await client.from('FEE STRUCTURE').select();
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching all fee structures: $e');
+      return [];
+    }
+  }
+
+  // Fetch all transport records
+  static Future<List<Map<String, dynamic>>> getAllTransport() async {
+    try {
+      final response = await client.from('TRANSPORT').select();
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching all transport: $e');
+      return [];
+    }
+  }
+
+  // Fetch all hostel records
+  static Future<List<Map<String, dynamic>>> getAllHostelFees() async {
+    try {
+      final response = await client.from('HOSTEL').select();
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching all hostel fees: $e');
+      return [];
+    }
+  }
+
+  // Fetch students by multiple classes
+  static Future<List<Student>> getStudentsByClasses(List<String> classes) async {
+    try {
+      final response = await client.from('STUDENTS').select().in_('Class', classes);
+      return (response as List)
+          .map((e) => Student.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching students by multiple classes: $e');
+      return [];
+    }
+  }
+
+  // Get comprehensive fee summary for a student
+  static Future<Map<String, double>> getStudentFeeSummary(Student student) async {
+    try {
+      final className = student.className.split('-').first;
+      final feeStructure = await getSchoolFeeStructure(className);
+      final totalSchoolFee = double.tryParse(feeStructure['fee']?.toString() ?? '0') ?? 0.0;
+      final schoolFeeConcession = student.schoolFeeConcession;
+      final netSchoolFee = (totalSchoolFee - schoolFeeConcession).clamp(0.0, double.infinity).toDouble();
+
+      final busFee = await getStudentBusFee(student.name);
+      final busFeeConcession = student.busFeeConcession;
+      final netBusFee = (busFee - busFeeConcession).clamp(0.0, double.infinity).toDouble();
+
+      final hostelFee = await getHostelFeeByClass(className);
+      final hostelFeeConcession = student.hostelFeeConcession;
+      final netHostelFee = (hostelFee - hostelFeeConcession).clamp(0.0, double.infinity).toDouble();
+
+      final double totalFees = netSchoolFee + netBusFee + netHostelFee;
+
+      final allFees = await getFeesByStudent(student.name);
+      final totalPaid = allFees.fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0.0));
+      
+      final totalPending = (totalFees - totalPaid).clamp(0.0, double.infinity).toDouble();
+
+      return {
+        'totalFees': totalFees,
+        'totalPaid': totalPaid,
+        'totalPending': totalPending,
+        'schoolFee': netSchoolFee,
+        'busFee': netBusFee,
+        'hostelFee': netHostelFee,
+      };
+    } catch (e) {
+      print('Error getting fee summary: $e');
+      return {
+        'totalFees': 0,
+        'totalPaid': 0,
+        'totalPending': 0,
+        'schoolFee': 0,
+        'busFee': 0,
+        'hostelFee': 0,
+      };
     }
   }
 }

@@ -85,33 +85,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                 ],
               ),
             ),
-            // Absent Checkbox
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange[200]!),
-                ),
-                child: CheckboxListTile(
-                  title: Text('Is Absent Today', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                  value: _isAbsent,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _isAbsent = value ?? false;
-                    });
-                    if (_isAbsent) {
-                      _sendAbsenceNotification();
-                    }
-                  },
-                  activeColor: Colors.orange,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  secondary: const Icon(Icons.sms),
-                ),
-              ),
-            ),
+
 
             // Performance Section
             Padding(
@@ -318,24 +292,4 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     );
   }
 
-  void _sendAbsenceNotification() async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final mobileNumber = widget.student.parentMobile;
-    if (mobileNumber.isEmpty) {
-      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Parent mobile number is not available.'), backgroundColor: Colors.red));
-      return;
-    }
-
-    final currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
-    final message = "your ward is abscent for school on '$currentDate' thanks from Nalanda school";
-
-    final success = await SupabaseService.sendSms(mobileNumber, message);
-
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text(success ? 'Absence notification sent successfully.' : 'Failed to send SMS.'),
-        backgroundColor: success ? Colors.green : Colors.red,
-      ),
-    );
-  }
 }

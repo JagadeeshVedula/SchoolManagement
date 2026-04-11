@@ -19,6 +19,7 @@ import 'package:school_management/screens/miscellaneous_screen.dart';
 import 'package:school_management/screens/Attendance.dart';
 import 'package:school_management/screens/Events.dart';
 import 'package:school_management/screens/staff_student_details_screen.dart';
+import 'package:school_management/widgets/chat_bot_widget.dart';
 
 class HomeTabsScreen extends StatefulWidget {
   final String role;
@@ -274,62 +275,67 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
           ),
         ),
       ),
-      body: Row(
+      body: Stack(
         children: [
-          // Sidebar Navigation
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: _sidebarOpen ? 280 : 0,
-            color: const Color(0xFFF1F5F9), // Slate 100
-            child: _sidebarOpen
-                ? SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF800000), Color(0xFFB91C1C)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.school,
-                                size: 40,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Menu',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
+          Row(
+            children: [
+              // Sidebar Navigation
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: _sidebarOpen ? 280 : 0,
+                color: const Color(0xFFF1F5F9), // Slate 100
+                child: _sidebarOpen
+                    ? SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF800000), Color(0xFFB91C1C)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
                               ),
-                            ],
-                          ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.school,
+                                    size: 40,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Menu',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ..._buildSidebarItems(tabs),
+                          ],
                         ),
-                        ..._buildSidebarItems(tabs),
-                      ],
-                    ),
-                  )
-                : null,
+                      )
+                    : null,
+              ),
+              // Main Content Area
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: views,
+                ),
+              ),
+            ],
           ),
-          // Main Content Area
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: views,
-            ),
-          ),
+          const ChatBotWidget(),
         ],
       ),
     ));

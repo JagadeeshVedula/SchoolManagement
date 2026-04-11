@@ -40,7 +40,7 @@ class _DueReportTabState extends State<DueReportTab> {
         children: [
           _buildStaffSelector(),
           const SizedBox(height: 24),
-          if (_selectedStaff != null) ...[
+          if (_selectedStaff != null || _assignedClasses.isNotEmpty) ...[
             _buildClassAndTermFilters(),
             const SizedBox(height: 24),
             _buildReportData(),
@@ -63,25 +63,35 @@ class _DueReportTabState extends State<DueReportTab> {
           ),
         ),
         const SizedBox(height: 12),
-        DropdownButtonFormField<Staff>(
+        DropdownButtonFormField<dynamic>(
           value: _selectedStaff,
           hint: const Text('Select Staff'),
-          items: widget.staffList
-              .map((staff) => DropdownMenuItem(value: staff, child: Text(staff.name)))
-              .toList(),
-          onChanged: (staff) {
+          items: [
+            const DropdownMenuItem(value: 'all', child: Text('All Staff / All Classes')),
+            ...widget.staffList
+                .map((staff) => DropdownMenuItem(value: staff, child: Text(staff.name))),
+          ],
+          onChanged: (val) {
             setState(() {
-              _selectedStaff = staff;
-              _assignedClasses = [];
-              _dueReportData = [];
+              if (val is String) {
+                _selectedStaff = null; // Represents 'All'
+                _assignedClasses = [];
+                _dueReportData = [];
+              } else {
+                _selectedStaff = val as Staff;
+                _assignedClasses = [];
+                _dueReportData = [];
+              }
             });
-            if (staff != null) {
-              _loadAssignedClasses(staff.name);
+            if (val is Staff) {
+              _loadAssignedClasses(val.name);
+            } else if (val == 'all') {
+              _loadAllAssignedClasses();
             }
           },
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
-            labelText: 'Staff',
+            labelText: 'Staff Selection',
           ),
         ),
       ],
@@ -137,8 +147,11 @@ class _DueReportTabState extends State<DueReportTab> {
           ],
         ),
         const SizedBox(height: 12),
+        const SizedBox(height: 12),
         ElevatedButton(
-          onPressed: _loadDueReportData,
+          onPressed: (_selectedStaff == null && _assignedClasses.isEmpty && !(_dueReportData.isEmpty && widget.staffList.isNotEmpty)) 
+              ? null // This condition might need refinement if 'All' is selected
+              : _loadDueReportData,
           child: const Text('Generate Report'),
         ),
       ],
@@ -178,31 +191,44 @@ class _DueReportTabState extends State<DueReportTab> {
       const DataColumn(label: Text('Class')),
       const DataColumn(label: Text('Parent Mobile')),
       const DataColumn(label: Text('Staff Name')),
+      const DataColumn(label: Text('Bus Fee')),
+      const DataColumn(label: Text('Hostel Fee')),
+      const DataColumn(label: Text('Total Fees')),
+      const DataColumn(label: Text('Total Paid')),
+      const DataColumn(label: Text('Total Pending')),
     ];
     if (_term1Selected) columns.add(const DataColumn(label: Text('Term 1 Due')));
     if (_term2Selected) columns.add(const DataColumn(label: Text('Term 2 Due')));
     if (_term3Selected) columns.add(const DataColumn(label: Text('Term 3 Due')));
 
-    return DataTable(
-      columns: columns,
-      rows: _dueReportData.map((data) {
-        final cells = [
-          DataCell(Text(data['Student Name'])),
-          DataCell(Text(data['Class'])),
-          DataCell(Text(data['Parent Mobile'])),
-          DataCell(Text(data['Staff Name'])),
-        ];
-        if (_term1Selected) {
-          cells.add(DataCell(Text(data['Term1 Due']?.toString() ?? 'N/A')));
-        }
-        if (_term2Selected) {
-          cells.add(DataCell(Text(data['Term2 Due']?.toString() ?? 'N/A')));
-        }
-        if (_term3Selected) {
-          cells.add(DataCell(Text(data['Term3 Due']?.toString() ?? 'N/A')));
-        }
-        return DataRow(cells: cells);
-      }).toList(),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: columns,
+        rows: _dueReportData.map((data) {
+          final cells = [
+            DataCell(Text(data['Student Name'] ?? '')),
+            DataCell(Text(data['Class'] ?? '')),
+            DataCell(Text(data['Parent Mobile'] ?? '')),
+            DataCell(Text(data['Staff Name'] ?? '')),
+            DataCell(Text(data['Bus Fee'] ?? '0.00')),
+            DataCell(Text(data['Hostel Fee'] ?? '0.00')),
+            DataCell(Text(data['Total Fees'] ?? '0.00')),
+            DataCell(Text(data['Total Paid'] ?? '0.00')),
+            DataCell(Text(data['Total Pending'] ?? '0.00')),
+          ];
+          if (_term1Selected) {
+            cells.add(DataCell(Text(data['Term1 Due']?.toString() ?? 'N/A')));
+          }
+          if (_term2Selected) {
+            cells.add(DataCell(Text(data['Term2 Due']?.toString() ?? 'N/A')));
+          }
+          if (_term3Selected) {
+            cells.add(DataCell(Text(data['Term3 Due']?.toString() ?? 'N/A')));
+          }
+          return DataRow(cells: cells);
+        }).toList(),
+      ),
     );
   }
 
@@ -222,74 +248,165 @@ class _DueReportTabState extends State<DueReportTab> {
     }
   }
 
+  Future<void> _loadAllAssignedClasses() async {
+    setState(() => _isLoadingClasses = true);
+    try {
+      final Set<String> allAssigned = {};
+      for (final staff in widget.staffList) {
+        final classes = await SupabaseService.getClassesForStaff(staff.name);
+        allAssigned.addAll(classes);
+      }
+      setState(() {
+        _assignedClasses = allAssigned.toList()..sort();
+        _isLoadingClasses = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingClasses = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading all assigned classes: $e')),
+      );
+    }
+  }
+
   Future<void> _loadDueReportData() async {
-    if (_selectedStaff == null || _assignedClasses.isEmpty) return;
+    // Return early only if no selection has been made yet
+    if (_selectedStaff == null && _assignedClasses.isEmpty && _dueReportData.isEmpty) return;
 
     setState(() => _isLoadingReport = true);
 
     try {
       final reportData = <Map<String, dynamic>>[];
-      for (final className in _assignedClasses) {
-        final students = await SupabaseService.getStudentsByClass(className);
-        final studentNames = students.map((s) => s.name).toList();
-        final allFeesByStudent = await SupabaseService.getFeesForStudents(studentNames);
-
-        for (final student in students) {
-          final fees = allFeesByStudent[student.name] ?? [];
-          final feeStructure = await SupabaseService.getFeeStructureByClass(student.className.split('-').first);
-          if (feeStructure == null || feeStructure.isEmpty) continue;
-
-          final totalFee = double.tryParse(feeStructure['FEE']?.toString() ?? '0') ?? 0;
-          final concession = student.schoolFeeConcession;
-          final termFees = SupabaseService.calculateTermFees(totalFee, concession);
-
-          final Map<String, dynamic> rowData = {
-            'Student Name': student.name,
-            'Class': student.className,
-            'Parent Mobile': student.parentMobile,
-            'Staff Name': _selectedStaff!.name,
-          };
-
-          if (_term1Selected) {
-            final termPaidAmount = fees
-                .where((f) =>
-            (f['FEE TYPE'] as String? ?? '').trim().toLowerCase() == 'school fee' &&
-                (f['TERM NO'] as String? ?? '').trim().contains('Term 1'))
-                .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
-            final termDue = ((termFees[1] ?? 0.0) - termPaidAmount).clamp(0, double.infinity);
-            rowData['Term1 Due'] = termDue.toStringAsFixed(2);
+      
+      // 1. Determine which staff/classes to process
+      final staffsToProcess = <(Staff, List<String>)>[];
+      if (_selectedStaff != null) {
+        staffsToProcess.add((_selectedStaff!, _assignedClasses));
+      } else {
+        // 'All' mode
+        for (final staff in widget.staffList) {
+          final classes = await SupabaseService.getClassesForStaff(staff.name);
+          if (classes.isNotEmpty) {
+            staffsToProcess.add((staff, classes));
           }
-          if (_term2Selected) {
-            final termPaidAmount = fees
-                .where((f) =>
-            (f['FEE TYPE'] as String? ?? '').trim().toLowerCase() == 'school fee' &&
-                (f['TERM NO'] as String? ?? '').trim().contains('Term 2'))
-                .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
-            final termDue = ((termFees[2] ?? 0.0) - termPaidAmount).clamp(0, double.infinity);
-            rowData['Term2 Due'] = termDue.toStringAsFixed(2);
-          }
-          if (_term3Selected) {
-            final termPaidAmount = fees
-                .where((f) =>
-            (f['FEE TYPE'] as String? ?? '').trim().toLowerCase() == 'school fee' &&
-                (f['TERM NO'] as String? ?? '').trim().contains('Term 3'))
-                .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
-            final termDue = ((termFees[3] ?? 0.0) - termPaidAmount).clamp(0, double.infinity);
-            rowData['Term3 Due'] = termDue.toStringAsFixed(2);
-          }
-
-          reportData.add(rowData);
         }
       }
+
+      if (staffsToProcess.isEmpty) {
+        setState(() => _isLoadingReport = false);
+        return;
+      }
+
+      // 2. Fetch all Master Data in parallel for O(1) local lookup
+      final masterData = await Future.wait([
+        SupabaseService.getAllFeeStructures(),
+        SupabaseService.getAllTransport(),
+        SupabaseService.getAllHostelFees(),
+      ]);
+
+      final feeStructures = {for (var f in masterData[0]) f['CLASS']?.toString() ?? '': f};
+      final transportMap = {for (var t in masterData[1]) t['Route']?.toString() ?? '': t};
+      final hostelMap = {for (var h in masterData[2]) h['CLASS']?.toString() ?? '': h};
+
+      // 3. Collect all unique classes and students
+      final allClassNames = staffsToProcess.expand((e) => e.$2).toSet().toList();
+      final allStudents = await SupabaseService.getStudentsByClasses(allClassNames);
+      
+      if (allStudents.isEmpty) {
+        setState(() {
+          _dueReportData = [];
+          _isLoadingReport = false;
+        });
+        return;
+      }
+
+      // 4. Bulk fetch all fee records for all students
+      final allStudentNames = allStudents.map((s) => s.name).toList();
+      final allFeesByStudent = await SupabaseService.getFeesForStudents(allStudentNames);
+
+      // 5. Create a map of Class -> Staff for quick lookup
+      final classToStaffMap = <String, List<Staff>>{};
+      for (final item in staffsToProcess) {
+        final staff = item.$1;
+        for (final className in item.$2) {
+          classToStaffMap.putIfAbsent(className, () => []).add(staff);
+        }
+      }
+
+      // 6. Process all data locally (High Speed)
+      for (final student in allStudents) {
+        final fees = allFeesByStudent[student.name] ?? [];
+        final classPrefix = student.className.split('-').first;
+        final feeStructure = feeStructures[classPrefix];
+        
+        if (feeStructure == null) continue;
+
+        // Calculate School Fees
+        final totalFee = double.tryParse(feeStructure['FEE']?.toString() ?? '0') ?? 0.0;
+        final concession = student.schoolFeeConcession;
+        final termFees = SupabaseService.calculateTermFees(totalFee, concession);
+
+        // Calculate Bus Fees
+        final busRouteData = transportMap[student.busRoute];
+        final totalBusFee = double.tryParse(busRouteData?['Fees']?.toString() ?? '0') ?? 0.0;
+        final netBusFee = (totalBusFee - student.busFeeConcession).clamp(0.0, double.infinity).toDouble();
+
+        // Calculate Hostel Fees
+        final hostelData = hostelMap[classPrefix];
+        final totalHostelFee = double.tryParse(hostelData?['HOSTEL_FEE']?.toString() ?? '0') ?? 0.0;
+        final netHostelFee = (totalHostelFee - student.hostelFeeConcession).clamp(0.0, double.infinity).toDouble();
+
+        final totalFees = totalFee - concession + netBusFee + netHostelFee;
+        final totalPaid = fees.fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+        final totalPending = (totalFees - totalPaid).clamp(0.0, double.infinity).toDouble();
+
+        // Prepare row data
+        final rowBase = {
+          'Student Name': student.name,
+          'Class': student.className,
+          'Parent Mobile': student.parentMobile,
+          'Bus Fee': netBusFee.toStringAsFixed(2),
+          'Hostel Fee': netHostelFee.toStringAsFixed(2),
+          'Total Fees': totalFees.toStringAsFixed(2),
+          'Total Paid': totalPaid.toStringAsFixed(2),
+          'Total Pending': totalPending.toStringAsFixed(2),
+        };
+
+        // Term specific dues
+        if (_term1Selected) {
+          final termPaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').trim().toLowerCase() == 'school fee' && (f['TERM NO'] as String? ?? '').trim().contains('Term 1'))
+              .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+          rowBase['Term1 Due'] = ((termFees[1] ?? 0.0) - termPaid).clamp(0.0, double.infinity).toStringAsFixed(2);
+        }
+        if (_term2Selected) {
+          final termPaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').trim().toLowerCase() == 'school fee' && (f['TERM NO'] as String? ?? '').trim().contains('Term 2'))
+              .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+          rowBase['Term2 Due'] = ((termFees[2] ?? 0.0) - termPaid).clamp(0.0, double.infinity).toStringAsFixed(2);
+        }
+        if (_term3Selected) {
+          final termPaid = fees.where((f) => (f['FEE TYPE'] as String? ?? '').trim().toLowerCase() == 'school fee' && (f['TERM NO'] as String? ?? '').trim().contains('Term 3'))
+              .fold<double>(0, (sum, f) => sum + (double.tryParse((f['AMOUNT'] as dynamic).toString()) ?? 0));
+          rowBase['Term3 Due'] = ((termFees[3] ?? 0.0) - termPaid).clamp(0.0, double.infinity).toStringAsFixed(2);
+        }
+
+        // Handle multiple staff assigned to same class
+        final associatedStaffs = classToStaffMap[student.className] ?? [];
+        if (associatedStaffs.isEmpty) {
+          reportData.add({...rowBase, 'Staff Name': 'Unassigned'});
+        } else {
+          for (final staff in associatedStaffs) {
+            reportData.add({...rowBase, 'Staff Name': staff.name});
+          }
+        }
+      }
+
       setState(() {
         _dueReportData = reportData;
         _isLoadingReport = false;
       });
     } catch (e) {
+      print('Error generating due report: $e');
       setState(() => _isLoadingReport = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading due report: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -297,7 +414,7 @@ class _DueReportTabState extends State<DueReportTab> {
     final excel = excel_pkg.Excel.createExcel();
     final sheet = excel['Sheet1'];
 
-    final headers = ['Student Name', 'Class', 'Parent Mobile', 'Staff Name'];
+    final headers = ['Student Name', 'Class', 'Parent Mobile', 'Staff Name', 'Bus Fee', 'Hostel Fee', 'Total Fees', 'Total Paid', 'Total Pending'];
     if (_term1Selected) headers.add('Term 1 Due');
     if (_term2Selected) headers.add('Term 2 Due');
     if (_term3Selected) headers.add('Term 3 Due');
@@ -310,6 +427,11 @@ class _DueReportTabState extends State<DueReportTab> {
         data['Class'],
         data['Parent Mobile'],
         data['Staff Name'],
+        data['Bus Fee'],
+        data['Hostel Fee'],
+        data['Total Fees'],
+        data['Total Paid'],
+        data['Total Pending'],
       ];
       if (_term1Selected) row.add(data['Term1 Due']);
       if (_term2Selected) row.add(data['Term2 Due']);
