@@ -389,6 +389,38 @@ class SupabaseService {
     }
   }
 
+  // Update an existing student in STUDENTS table
+  static Future<bool> updateStudent(int id, Map<String, dynamic> studentData, {String? oldName}) async {
+    try {
+      final newName = studentData['Name'] as String?;
+      
+      // 1. Update the student record
+      await client.from('STUDENTS').update(studentData).eq('id', id);
+      
+      // 2. If name changed, update related tables to maintain consistency
+      if (oldName != null && newName != null && oldName != newName) {
+        // Update FEES table
+        try {
+          await client.from('FEES').update({'STUDENT NAME': newName}).eq('STUDENT NAME', oldName);
+        } catch (e) {
+          print('Note: Could not update fees for renamed student: $e');
+        }
+        
+        // Update PERFORMANCE table
+        try {
+          await client.from('PERFORMANCE').update({'Student Name': newName}).eq('Student Name', oldName);
+        } catch (e) {
+          print('Note: Could not update performance for renamed student: $e');
+        }
+      }
+      
+      return true;
+    } catch (e) {
+      print('Error updating student: $e');
+      return false;
+    }
+  }
+
   // Insert a performance record into PERFORMANCE table
   static Future<bool> insertPerformance(Map<String, dynamic> perfData) async {
     try {

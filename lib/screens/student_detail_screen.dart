@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:school_management/models/student.dart';
 import 'package:school_management/models/performance.dart';
 import 'package:school_management/services/supabase_service.dart';
+import 'package:school_management/screens/edit_student_screen.dart';
 
 class StudentDetailScreen extends StatefulWidget {
   final Student student;
@@ -19,12 +20,22 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   String? _selectedAssessment;
   bool _isAbsent = false;
   late Future<List<Performance>> _performanceFuture;
+  late Student _currentStudent;
 
   @override
   void initState() {
     super.initState();
-    _assessmentsFuture = SupabaseService.getAssessmentsForStudent(widget.student.name);
+    _currentStudent = widget.student;
+    _assessmentsFuture = SupabaseService.getAssessmentsForStudent(_currentStudent.name);
     _performanceFuture = Future.value([]);
+  }
+
+  Future<void> _refreshStudentData() async {
+    final students = await SupabaseService.getStudentsByParentMobile(_currentStudent.parentMobile);
+    final updated = students.firstWhere((s) => s.id == _currentStudent.id, orElse: () => _currentStudent);
+    setState(() {
+      _currentStudent = updated;
+    });
   }
 
   @override
@@ -32,16 +43,32 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.student.name,
+          _currentStudent.name,
           style: GoogleFonts.poppins(),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditStudentScreen(student: _currentStudent),
+                ),
+              );
+              if (result == true) {
+                _refreshStudentData();
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Student Photo
-            if (widget.student.photoUrl != null && widget.student.photoUrl!.isNotEmpty)
+            if (_currentStudent.photoUrl != null && _currentStudent.photoUrl!.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(top: 16),
                 width: 120,
@@ -50,7 +77,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: const Color(0xFF800000), width: 2),
                   image: DecorationImage(
-                    image: NetworkImage(widget.student.photoUrl!),
+                    image: NetworkImage(_currentStudent.photoUrl!),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -87,30 +114,30 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildInfoRow('Name:', widget.student.name),
-                  if (widget.student.rollNo != null && widget.student.rollNo!.isNotEmpty)
-                    _buildInfoRow('Roll No:', widget.student.rollNo!),
-                  _buildInfoRow('Class:', widget.student.className),
-                  _buildInfoRow('Father Name:', widget.student.fatherName),
-                  _buildInfoRow('Mother Name:', widget.student.motherName),
-                  _buildInfoRow('Parent Mobile:', widget.student.parentMobile),
-                  if (widget.student.doj != null && widget.student.doj!.isNotEmpty)
-                    _buildInfoRow('Joining Date:', widget.student.doj!),
-                  _buildInfoRow('Address:', widget.student.address ?? 'N/A'),
-                  if (widget.student.gender != null && widget.student.gender!.isNotEmpty)
-                    _buildInfoRow('Gender:', widget.student.gender!),
-                  if (widget.student.schoolFeeConcession > 0)
-                    _buildInfoRow('School Fee Concession:', 'Rs.${widget.student.schoolFeeConcession.toStringAsFixed(2)}'),
-                  if (widget.student.tuitionFeeConcession > 0)
-                    _buildInfoRow('Tuition Fee Concession:', 'Rs.${widget.student.tuitionFeeConcession.toStringAsFixed(2)}'),
-                  if (widget.student.busRoute != null && widget.student.busRoute!.isNotEmpty)
-                    _buildInfoRow('Bus Route:', widget.student.busRoute!),
-                  if (widget.student.busNo != null && widget.student.busNo!.isNotEmpty)
-                    _buildInfoRow('Bus Number:', widget.student.busNo!),
-                  if (widget.student.busFacility != null && widget.student.busFacility!.isNotEmpty)
-                    _buildInfoRow('Bus Facility:', widget.student.busFacility!),
-                  if (widget.student.hostelFacility != null && widget.student.hostelFacility!.isNotEmpty)
-                    _buildInfoRow('Hostel Facility:', widget.student.hostelFacility!),
+                  _buildInfoRow('Name:', _currentStudent.name),
+                  if (_currentStudent.rollNo != null && _currentStudent.rollNo!.isNotEmpty)
+                    _buildInfoRow('Roll No:', _currentStudent.rollNo!),
+                  _buildInfoRow('Class:', _currentStudent.className),
+                  _buildInfoRow('Father Name:', _currentStudent.fatherName),
+                  _buildInfoRow('Mother Name:', _currentStudent.motherName),
+                  _buildInfoRow('Parent Mobile:', _currentStudent.parentMobile),
+                  if (_currentStudent.doj != null && _currentStudent.doj!.isNotEmpty)
+                    _buildInfoRow('Joining Date:', _currentStudent.doj!),
+                  _buildInfoRow('Address:', _currentStudent.address ?? 'N/A'),
+                  if (_currentStudent.gender != null && _currentStudent.gender!.isNotEmpty)
+                    _buildInfoRow('Gender:', _currentStudent.gender!),
+                  if (_currentStudent.schoolFeeConcession > 0)
+                    _buildInfoRow('School Fee Concession:', 'Rs.${_currentStudent.schoolFeeConcession.toStringAsFixed(2)}'),
+                  if (_currentStudent.tuitionFeeConcession > 0)
+                    _buildInfoRow('Tuition Fee Concession:', 'Rs.${_currentStudent.tuitionFeeConcession.toStringAsFixed(2)}'),
+                  if (_currentStudent.busRoute != null && _currentStudent.busRoute!.isNotEmpty)
+                    _buildInfoRow('Bus Route:', _currentStudent.busRoute!),
+                  if (_currentStudent.busNo != null && _currentStudent.busNo!.isNotEmpty)
+                    _buildInfoRow('Bus Number:', _currentStudent.busNo!),
+                  if (_currentStudent.busFacility != null && _currentStudent.busFacility!.isNotEmpty)
+                    _buildInfoRow('Bus Facility:', _currentStudent.busFacility!),
+                  if (_currentStudent.hostelFacility != null && _currentStudent.hostelFacility!.isNotEmpty)
+                    _buildInfoRow('Hostel Facility:', _currentStudent.hostelFacility!),
                 ],
               ),
             ),
@@ -170,7 +197,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                             onChanged: (val) {
                               setState(() {
                                 _selectedAssessment = val;
-                                _performanceFuture = SupabaseService.getStudentPerformanceByAssessment(widget.student.name, _selectedAssessment!);
+                                _performanceFuture = SupabaseService.getStudentPerformanceByAssessment(_currentStudent.name, _selectedAssessment!);
                               });
                             },
                           ),
@@ -180,7 +207,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                       ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            _performanceFuture = SupabaseService.getStudentPerformanceByAssessment(widget.student.name, _selectedAssessment!);
+                            _performanceFuture = SupabaseService.getStudentPerformanceByAssessment(_currentStudent.name, _selectedAssessment!);
                           });
                         },
                         child: Text('Load', style: GoogleFonts.inter()),
