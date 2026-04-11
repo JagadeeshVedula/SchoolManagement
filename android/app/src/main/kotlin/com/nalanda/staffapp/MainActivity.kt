@@ -1,4 +1,4 @@
-package com.example.school_management
+package com.nalanda.staffapp
 
 import io.flutter.embedding.android.FlutterActivity
 
