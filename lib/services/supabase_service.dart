@@ -2353,11 +2353,16 @@ class SupabaseService {
   static Future<List<Map<String, dynamic>>> getEventsForClasses(
       List<String> classes) async {
     try {
-      final baseClasses = classes.map((c) => c.split('-')[0]).toSet().toList();
+      final searchClasses = {
+        ...classes, 
+        ...classes.map((c) => c.split('-')[0]), 
+        'ALL'
+      }.toList();
+
       final response = await client
           .from('EVENTS')
           .select()
-          .in_('CLASS', [...baseClasses, 'Global']);
+          .in_('CLASS', searchClasses);
 
       final events = (response as List).cast<Map<String, dynamic>>();
       final now = DateTime.now();
