@@ -1791,6 +1791,17 @@ class SupabaseService {
     }
   }
 
+  // Add a new account to ACCOUNTS table
+  static Future<bool> addAccount(String accountName) async {
+    try {
+      await client.from('ACCOUNTS').insert({'ACCOUNT': accountName});
+      return true;
+    } catch (e) {
+      print('Error adding account: $e');
+      return false;
+    }
+  }
+
   // Get transactions with optional filters
   static Future<List<Map<String, dynamic>>> getTransactions({
     String? account,
