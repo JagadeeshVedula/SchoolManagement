@@ -242,6 +242,23 @@ class SupabaseService {
     }
   }
 
+  // Fetch homework for a specific class and date
+  static Future<List<Map<String, dynamic>>> getHomeworkByClassAndDate(
+      String className, String date) async {
+    try {
+      final response = await client
+          .from('HOMEWORK')
+          .select()
+          .eq('CLASS', className)
+          .eq('DATE', date);
+
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching homework: $e');
+      return [];
+    }
+  }
+
   // Fetch distinct Assessment values for a student
   static Future<List<String>> getAssessmentsForStudent(String studentName) async {
     try {

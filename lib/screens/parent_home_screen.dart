@@ -170,12 +170,20 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF2563EB).withOpacity(0.1),
                     shape: BoxShape.circle,
+                    image: student.photoUrl != null && student.photoUrl!.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(student.photoUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Color(0xFF2563EB),
-                    size: 30,
-                  ),
+                  child: student.photoUrl == null || student.photoUrl!.isEmpty
+                      ? const Icon(
+                          Icons.person,
+                          color: Color(0xFF2563EB),
+                          size: 30,
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -281,6 +289,26 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                     builder: (context) => StudentDetailScreen(
                       student: student,
                       initialView: 'performance',
+                      isParentView: true,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildOptionButton(
+              context,
+              icon: Icons.assignment_outlined,
+              label: 'Homework',
+              color: const Color(0xFF8B5CF6),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentDetailScreen(
+                      student: student,
+                      initialView: 'homework',
                       isParentView: true,
                     ),
                   ),

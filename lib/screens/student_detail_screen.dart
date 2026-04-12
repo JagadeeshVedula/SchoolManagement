@@ -26,6 +26,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   String? _selectedAssessment;
   bool _isAbsent = false;
   late Future<List<Performance>> _performanceFuture;
+  late Future<List<Map<String, dynamic>>> _homeworkFuture;
 
   @override
   void initState() {
@@ -34,7 +35,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     _performanceFuture = Future.value([]);
     
     // If initial view is performance, load the first assessment automatically
-    if (widget.initialView == 'performance') {
+    if (widget.initialView == 'performance' || widget.initialView == null) {
       _assessmentsFuture.then((assessments) {
         if (assessments.isNotEmpty && mounted) {
           setState(() {
@@ -43,6 +44,13 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           });
         }
       });
+    }
+
+    if (widget.initialView == 'homework' || widget.initialView == null) {
+      final today = DateFormat('dd-MM-yyyy').format(DateTime.now());
+      _homeworkFuture = SupabaseService.getHomeworkByClassAndDate(widget.student.className, today);
+    } else {
+      _homeworkFuture = Future.value([]);
     }
   }
 
@@ -59,6 +67,56 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            const SizedBox(height: 20),
+            // Student Profile Photo
+            if (widget.initialView == null || widget.initialView == 'data')
+            Center(
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.blue[100]!, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                  image: widget.student.photoUrl != null && widget.student.photoUrl!.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(widget.student.photoUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: widget.student.photoUrl == null || widget.student.photoUrl!.isEmpty
+                    ? Icon(Icons.person, size: 60, color: Colors.blue[200])
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (widget.initialView == null || widget.initialView == 'data')
+            Text(
+              widget.student.name,
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1E293B),
+              ),
+            ),
+            if (widget.initialView == null || widget.initialView == 'data')
+            Text(
+              'Class: ${widget.student.className}',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 10),
+
             // Student Information Card
             if (widget.initialView == null || widget.initialView == 'data')
               Container(
@@ -248,6 +306,152 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                 );
               },
             ),
+
+            // Homework Section
+            if (widget.initialView == null || widget.initialView == 'homework')
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.assignment, color: Color(0xFF8B5CF6), size: 28),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Today\'s Homework',
+                          style: GoogleFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      DateFormat('MMMM dd, yyyy').format(DateTime.now()),
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _homeworkFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: CircularProgressIndicator(),
+                          ));
+                        }
+                        if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+                        }
+                        final homeworkList = snapshot.data ?? [];
+                        if (homeworkList.isEmpty) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(Icons.sentiment_satisfied_alt, size: 64, color: Colors.grey[400]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No homework assigned for today!',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final homework = homeworkList.first;
+                        // Expected keys: TELUGU, HINDI, ENGLISH, MATHS, SCIENCE, SOCIAL, COMPUTERS
+                        final subjects = [
+                          {'name': 'Telugu', 'key': 'TELUGU', 'color': Color(0xFFEF4444)},
+                          {'name': 'Hindi', 'key': 'HINDI', 'color': Color(0xFFF59E0B)},
+                          {'name': 'English', 'key': 'ENGLISH', 'color': Color(0xFF3B82F6)},
+                          {'name': 'Maths', 'key': 'MATHS', 'color': Color(0xFF10B981)},
+                          {'name': 'Science', 'key': 'SCIENCE', 'color': Color(0xFF6366F1)},
+                          {'name': 'Social', 'key': 'SOCIAL', 'color': Color(0xFFEC4899)},
+                          {'name': 'Computers', 'key': 'COMPUTERS', 'color': Color(0xFF8B5CF6)},
+                        ];
+
+                        return Column(
+                          children: subjects.map((sub) {
+                            final work = homework[sub['key']] as String? ?? '';
+                            if (work.isEmpty || work == 'N/A') return const SizedBox();
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: (sub['color'] as Color).withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: (sub['color'] as Color).withOpacity(0.2)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (sub['color'] as Color).withOpacity(0.03),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: sub['color'] as Color,
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(19),
+                                        bottomRight: Radius.circular(20),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      sub['name'] as String,
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Text(
+                                      work,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        height: 1.5,
+                                        color: const Color(0xFF1E293B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

@@ -17,6 +17,7 @@ class Student {
   final String? hostelFacility;
   final String? hostelType;
   final String? doj;
+  final String? photoUrl;
 
   Student({
     this.id,
@@ -37,6 +38,7 @@ class Student {
     this.hostelFacility,
     this.hostelType,
     this.doj,
+    this.photoUrl,
   });
 
   // Convert JSON from Supabase to Student object
@@ -60,6 +62,7 @@ class Student {
       hostelFacility: json['Hostel Facility'] as String?,
       hostelType: json['HOSTELTYPE'] as String?,
       doj: json['DOJ'] as String?,
+      photoUrl: json['PHOTO_URL'] as String?,
     );
   }
 
@@ -84,6 +87,7 @@ class Student {
       'Hostel Facility': hostelFacility,
       'HOSTELTYPE': hostelType,
       'DOJ': doj,
+      'PHOTO_URL': photoUrl,
     };
   }
 
@@ -106,6 +110,7 @@ class Student {
     String? hostelFacility,
     String? hostelType,
     String? doj,
+    String? photoUrl,
   }) {
     return Student(
       id: id ?? this.id,
@@ -126,6 +131,7 @@ class Student {
       hostelFacility: hostelFacility ?? this.hostelFacility,
       hostelType: hostelType ?? this.hostelType,
       doj: doj ?? this.doj,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }
