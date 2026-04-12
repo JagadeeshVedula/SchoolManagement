@@ -75,27 +75,12 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
       }
     }
 
-    // Staff login - validate credentials against CRED table with ROLE='STAFF'
+    // Staff login - validate using mobile and last 5 digits
     if (widget.userRole.id == 'staff') {
       try {
-        final staffCred = await SupabaseService.staffLogin(username, password);
-        print('DEBUG: staffCred = $staffCred');
-        if (staffCred != null && mounted) {
-          // Get staff details from STAFF table using Mobile Number from CRED
-          final mobileNumber = staffCred['Mobile Number'] ?? '';
-          print('DEBUG: Extracted Mobile Number from staffCred = $mobileNumber');
-          
-          if (mobileNumber.isEmpty) {
-            print('DEBUG: Mobile Number is empty! Available keys in staffCred: ${staffCred.keys}');
-          }
-          
-          final staffDetails = await SupabaseService.getStaffByMobile(mobileNumber);
-          print('DEBUG: staffDetails = $staffDetails');
-          
-          if (staffDetails == null) {
-            print('DEBUG: staffDetails is NULL! Mobile lookup failed for mobile: $mobileNumber');
-          }
-          
+        final staffDetails = await SupabaseService.staffLogin(username, password);
+        
+        if (staffDetails != null && mounted) {
           setState(() {
             _isLoading = false;
           });
@@ -106,8 +91,8 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
               context,
               '/staff-dashboard',
               arguments: {
-                'staffCred': staffCred,
-                'staffDetails': staffDetails ?? {},
+                'staffCred': {'Mobile Number': username}, // Keep for backward compat
+                'staffDetails': staffDetails,
               },
             );
           }
@@ -118,7 +103,7 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Invalid staff credentials'),
+                content: const Text('Invalid password'),
                 backgroundColor: widget.userRole.color,
               ),
             );
@@ -129,10 +114,14 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
           setState(() {
             _isLoading = false;
           });
+          String message = 'Invalid staff credentials';
+          if (e.toString().contains('not a staff member')) {
+            message = 'not a staff member';
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Login error: $e'),
-              backgroundColor: Colors.red[600],
+              content: Text(message),
+              backgroundColor: widget.userRole.color,
             ),
           );
         }

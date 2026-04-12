@@ -1183,22 +1183,34 @@ class SupabaseService {
     }
   }
 
-  // Staff Authentication - Verify staff credentials from CRED table
-  static Future<Map<String, dynamic>?> staffLogin(String username, String password) async {
+  // Staff Authentication - Verify staff credentials from STAFF table
+  static Future<Map<String, dynamic>?> staffLogin(String mobile, String password) async {
     try {
+      // Get staff details by mobile number
       final response = await client
-          .from('CRED')
+          .from('STAFF')
           .select()
-          .eq('USERNAME', username)
-          .eq('PASSWORD', password)
-          .eq('ROLE', 'STAFF')
-          .limit(1);
+          .eq('Mobile', mobile)
+          .maybeSingle();
 
-      if ((response as List).isNotEmpty) {
-        return response[0] as Map<String, dynamic>;
+      if (response == null) {
+        throw Exception('not a staff member');
       }
-      return null;
+
+      // Check if password matches last 5 digits of mobile
+      final lastFiveDigits = mobile.length >= 5 
+          ? mobile.substring(mobile.length - 5) 
+          : mobile;
+
+      if (password == lastFiveDigits) {
+        return response as Map<String, dynamic>;
+      } else {
+        return null; // Invalid password
+      }
     } catch (e) {
+      if (e.toString().contains('not a staff member')) {
+        rethrow;
+      }
       print('Error during staff login: $e');
       return null;
     }
@@ -2342,6 +2354,73 @@ class SupabaseService {
     } catch (e) {
       print('Error deleting holiday: $e');
       return false;
+    }
+  }
+
+  // Insert or update timetable data into TIMETABLES table
+  static Future<bool> saveTimeTable(List<Map<String, dynamic>> timetableData) async {
+    try {
+      if (timetableData.isEmpty) return true;
+      
+      final assessmentName = timetableData.first['assessment_name'];
+      
+      // Delete existing entries for this assessment to avoid duplicates if re-saving
+      await client
+          .from('TIMETABLES')
+          .delete()
+          .eq('assessment_name', assessmentName);
+          
+      // Insert new entries
+      await client.from('TIMETABLES').insert(timetableData);
+      return true;
+    } catch (e) {
+      print('Error saving timetable data: $e');
+      return false;
+    }
+  }
+
+  // Fetch timetable by assessment name
+  static Future<List<Map<String, dynamic>>> getTimeTableByAssessment(String assessmentName) async {
+    try {
+      final response = await client
+          .from('TIMETABLES')
+          .select()
+          .eq('assessment_name', assessmentName)
+          .order('exam_date', ascending: true);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching timetable: $e');
+      return [];
+    }
+  }
+
+  // Delete timetable by assessment name
+  static Future<bool> deleteTimeTable(String assessmentName) async {
+    try {
+      await client
+          .from('TIMETABLES')
+          .delete()
+          .eq('assessment_name', assessmentName);
+      return true;
+    } catch (e) {
+      print('Error deleting timetable: $e');
+      return false;
+    }
+  }
+
+  // Get all unique assessment names
+  static Future<List<String>> getUniqueAssessments() async {
+    try {
+      final response = await client.from('TIMETABLES').select('assessment_name');
+      final assessments = <String>{};
+      for (var item in response as List) {
+        final name = item['assessment_name'] as String?;
+        if (name != null) assessments.add(name);
+      }
+      return assessments.toList()..sort();
+    } catch (e) {
+      print('Error fetching unique assessments: $e');
+      return [];
     }
   }
 }
