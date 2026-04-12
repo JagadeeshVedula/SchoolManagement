@@ -16,6 +16,8 @@ class StudentAttendanceReportScreen extends StatefulWidget {
 class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportScreen> {
   DateTime _focusedDate = DateTime.now();
   Map<String, String> _attendanceMap = {};
+  Map<String, String> _holidayMap = {};
+  DateTime? _selectedDate;
   bool _isLoading = true;
 
   @override
@@ -84,9 +86,21 @@ class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportS
       
       print('DEBUG: Final attendance map size: ${attendanceMap.length}');
       
+      // Fetch holidays
+      final holidayData = await SupabaseService.getAllHolidays();
+      final Map<String, String> holidayMap = {};
+      for (var holiday in holidayData) {
+        final date = holiday['DATE']?.toString();
+        final reason = holiday['REASON']?.toString();
+        if (date != null && reason != null) {
+          holidayMap[date] = reason;
+        }
+      }
+
       if (mounted) {
         setState(() {
           _attendanceMap = attendanceMap;
+          _holidayMap = holidayMap;
           _isLoading = false;
         });
       }
@@ -128,6 +142,10 @@ class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportS
                     _buildStudentHeader(),
                     const SizedBox(height: 20),
                     _buildCalendarCard(),
+                    if (_selectedDate != null) ...[
+                      const SizedBox(height: 12),
+                      _buildHolidayReason(),
+                    ],
                     const SizedBox(height: 20),
                     _buildLegend(),
                     const SizedBox(height: 20),
@@ -292,20 +310,36 @@ class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportS
         final date = DateTime(_focusedDate.year, _focusedDate.month, day);
         final dateStr = DateFormat('dd-MM-yyyy').format(date);
         final status = _attendanceMap[dateStr];
+        final holidayReason = _holidayMap[dateStr];
         final isSunday = date.weekday == 7;
         final isFuture = date.isAfter(DateTime.now());
+        final isSelected = _selectedDate != null && 
+                          _selectedDate!.day == date.day && 
+                          _selectedDate!.month == date.month && 
+                          _selectedDate!.year == date.year;
 
-        return _buildDayCell(day, status, isSunday, isFuture);
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedDate = date;
+            });
+          },
+          child: _buildDayCell(day, status, isSunday, isFuture, holidayReason, isSelected),
+        );
       },
     );
   }
 
-  Widget _buildDayCell(int day, String? status, bool isSunday, bool isFuture) {
+  Widget _buildDayCell(int day, String? status, bool isSunday, bool isFuture, String? holidayReason, bool isSelected) {
     Color bgColor = Colors.transparent;
     Color textColor = const Color(0xFF1E293B);
     String label = '';
 
-    if (isSunday) {
+    if (holidayReason != null) {
+      label = 'H';
+      textColor = Colors.orange[800]!;
+      bgColor = Colors.orange[100]!;
+    } else if (isSunday) {
       label = 'H';
       textColor = Colors.blueGrey;
       bgColor = Colors.blueGrey.withOpacity(0.1);
@@ -327,7 +361,8 @@ class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportS
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: label != '' ? textColor.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+          color: isSelected ? const Color(0xFF2563EB) : (label != '' ? textColor.withOpacity(0.3) : Colors.grey.withOpacity(0.1)),
+          width: isSelected ? 2 : 1,
         ),
       ),
       child: Column(
@@ -363,7 +398,7 @@ class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportS
         const SizedBox(width: 20),
         _buildLegendItem('Absent', Colors.red),
         const SizedBox(width: 20),
-        _buildLegendItem('Holiday', Colors.blueGrey),
+        _buildLegendItem('Holiday', Colors.orange[800]!),
       ],
     );
   }
@@ -407,11 +442,11 @@ class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportS
     final daysInMonth = DateTime(_focusedDate.year, _focusedDate.month + 1, 0).day;
     for (int i = 1; i <= daysInMonth; i++) {
         final date = DateTime(_focusedDate.year, _focusedDate.month, i);
-        if (date.weekday == 7) {
+        final dateStr = DateFormat('dd-MM-yyyy').format(date);
+        if (_holidayMap.containsKey(dateStr) || date.weekday == 7) {
             holidays++;
             continue;
         }
-        final dateStr = DateFormat('dd-MM-yyyy').format(date);
         final status = _attendanceMap[dateStr];
         final normalizedStatus = status?.toLowerCase();
         if (normalizedStatus == 'present' || normalizedStatus == 'p') present++;
@@ -429,7 +464,43 @@ class _StudentAttendanceReportScreenState extends State<StudentAttendanceReportS
         children: [
           _buildSummaryItem('Present', present, Colors.greenAccent),
           _buildSummaryItem('Absent', absent, Colors.redAccent),
-          _buildSummaryItem('Holidays', holidays, Colors.blueGrey),
+          _buildSummaryItem('Holidays', holidays, Colors.orangeAccent),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHolidayReason() {
+    final dateStr = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+    final reason = _holidayMap[dateStr];
+    if (reason == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.beach_access, color: Colors.orange),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Holiday Reason',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.orange[900]),
+                ),
+                Text(
+                  reason,
+                  style: GoogleFonts.inter(color: Colors.orange[800]),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

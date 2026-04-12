@@ -25,6 +25,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Set<int> _absentStudentIds = {};
   bool _isSubmitting = false;
 
+  bool _isHoliday = false;
+  final TextEditingController _holidayReasonController = TextEditingController();
+  bool _isSavingHoliday = false;
+
   @override
   void initState() {
     super.initState();
@@ -161,6 +165,46 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _submitHoliday() async {
+    if (_holidayReasonController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a reason for the holiday.')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingHoliday = true);
+
+    try {
+      final today = DateFormat('dd-MM-yyyy').format(DateTime.now());
+      final success = await SupabaseService.saveHoliday(today, _holidayReasonController.text.trim());
+
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Holiday marked successfully!'), backgroundColor: Colors.green),
+          );
+          _holidayReasonController.clear();
+          setState(() {
+            _isHoliday = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to mark holiday.'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error saving holiday: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingHoliday = false);
       }
     }
   }
@@ -308,6 +352,48 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _isHoliday,
+                        onChanged: (val) {
+                          setState(() {
+                            _isHoliday = val ?? false;
+                          });
+                        },
+                      ),
+                      Text(
+                        'Mark Today as Holiday',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                  if (_isHoliday) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _holidayReasonController,
+                      decoration: const InputDecoration(
+                        labelText: 'Holiday Reason',
+                        border: OutlineInputBorder(),
+                        hintText: 'e.g., Summer Vacation, Public Holiday',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: _isSavingHoliday ? null : _submitHoliday,
+                      icon: _isSavingHoliday 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                          : const Icon(Icons.beach_access),
+                      label: Text(_isSavingHoliday ? 'Saving...' : 'Save Holiday'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Expanded(
                     child: _isLoadingStudents

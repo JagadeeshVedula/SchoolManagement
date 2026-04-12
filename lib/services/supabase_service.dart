@@ -2286,4 +2286,29 @@ class SupabaseService {
       return false;
     }
   }
+
+  // Fetch all holidays
+  static Future<List<Map<String, dynamic>>> getAllHolidays() async {
+    try {
+      final response = await client.from('HOLIDAYS').select();
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching holidays: $e');
+      return [];
+    }
+  }
+
+  // Save a holiday
+  static Future<bool> saveHoliday(String date, String reason) async {
+    try {
+      await client.from('HOLIDAYS').insert({
+        'DATE': date,
+        'REASON': reason,
+      });
+      return true;
+    } catch (e) {
+      print('Error saving holiday: $e');
+      return false;
+    }
+  }
 }
