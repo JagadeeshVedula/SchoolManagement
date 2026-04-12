@@ -101,13 +101,15 @@ class _StudentDataTabState extends State<StudentDataTab> {
       var sheet = excel.sheets[excel.getDefaultSheet()]!;
 
       // Headers
-      List<String> headers = ['Name', 'Roll No', 'Class', 'Father Name', 'Mother Name', 'Parent Mobile', 'Gender', 'Address', 'DOJ', 'Bus Facility', 'Route', 'BusNo', 'Hostel Facility', 'Hostel Type'];
+      List<String> headers = ['Name', 'Admsn No', 'AADHAR', 'APAAR', 'Class', 'Father Name', 'Mother Name', 'Parent Mobile', 'Gender', 'Address', 'DOJ', 'Bus Facility', 'Route', 'BusNo', 'Hostel Facility', 'Hostel Type'];
       sheet.appendRow(headers);
 
       for (var s in studentsToExport) {
         sheet.appendRow([
           s.name,
           s.rollNo ?? '',
+          s.aadhar ?? '',
+          s.apaar ?? '',
           s.className,
           s.fatherName,
           s.motherName,
@@ -238,7 +240,7 @@ class _StudentDataTabState extends State<StudentDataTab> {
                           controller: _searchController,
                           onChanged: _onSearch,
                           decoration: InputDecoration(
-                            hintText: 'Search by name or roll no...',
+                            hintText: 'Search by name or admsn no...',
                             hintStyle: const TextStyle(color: Colors.white70),
                             prefixIcon: const Icon(Icons.search, color: Colors.white70),
                             filled: true,
@@ -345,7 +347,7 @@ class _StudentDataTabState extends State<StudentDataTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 4),
-                Text('Roll No: ${student.rollNo ?? 'N/A'} • Class: ${student.className}'),
+                Text('Admsn No: ${student.rollNo ?? 'N/A'} • Class: ${student.className}'),
                 Text('Father: ${student.fatherName}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
               ],
             ),

@@ -389,6 +389,17 @@ class SupabaseService {
     }
   }
 
+  // Insert a new event into EVENTS table
+  static Future<bool> insertEvent(Map<String, dynamic> eventData) async {
+    try {
+      await client.from('EVENTS').insert(eventData);
+      return true;
+    } catch (e) {
+      print('Error inserting event: $e');
+      return false;
+    }
+  }
+
   // Update an existing student in STUDENTS table
   static Future<bool> updateStudent(int id, Map<String, dynamic> studentData, {String? oldName}) async {
     try {

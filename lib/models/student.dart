@@ -20,6 +20,8 @@ class Student {
   final String? hostelType;
   final String? adminFee;
   final String? doj;
+  final String? aadhar;
+  final String? apaar;
 
   Student({
     this.id,
@@ -43,6 +45,8 @@ class Student {
     this.hostelType,
     this.adminFee,
     this.doj,
+    this.aadhar,
+    this.apaar,
   });
 
   // Convert JSON from Supabase to Student object
@@ -69,6 +73,8 @@ class Student {
       hostelType: json['HOSTELTYPE'] as String?,
       adminFee: json['ADMIN_FEE'] as String?,
       doj: json['DOJ'] as String?,
+      aadhar: json['AADHAR'] as String?,
+      apaar: json['APAAR'] as String?,
     );
   }
 
@@ -96,6 +102,8 @@ class Student {
       'HOSTELTYPE': hostelType,
       'ADMIN_FEE': adminFee,
       'DOJ': doj,
+      'AADHAR': aadhar,
+      'APAAR': apaar,
     };
   }
 
@@ -121,6 +129,8 @@ class Student {
     String? hostelType,
     String? adminFee,
     String? doj,
+    String? aadhar,
+    String? apaar,
   }) {
     return Student(
       id: id ?? this.id,
@@ -144,6 +154,8 @@ class Student {
       hostelType: hostelType ?? this.hostelType,
       adminFee: adminFee ?? this.adminFee,
       doj: doj ?? this.doj,
+      aadhar: aadhar ?? this.aadhar,
+      apaar: apaar ?? this.apaar,
     );
   }
 }

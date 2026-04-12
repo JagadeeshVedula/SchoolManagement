@@ -22,6 +22,8 @@ class _RegisterTabState extends State<RegisterTab> {
   // Student registration controllers
   final _sName = TextEditingController();
   final _sRollNo = TextEditingController();
+  final _sAadhar = TextEditingController();
+  final _sApaar = TextEditingController();
   XFile? _sImage;
   Uint8List? _sImageBytes;
   String? _sClass;
@@ -217,6 +219,8 @@ class _RegisterTabState extends State<RegisterTab> {
   void dispose() {
     _sName.dispose();
     _sRollNo.dispose();
+    _sAadhar.dispose();
+    _sApaar.dispose();
     _sFather.dispose();
     _sMother.dispose();
     _sParentMobile.dispose();
@@ -256,6 +260,8 @@ class _RegisterTabState extends State<RegisterTab> {
     final data = {
       'Name': _sName.text.trim(),
       'ROLL_NO': _sRollNo.text.trim(),
+      'AADHAR': _sAadhar.text.trim(),
+      'APAAR': _sApaar.text.trim(),
       'Class': (_sClass == 'NURSERY' || _sClass == 'S BATCH') ? _sClass! : '$_sClass-$_sSection',
       'Father Name': _sFather.text.trim(),
       'Mother Name': _sMother.text.trim(),
@@ -316,7 +322,7 @@ class _RegisterTabState extends State<RegisterTab> {
     setState(() => _isSubmittingStudent = false);
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student registered successfully')));
-      _sName.clear(); _sRollNo.clear(); _sFather.clear(); _sMother.clear(); _sParentMobile.clear(); _sAddress.clear();
+      _sName.clear(); _sRollNo.clear(); _sAadhar.clear(); _sApaar.clear(); _sFather.clear(); _sMother.clear(); _sParentMobile.clear(); _sAddress.clear();
       setState(() { 
         _sGender = null; 
         _sClass = null;
@@ -761,9 +767,40 @@ class _RegisterTabState extends State<RegisterTab> {
                   TextField(
                     controller: _sRollNo,
                     decoration: InputDecoration(
-                      labelText: 'Roll No',
-                      hintText: 'Enter roll number',
+                      labelText: 'Admsn No',
+                      hintText: 'Enter admission number',
                       prefixIcon: const Icon(Icons.numbers, color: Color(0xFF800000)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _sAadhar,
+                    decoration: InputDecoration(
+                      labelText: 'AADHAR NO',
+                      hintText: 'Enter Aadhar number',
+                      prefixIcon: const Icon(Icons.credit_card, color: Color(0xFF800000)),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _sApaar,
+                    decoration: InputDecoration(
+                      labelText: 'APAAR ID',
+                      hintText: 'Enter APAAR ID',
+                      prefixIcon: const Icon(Icons.badge_outlined, color: Color(0xFF800000)),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(

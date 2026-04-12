@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart';
+import 'package:intl/intl.dart';
 import 'package:school_management/services/supabase_service.dart';
 
 class EventsScreen extends StatefulWidget {
@@ -17,10 +18,14 @@ class _EventsScreenState extends State<EventsScreen> {
   // Class Events State
   List<String> _classes = [];
   String? _selectedClass;
+  DateTime? _classEventDate;
+  final TextEditingController _classEventNameCtrl = TextEditingController();
   final TextEditingController _classMessageCtrl = TextEditingController();
   bool _isLoadingClasses = true;
 
   // School Events State
+  DateTime? _schoolEventDate;
+  final TextEditingController _schoolEventNameCtrl = TextEditingController();
   final TextEditingController _schoolMessageCtrl = TextEditingController();
 
   // Promotional Events State
@@ -37,6 +42,16 @@ class _EventsScreenState extends State<EventsScreen> {
   void initState() {
     super.initState();
     _loadClasses();
+  }
+
+  @override
+  void dispose() {
+    _classEventNameCtrl.dispose();
+    _classMessageCtrl.dispose();
+    _schoolEventNameCtrl.dispose();
+    _schoolMessageCtrl.dispose();
+    _promoMessageCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadClasses() async {
@@ -167,22 +182,35 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Future<void> _sendClassEvents() async {
-    if (_selectedClass == null || _classMessageCtrl.text.trim().isEmpty) {
+    if (_selectedClass == null || _classEventNameCtrl.text.trim().isEmpty || _classEventDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a class and enter a message.')),
+        const SnackBar(content: Text('Please select class, event name, and date.')),
       );
       return;
     }
 
     _showLoading();
     try {
+      // 1. Add to Supabase
+      final eventData = {
+        'CLASS': _selectedClass,
+        'EVENT_NAME': _classEventNameCtrl.text.trim(),
+        'EVENT_DATE': DateFormat('dd-MM-yyyy').format(_classEventDate!),
+      };
+      await SupabaseService.insertEvent(eventData);
+
+      // 2. Clear message if empty to avoid sending empty SMS, or send whatever is in _classMessageCtrl
+      final message = _classMessageCtrl.text.trim().isEmpty 
+          ? 'Event: ${_classEventNameCtrl.text.trim()} on ${DateFormat('dd-MM-yyyy').format(_classEventDate!)}'
+          : _classMessageCtrl.text.trim();
+
       final students = await SupabaseService.getStudentsByClassPrefix(_selectedClass!);
       int successCount = 0;
       int failureCount = 0;
       for (var student in students) {
         final mobile = student.parentMobile.trim();
         if (mobile.isNotEmpty) {
-          final success = await SupabaseService.sendSms(mobile, _classMessageCtrl.text.trim());
+          final success = await SupabaseService.sendSms(mobile, message);
           if (success) {
             successCount++;
           } else {
@@ -195,6 +223,8 @@ class _EventsScreenState extends State<EventsScreen> {
         SnackBar(content: Text('Sent: $successCount, Failed: $failureCount. (Total students in class: ${students.length})')),
       );
       _classMessageCtrl.clear();
+      _classEventNameCtrl.clear();
+      setState(() => _classEventDate = null);
     } catch (e) {
       _hideLoading();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -204,15 +234,28 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Future<void> _sendSchoolEvents() async {
-    if (_schoolMessageCtrl.text.trim().isEmpty) {
+    if (_schoolEventNameCtrl.text.trim().isEmpty || _schoolEventDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a message.')),
+        const SnackBar(content: Text('Please enter event name and select date.')),
       );
       return;
     }
 
     _showLoading();
     try {
+      // 1. Add to Supabase
+      final eventData = {
+        'CLASS': 'ALL',
+        'EVENT_NAME': _schoolEventNameCtrl.text.trim(),
+        'EVENT_DATE': DateFormat('dd-MM-yyyy').format(_schoolEventDate!),
+      };
+      await SupabaseService.insertEvent(eventData);
+
+      // 2. Prepare message
+      final message = _schoolMessageCtrl.text.trim().isEmpty 
+          ? 'School Event: ${_schoolEventNameCtrl.text.trim()} on ${DateFormat('dd-MM-yyyy').format(_schoolEventDate!)}'
+          : _schoolMessageCtrl.text.trim();
+
       final students = await SupabaseService.getAllStudents();
       int successCount = 0;
       int failureCount = 0;
@@ -227,7 +270,7 @@ class _EventsScreenState extends State<EventsScreen> {
       }
 
       for (var mobile in uniqueMobiles) {
-        final success = await SupabaseService.sendSms(mobile, _schoolMessageCtrl.text.trim());
+        final success = await SupabaseService.sendSms(mobile, message);
         if (success) {
           successCount++;
         } else {
@@ -240,6 +283,8 @@ class _EventsScreenState extends State<EventsScreen> {
         SnackBar(content: Text('Sent: $successCount, Failed: $failureCount. (Total unique parents: ${uniqueMobiles.length})')),
       );
       _schoolMessageCtrl.clear();
+      _schoolEventNameCtrl.clear();
+      setState(() => _schoolEventDate = null);
     } catch (e) {
       _hideLoading();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -382,11 +427,39 @@ class _EventsScreenState extends State<EventsScreen> {
             },
           ),
         const SizedBox(height: 16),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) setState(() => _classEventDate = picked);
+          },
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Select Event Date',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.calendar_today),
+            ),
+            child: Text(_classEventDate == null ? 'Click to pick date' : DateFormat('dd-MM-yyyy').format(_classEventDate!)),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _classEventNameCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Event Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
         TextField(
           controller: _classMessageCtrl,
-          maxLines: 4,
+          maxLines: 2,
           decoration: const InputDecoration(
-            labelText: 'Type message here',
+            labelText: 'Type notification message (Optional)',
             border: OutlineInputBorder(),
           ),
         ),
@@ -394,7 +467,7 @@ class _EventsScreenState extends State<EventsScreen> {
         ElevatedButton.icon(
           onPressed: _isSending ? null : _sendClassEvents,
           icon: const Icon(Icons.send),
-          label: const Text('Send Message Option'),
+          label: const Text('Submit & Send Message'),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF800000),
             foregroundColor: Colors.white,
@@ -414,11 +487,39 @@ class _EventsScreenState extends State<EventsScreen> {
           style: GoogleFonts.poppins(color: Colors.redAccent, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) setState(() => _schoolEventDate = picked);
+          },
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Select Event Date',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.calendar_today),
+            ),
+            child: Text(_schoolEventDate == null ? 'Click to pick date' : DateFormat('dd-MM-yyyy').format(_schoolEventDate!)),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _schoolEventNameCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Event Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
         TextField(
           controller: _schoolMessageCtrl,
-          maxLines: 4,
+          maxLines: 2,
           decoration: const InputDecoration(
-            labelText: 'Type message here',
+            labelText: 'Type notification message (Optional)',
             border: OutlineInputBorder(),
           ),
         ),
@@ -426,7 +527,7 @@ class _EventsScreenState extends State<EventsScreen> {
         ElevatedButton.icon(
           onPressed: _isSending ? null : _sendSchoolEvents,
           icon: const Icon(Icons.send),
-          label: const Text('Send Message Option'),
+          label: const Text('Submit & Send Message'),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF800000),
             foregroundColor: Colors.white,

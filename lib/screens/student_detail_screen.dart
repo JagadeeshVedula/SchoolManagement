@@ -116,13 +116,17 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   const SizedBox(height: 16),
                   _buildInfoRow('Name:', _currentStudent.name),
                   if (_currentStudent.rollNo != null && _currentStudent.rollNo!.isNotEmpty)
-                    _buildInfoRow('Roll No:', _currentStudent.rollNo!),
+                    _buildInfoRow('Admsn No:', _currentStudent.rollNo!),
                   _buildInfoRow('Class:', _currentStudent.className),
                   _buildInfoRow('Father Name:', _currentStudent.fatherName),
                   _buildInfoRow('Mother Name:', _currentStudent.motherName),
                   _buildInfoRow('Parent Mobile:', _currentStudent.parentMobile),
                   if (_currentStudent.doj != null && _currentStudent.doj!.isNotEmpty)
                     _buildInfoRow('Joining Date:', _currentStudent.doj!),
+                  if (_currentStudent.aadhar != null && _currentStudent.aadhar!.isNotEmpty)
+                    _buildInfoRow('Aadhar No:', _currentStudent.aadhar!),
+                  if (_currentStudent.apaar != null && _currentStudent.apaar!.isNotEmpty)
+                    _buildInfoRow('Apaar ID:', _currentStudent.apaar!),
                   _buildInfoRow('Address:', _currentStudent.address ?? 'N/A'),
                   if (_currentStudent.gender != null && _currentStudent.gender!.isNotEmpty)
                     _buildInfoRow('Gender:', _currentStudent.gender!),

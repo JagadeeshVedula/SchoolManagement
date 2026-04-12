@@ -24,6 +24,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   late TextEditingController _parentMobileController;
   late TextEditingController _addressController;
   late TextEditingController _dojController;
+  late TextEditingController _aadharController;
+  late TextEditingController _apaarController;
   
   String? _selectedClass;
   String? _selectedSection;
@@ -52,6 +54,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     _parentMobileController = TextEditingController(text: widget.student.parentMobile);
     _addressController = TextEditingController(text: widget.student.address);
     _dojController = TextEditingController(text: widget.student.doj);
+    _aadharController = TextEditingController(text: widget.student.aadhar);
+    _apaarController = TextEditingController(text: widget.student.apaar);
     
     _selectedGender = widget.student.gender;
     _busFacility = widget.student.busFacility;
@@ -99,6 +103,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     _parentMobileController.dispose();
     _addressController.dispose();
     _dojController.dispose();
+    _aadharController.dispose();
+    _apaarController.dispose();
     super.dispose();
   }
 
@@ -132,6 +138,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     final data = {
       'Name': _nameController.text.trim(),
       'ROLL_NO': _rollNoController.text.trim(),
+      'AADHAR': _aadharController.text.trim(),
+      'APAAR': _apaarController.text.trim(),
       'PHOTO_URL': photoUrl,
       'Class': finalClass,
       'Father Name': _fatherNameController.text.trim(),
@@ -209,7 +217,9 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                   const SizedBox(height: 24),
                   
                   _buildTextField(_nameController, 'Student Name', Icons.person),
-                  _buildTextField(_rollNoController, 'Roll No', Icons.numbers),
+                  _buildTextField(_rollNoController, 'Admsn No', Icons.numbers),
+                  _buildTextField(_aadharController, 'AADHAR NO', Icons.credit_card, keyboardType: TextInputType.number),
+                  _buildTextField(_apaarController, 'APAAR ID', Icons.badge_outlined),
                   
                   const SizedBox(height: 16),
                   Row(

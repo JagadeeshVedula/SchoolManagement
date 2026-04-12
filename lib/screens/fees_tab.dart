@@ -762,7 +762,7 @@ class _FeesTabState extends State<FeesTab> {
             child: Table(
               children: [
                 _infoRow('Receipt No', receiptNo, 'Receipt Date', receiptDate),
-                _infoRow('Adm No', admNo, 'Roll No', student.rollNo ?? '-'),
+                _infoRow('Adm No', admNo, 'Admsn No', student.rollNo ?? '-'),
                 _infoRow('Name', student.name, 'Class/Section', classSection),
                 _infoRow('Father Name', student.fatherName, 'F-Mobile No', student.parentMobile),
               ],
@@ -995,7 +995,7 @@ class _FeesTabState extends State<FeesTab> {
                   padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   child: pw.Table(children: [
                     _pdfInfoRow('Receipt No', receiptNo, 'Receipt Date', receiptDate),
-                    _pdfInfoRow('Adm No', admNo, 'Roll No', student.rollNo ?? '-'),
+                    _pdfInfoRow('Adm No', admNo, 'Admsn No', student.rollNo ?? '-'),
                     _pdfInfoRow('Name', student.name, 'Class/Section', student.className),
                     _pdfInfoRow('Father Name', student.fatherName, 'F-Mobile No', student.parentMobile),
                   ]),
