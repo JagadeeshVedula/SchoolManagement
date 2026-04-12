@@ -4,6 +4,7 @@ import 'package:school_management/screens/leave_management_screen.dart';
 import 'package:school_management/screens/staff_pay_slips_screen.dart';
 import 'package:school_management/screens/staff_student_details_screen.dart';
 import 'package:school_management/screens/homework_screen.dart';
+import 'package:school_management/screens/attendance_screen.dart';
 
 class StaffDashboardScreen extends StatefulWidget {
   final Map<String, dynamic> staffCred;
@@ -221,6 +222,52 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Home Work',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Student Attendance Button
+              SizedBox(
+                width: double.infinity,
+                height: 120,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AttendanceScreen(
+                          staffName: staffName,
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo[600],
+                    padding: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.how_to_reg_rounded,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Student Attendance',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

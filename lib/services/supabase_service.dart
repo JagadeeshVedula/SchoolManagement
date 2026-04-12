@@ -2203,4 +2203,86 @@ class SupabaseService {
       return null;
     }
   }
+  // --- Attendance Methods ---
+
+  // Save/Upsert attendance for a list of students
+  static Future<bool> saveAttendance(List<Map<String, dynamic>> attendanceData) async {
+    try {
+      if (attendanceData.isEmpty) return true;
+
+      for (var record in attendanceData) {
+        final studentName = record['STUDENT_NAME'] as String;
+        final date = record['DATE'] as String;
+
+        // Check if record exists for this student on this date
+        final existing = await client
+            .from('ATTENDANCE')
+            .select()
+            .eq('STUDENT_NAME', studentName)
+            .eq('DATE', date)
+            .maybeSingle();
+
+        if (existing != null) {
+          // Update
+          await client
+              .from('ATTENDANCE')
+              .update(record)
+              .eq('STUDENT_NAME', studentName)
+              .eq('DATE', date);
+        } else {
+          // Insert
+          await client.from('ATTENDANCE').insert(record);
+        }
+      }
+      return true;
+    } catch (e) {
+      print('Error saving attendance: $e');
+      return false;
+    }
+  }
+
+  // Get attendance records for a class on a specific date
+  static Future<List<Map<String, dynamic>>> getAttendance(String className, String date) async {
+    try {
+      final response = await client
+          .from('ATTENDANCE')
+          .select()
+          .eq('CLASS', className)
+          .eq('DATE', date);
+
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching attendance: $e');
+      return [];
+    }
+  }
+
+  // Get attendance for a student within a month (format MM-YYYY)
+  static Future<List<Map<String, dynamic>>> getStudentMonthlyAttendance(String studentName, String monthYear) async {
+    try {
+      final response = await client
+          .from('ATTENDANCE')
+          .select()
+          .eq('STUDENT_NAME', studentName);
+
+      final attendance = (response as List).cast<Map<String, dynamic>>();
+      
+      // Filter by month in Date string (dd-MM-yyyy)
+      return attendance.where((record) {
+        final d = record['DATE'] as String? ?? '';
+        if (d.length >= 10) {
+          final parts = d.split('-');
+          if (parts.length == 3) {
+            final my = '${parts[1]}-${parts[2]}';
+            return my == monthYear;
+          }
+        }
+        return false;
+      }).toList();
+    } catch (e) {
+      print('Error fetching student monthly attendance: $e');
+      return [];
+    }
+  }
 }
+
