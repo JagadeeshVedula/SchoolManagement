@@ -2311,4 +2311,76 @@ class SupabaseService {
       return false;
     }
   }
+  // Fetch distinct Assessment names for a specific class from TIMETABLES
+  static Future<List<String>> getTimetableAssessments(String className) async {
+    try {
+      final baseClassName = className.split('-')[0];
+      final response = await client
+          .from('TIMETABLES')
+          .select('assessment_name')
+          .eq('class_name', baseClassName);
+
+      final assessments = <String>{};
+      for (var item in response as List) {
+        final a = item['assessment_name'] as String? ?? '';
+        if (a.isNotEmpty) assessments.add(a);
+      }
+      return assessments.toList()..sort();
+    } catch (e) {
+      print('Error fetching timetable assessments: $e');
+      return [];
+    }
+  }
+
+  // Fetch timetable data for a specific class and assessment
+  static Future<List<Map<String, dynamic>>> getTimetable(
+      String className, String assessmentName) async {
+    try {
+      final baseClassName = className.split('-')[0];
+      final response = await client
+          .from('TIMETABLES')
+          .select()
+          .eq('class_name', baseClassName)
+          .eq('assessment_name', assessmentName);
+
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching timetable: $e');
+      return [];
+    }
+  }
+  // Fetch future events for a list of classes
+  static Future<List<Map<String, dynamic>>> getEventsForClasses(
+      List<String> classes) async {
+    try {
+      final baseClasses = classes.map((c) => c.split('-')[0]).toSet().toList();
+      final response = await client
+          .from('EVENTS')
+          .select()
+          .in_('CLASS', [...baseClasses, 'Global']);
+
+      final events = (response as List).cast<Map<String, dynamic>>();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      final futureEvents = events.where((e) {
+        final dateStr = e['EVENT_DATE']?.toString() ?? '';
+        final dateFormat = DateFormat('dd-MM-yyyy');
+        final eventDate = dateFormat.tryParse(dateStr);
+        if (eventDate == null) return false;
+        return !eventDate.isBefore(today);
+      }).toList();
+
+      futureEvents.sort((a, b) {
+        final dateA = DateFormat('dd-MM-yyyy').parse(a['EVENT_DATE']);
+        final dateB = DateFormat('dd-MM-yyyy').parse(b['EVENT_DATE']);
+        return dateA.compareTo(dateB);
+      });
+
+      return futureEvents;
+    } catch (e) {
+      print('Error fetching events: $e');
+      return [];
+    }
+  }
 }
