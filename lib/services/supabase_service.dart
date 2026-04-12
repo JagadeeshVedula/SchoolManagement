@@ -2225,6 +2225,49 @@ class SupabaseService {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> getMiscellaneousTransactionsReport({
+    String? account,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      var query = client.from('TRANSACTIONS').select('ACCOUNT, DATE, TYPE, AMOUNT, COMMENT');
+      
+      if (account != null && account != 'ALL') {
+        query = query.eq('ACCOUNT', account);
+      }
+
+      final response = await query.order('DATE', ascending: false);
+      final transactions = (response as List).cast<Map<String, dynamic>>();
+      
+      final normalizedStartDate = DateTime(startDate.year, startDate.month, startDate.day);
+      final normalizedEndDate = DateTime(endDate.year, endDate.month, endDate.day);
+
+      return transactions.where((t) {
+        final dateString = t['DATE'] as String?;
+        if (dateString == null) return false;
+        
+        DateTime? transactionDate;
+        try {
+          transactionDate = DateFormat('dd-MM-yyyy').parse(dateString);
+        } catch (_) {
+          try {
+            transactionDate = DateFormat('yyyy-MM-dd').parse(dateString);
+          } catch (_) {}
+        }
+
+        if (transactionDate == null) return false;
+        final normalizedTransactionDate = DateTime(transactionDate.year, transactionDate.month, transactionDate.day);
+        
+        return !normalizedTransactionDate.isBefore(normalizedStartDate) && 
+               !normalizedTransactionDate.isAfter(normalizedEndDate);
+      }).toList();
+    } catch (e) {
+      print('Error fetching miscellaneous report data: $e');
+      return [];
+    }
+  }
+
   // Get staff leave data for report with filters
   static Future<List<Map<String, dynamic>>> getStaffLeaveForReport({
     required String staffName,

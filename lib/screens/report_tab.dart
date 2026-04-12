@@ -64,19 +64,31 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
   List<Map<String, dynamic>> _dueStatementReportData = [];
   bool _isDueStatementLoading = false;
 
+  // Miscellaneous Report State
+  String? _selectedMiscAccount = 'ALL';
+  List<String> _miscAccounts = [];
+  DateTimeRange? _miscDateRange;
+  List<Map<String, dynamic>> _miscReportData = [];
+  bool _isMiscLoading = false;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
     _loadClasses();
     _loadStaff();
     _loadDailyReportData(); // Initial load for daily report tab
     _loadBusNumbers(); // Load bus numbers for bus due report tab
+    _loadMiscAccounts(); // Load accounts for misc report
     _dieselDateRange = DateTimeRange(
       start: DateTime.now().subtract(const Duration(days: 7)),
       end: DateTime.now(),
     );
     _transactionsDateRange = DateTimeRange(
+      start: DateTime.now().subtract(const Duration(days: 7)),
+      end: DateTime.now(),
+    );
+    _miscDateRange = DateTimeRange(
       start: DateTime.now().subtract(const Duration(days: 7)),
       end: DateTime.now(),
     );
@@ -107,6 +119,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
             break;
           case 7: // Due Statement
             if (_dueStatementReportData.isEmpty) _loadDueStatementReportData();
+            break;
+          case 8: // Miscellaneous Report
+            if (_miscReportData.isEmpty) _loadMiscReportData();
             break;
         }
       }
@@ -589,6 +604,34 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
     }
   }
 
+  Future<void> _loadMiscAccounts() async {
+    final accounts = await SupabaseService.getAccounts();
+    setState(() {
+      _miscAccounts = accounts;
+    });
+  }
+
+  Future<void> _loadMiscReportData() async {
+    if (_miscDateRange == null) return;
+    setState(() => _isMiscLoading = true);
+    try {
+      final data = await SupabaseService.getMiscellaneousTransactionsReport(
+        account: _selectedMiscAccount,
+        startDate: _miscDateRange!.start,
+        endDate: _miscDateRange!.end,
+      );
+      setState(() {
+        _miscReportData = data;
+        _isMiscLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isMiscLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading miscellaneous report: $e')),
+      );
+    }
+  }
+
   // #endregion
 
   // #region Excel Export Methods
@@ -655,6 +698,35 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         
         // Overall Status
         sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = data['Overall Status'];
+      }
+
+      // Calculate Totals for Fee Columns
+      final feeColumnsToTotal = [
+        'Term1 Fee', 'Term1 Paid', 'Term1 Due',
+        'Term2 Fee', 'Term2 Paid', 'Term2 Due',
+        'Term3 Fee', 'Term3 Paid', 'Term3 Due',
+        'Bus Fee', 'Bus Fee Paid', 'Bus Fee Due',
+        'Books Fee', 'Books Fee Paid', 'Books Fee Due',
+        'Uniform Fee', 'Uniform Fee Paid', 'Uniform Fee Due'
+      ];
+      
+      final Map<String, double> totals = {};
+      for (final col in feeColumnsToTotal) {
+        totals[col] = _feeReportData.fold<double>(0, (sum, data) => sum + (double.tryParse(data[col]?.toString() ?? '0') ?? 0));
+      }
+
+      int lastDataRow = _feeReportData.length + 1;
+      int totalLabelCol = 0; // 'Student Name' column
+      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: totalLabelCol, rowIndex: lastDataRow + 1)).value = 'OVERALL TOTAL';
+
+      // Map feeColumnsToTotal to their actual column indices in the header
+      // (Reusing existing headers variable)
+
+      for (int i = 0; i < headers.length; i++) {
+        final header = headers[i];
+        if (totals.containsKey(header)) {
+          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: lastDataRow + 1)).value = _formatAmount(totals[header]);
+        }
       }
 
       // Get bytes and download
@@ -726,6 +798,61 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         sheet.appendRow(row);
       }
 
+      // Calculate totals for numeric columns
+      final Map<String, double> totals = {};
+      bool anyNumericColumn = false;
+      for (final header in headers) {
+        double columnTotal = 0;
+        bool hasNumericInColumn = false;
+        bool hasNonNumericInColumn = false;
+
+        for (final rowData in data) {
+          final val = rowData[header];
+          if (val == null) continue;
+
+          if (val is num) {
+            columnTotal += val.toDouble();
+            hasNumericInColumn = true;
+          } else if (val is String) {
+            final cleanVal = val.replaceAll('₹', '').replaceAll('Rs.', '').replaceAll(',', '').trim();
+            final parsed = double.tryParse(cleanVal);
+            if (parsed != null) {
+              columnTotal += parsed;
+              hasNumericInColumn = true;
+            } else if (cleanVal.isNotEmpty) {
+              hasNonNumericInColumn = true;
+            }
+          } else {
+            hasNonNumericInColumn = true;
+          }
+        }
+
+        // A column is numeric if it has at least one number and no non-numeric strings
+        if (hasNumericInColumn && !hasNonNumericInColumn) {
+          totals[header] = columnTotal;
+          anyNumericColumn = true;
+        }
+      }
+
+      if (anyNumericColumn) {
+        // Append an empty row for spacing
+        sheet.appendRow([]);
+        
+        // Append Total row
+        final List<dynamic> totalRow = [];
+        for (int i = 0; i < headers.length; i++) {
+          final header = headers[i];
+          if (i == 0) {
+            totalRow.add('OVERALL TOTAL');
+          } else if (totals.containsKey(header)) {
+            totalRow.add(totals[header]);
+          } else {
+            totalRow.add('');
+          }
+        }
+        sheet.appendRow(totalRow);
+      }
+
       final bytes = excel.encode();
       if (bytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -739,6 +866,65 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
 
     } catch (e) {
       print('Error downloading generic excel: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error downloading report: $e')),
+      );
+    }
+  }
+
+  Future<void> _downloadMiscExcel() async {
+    if (_miscReportData.isEmpty) return;
+
+    try {
+      final excel = excel_pkg.Excel.createExcel();
+      final sheet = excel['Sheet1'];
+
+      final headers = ['ACCOUNT', 'DATE', 'TYPE', 'AMOUNT', 'COMMENT'];
+      sheet.appendRow(headers);
+
+      double totalCredit = 0;
+      double totalDebit = 0;
+
+      for (final rowData in _miscReportData) {
+        final row = headers.map((header) => rowData[header]).toList();
+        sheet.appendRow(row);
+
+        final type = (rowData['TYPE'] as String? ?? '').toLowerCase();
+        final amount = double.tryParse(rowData['AMOUNT']?.toString() ?? '0') ?? 0;
+
+        if (type == 'credit') {
+          totalCredit += amount;
+        } else if (type == 'debit') {
+          totalDebit += amount;
+        }
+      }
+
+      sheet.appendRow([]); // Spacing
+
+      // Credit row
+      final List<dynamic> creditRow = List.filled(headers.length, '');
+      creditRow[0] = 'OVERALL CREDIT';
+      creditRow[headers.indexOf('AMOUNT')] = totalCredit;
+      sheet.appendRow(creditRow);
+
+      // Debit row
+      final List<dynamic> debitRow = List.filled(headers.length, '');
+      debitRow[0] = 'OVERALL DEBIT';
+      debitRow[headers.indexOf('AMOUNT')] = totalDebit;
+      sheet.appendRow(debitRow);
+      
+      // Balance row
+      final List<dynamic> balanceRow = List.filled(headers.length, '');
+      balanceRow[0] = 'NET BALANCE';
+      balanceRow[headers.indexOf('AMOUNT')] = totalCredit - totalDebit;
+      sheet.appendRow(balanceRow);
+
+      final bytes = excel.encode();
+      if (bytes != null) {
+        await _downloadFile(bytes, 'Misc_Report_${DateFormat('yyyy-MM-dd').format(DateTime.now())}.xlsx');
+      }
+    } catch (e) {
+      print('Error downloading misc excel: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error downloading report: $e')),
       );
@@ -852,6 +1038,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               Tab(text: 'Daily Report'),
               Tab(text: 'Bus Due Report'),
               Tab(text: 'Due Statement'),
+              Tab(text: 'Miscellaneous Report'),
             ],
           ),
         ),
@@ -868,6 +1055,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
               _buildDailyReportTab(),
               _buildBusDueReportTab(),
               _buildDueStatementTab(),
+              _buildMiscReportTab(),
             ],
           ),
         ),
@@ -1741,6 +1929,9 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
      sheet.appendRow([]);
      sheet.appendRow(['Description', 'Category', 'Subcategory', 'Type', 'Amount']);
      
+     double totalCredit = 0;
+     double totalDebit = 0;
+
      for (var t in _dailyReportData) {
        sheet.appendRow([
          t['description'],
@@ -1749,8 +1940,21 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
          t['type'].toString().toUpperCase(),
          t['amount']
        ]);
+
+       final type = t['type']?.toString().toLowerCase();
+       final amt = double.tryParse(t['amount']?.toString() ?? '0') ?? 0.0;
+       if (type == 'credit') {
+         totalCredit += amt;
+       } else if (type == 'debit') {
+         totalDebit += amt;
+       }
      }
      
+     sheet.appendRow([]); // Spacing row
+     sheet.appendRow(['OVERALL CREDIT', '', '', '', totalCredit]);
+     sheet.appendRow(['OVERALL DEBIT', '', '', '', totalDebit]);
+     sheet.appendRow(['NET BALANCE', '', '', '', totalCredit - totalDebit]);
+
      final bytes = excel.encode();
      if (bytes != null) {
        await _downloadFile(bytes, 'Daily_Report_${DateFormat('yyyyMMdd').format(_selectedDailyDate)}.xlsx');
@@ -1783,6 +1987,30 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         data['Overall Due']
       ]);
     }
+
+    // Calculate totals
+    double busTotal = 0, busPaid = 0, busDue = 0;
+    double schoolTotal = 0, schoolPaid = 0, schoolDue = 0;
+    double overallTotal = 0, overallDue = 0;
+
+    for (var data in _busDueReportData) {
+      busTotal += double.tryParse(data['Bus Total']?.toString() ?? '0') ?? 0;
+      busPaid += double.tryParse(data['Bus Paid']?.toString() ?? '0') ?? 0;
+      busDue += double.tryParse(data['Bus Pending']?.toString() ?? '0') ?? 0;
+      schoolTotal += double.tryParse(data['School Total']?.toString() ?? '0') ?? 0;
+      schoolPaid += double.tryParse(data['School Paid']?.toString() ?? '0') ?? 0;
+      schoolDue += double.tryParse(data['School Pending']?.toString() ?? '0') ?? 0;
+      overallTotal += double.tryParse(data['Overall Total']?.toString() ?? '0') ?? 0;
+      overallDue += double.tryParse(data['Overall Due']?.toString() ?? '0') ?? 0;
+    }
+
+    sheet.appendRow([]);
+    sheet.appendRow([
+      'OVERALL TOTAL', '', '', '',
+      busTotal, busPaid, busDue,
+      schoolTotal, schoolPaid, schoolDue,
+      '', overallTotal, overallDue
+    ]);
     
     final bytes = excel.encode();
     if (bytes != null) {
@@ -2091,6 +2319,170 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
       ),
     );
   }
+  Widget _buildMiscReportTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedMiscAccount,
+                        decoration: InputDecoration(
+                          labelText: 'Select Account',
+                          labelStyle: GoogleFonts.poppins(fontSize: 14),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          prefixIcon: const Icon(Icons.account_balance_wallet, color: Color(0xFF800000)),
+                          filled: true,
+                          fillColor: const Color(0xFFF1F5F9),
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: 'ALL', child: Text('ALL')),
+                          ..._miscAccounts.map((account) => DropdownMenuItem(value: account, child: Text(account))).toList(),
+                        ],
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedMiscAccount = val;
+                            _miscReportData = [];
+                          });
+                          _loadMiscReportData();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: _miscReportData.isEmpty ? null : _downloadMiscExcel,
+                      icon: const Icon(Icons.download_outlined, size: 18),
+                      label: Text('Export Excel', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDateRangePicker(
+                      context: context,
+                      initialDateRange: _miscDateRange,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _miscDateRange = picked;
+                        _miscReportData = [];
+                      });
+                      _loadMiscReportData();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.date_range, color: Color(0xFF800000)),
+                        const SizedBox(width: 12),
+                        Text(
+                          _miscDateRange == null
+                              ? 'Select Date Range'
+                              : '${DateFormat('dd-MM-yyyy').format(_miscDateRange!.start)} to ${DateFormat('dd-MM-yyyy').format(_miscDateRange!.end)}',
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (_isMiscLoading)
+            const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+          else if (_miscReportData.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    Icon(Icons.list_alt, size: 64, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text('No data found for the selected criteria', style: GoogleFonts.poppins(color: Colors.grey[500])),
+                  ],
+                ),
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor: MaterialStateProperty.all(const Color(0xFF800000)),
+                  headingTextStyle: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+                  dataTextStyle: GoogleFonts.inter(fontSize: 13),
+                  columns: const [
+                    DataColumn(label: Text('ACCOUNT')),
+                    DataColumn(label: Text('DATE')),
+                    DataColumn(label: Text('TYPE')),
+                    DataColumn(label: Text('AMOUNT')),
+                    DataColumn(label: Text('COMMENT')),
+                  ],
+                  rows: _miscReportData.map((data) {
+                    final isCredit = data['TYPE'] == 'Credit';
+                    return DataRow(cells: [
+                      DataCell(Text(data['ACCOUNT'] ?? '')),
+                      DataCell(Text(data['DATE'] ?? '')),
+                      DataCell(Text(data['TYPE'] ?? '', style: TextStyle(color: isCredit ? Colors.green : Colors.red, fontWeight: FontWeight.bold))),
+                      DataCell(Text('₹${data['AMOUNT']}')),
+                      DataCell(Text(data['COMMENT'] ?? '')),
+                    ]);
+                  }).toList(),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   // #endregion
 
   Color _getTabColor(int index) {
@@ -2107,6 +2499,12 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         return Colors.red[700]!;
       case 5:
         return const Color(0xFF800000);
+      case 6:
+        return Colors.blue[700]!;
+      case 7:
+        return Colors.teal[700]!;
+      case 8:
+        return Colors.indigo[700]!;
       default:
         return const Color(0xFF800000);
     }

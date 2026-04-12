@@ -559,6 +559,40 @@ class _DueReportTabState extends State<DueReportTab> {
       sheet.appendRow(row);
     }
 
+    // Calculate totals for numeric columns
+    final List<dynamic> totalRow = [];
+    bool hasNumeric = false;
+    for (int i = 0; i < headers.length; i++) {
+       final header = headers[i];
+       if (i == 0) {
+         totalRow.add('OVERALL TOTAL');
+       } else {
+         double colTotal = 0;
+         bool isNumeric = false;
+         for (final data in _dueReportData) {
+            final val = data[header];
+            if (val != null) {
+              final parsed = double.tryParse(val.toString());
+              if (parsed != null) {
+                colTotal += parsed;
+                isNumeric = true;
+                hasNumeric = true;
+              }
+            }
+         }
+         if (isNumeric) {
+           totalRow.add(colTotal.toStringAsFixed(2));
+         } else {
+           totalRow.add('');
+         }
+       }
+    }
+
+    if (hasNumeric) {
+      sheet.appendRow([]); // Spacing row
+      sheet.appendRow(totalRow);
+    }
+
     final bytes = excel.encode();
     if (bytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
