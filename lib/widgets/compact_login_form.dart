@@ -383,21 +383,7 @@ class _CompactLoginFormState extends State<CompactLoginForm> {
 
               const SizedBox(height: 16),
 
-              // Back link
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                ),
-                child: Text(
-                  '← Back to role selection',
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF718096),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+
             ],
           ),
         ),

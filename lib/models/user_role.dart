@@ -35,15 +35,5 @@ class UserRole {
           gradientStart: const Color(0xFF800000),
           gradientEnd: const Color(0xFF4A0000),
         ),
-        // Staff role definition
-        UserRole(
-          id: 'staff',
-          title: 'Staff',
-          description: 'Staff member access for leave and payslips',
-          icon: Icons.person_4,
-          color: const Color(0xFFB91C1C), // Medium Maroon
-          gradientStart: const Color(0xFFB91C1C),
-          gradientEnd: const Color(0xFF7F1D1D),
-        ),
       ];
 }

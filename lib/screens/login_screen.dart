@@ -92,28 +92,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
             ),
 
-            // Back button positioned in the gradient area
-            Positioned(
-              top: 16,
-              left: 16,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
+
 
             // Main content centered on screen
             SingleChildScrollView(

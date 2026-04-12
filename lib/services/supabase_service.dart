@@ -2341,6 +2341,33 @@ class SupabaseService {
     }
   }
 
+  static Future<bool> removeClassFromTeacher(String staffName, String className) async {
+    try {
+      await client
+          .from('CLASS_TEACHER')
+          .delete()
+          .eq('STAFF', staffName)
+          .eq('CLASS', className);
+      return true;
+    } catch (e) {
+      print('Error removing class from teacher: $e');
+      return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllStaffAssignments() async {
+    try {
+      final response = await client
+          .from('CLASS_TEACHER')
+          .select('STAFF, CLASS')
+          .order('STAFF', ascending: true);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching all staff assignments: $e');
+      return [];
+    }
+  }
+
   // Fetch class teacher for a specific class (e.g., "V-A")
   static Future<String?> getClassTeacher(String className) async {
     try {

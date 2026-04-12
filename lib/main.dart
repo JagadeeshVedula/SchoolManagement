@@ -8,6 +8,8 @@ import 'package:school_management/screens/staff_dashboard_screen.dart';
 import 'package:school_management/theme/app_theme.dart';
 // Importing Supabase service for database initialization
 import 'package:school_management/services/supabase_service.dart';
+import 'package:school_management/screens/login_screen.dart';
+import 'package:school_management/models/user_role.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
@@ -44,12 +46,16 @@ class SchoolManagementApp extends StatelessWidget {
       themeMode: ThemeMode.light, // Default to light theme
       debugShowCheckedModeBanner: false, // Remove debug banner in corner
       navigatorObservers: [routeObserver],
-      home: const RoleSelectionScreen(), // First screen shown when app launches
+      home: LoginScreen(userRole: UserRole.roles[0]), // Directly launch Admin Login
       // Handle /home route so we can pass role/username via arguments
       onGenerateRoute: (settings) {
         if (settings.name == '/home') {
           final args = settings.arguments as Map<String, dynamic>?;
-          final role = args != null && args['role'] is String ? args['role'] as String : 'student';
+          if (args == null) {
+            // Re-route to home if arguments are missing (e.g. on reload)
+            return MaterialPageRoute(builder: (_) => LoginScreen(userRole: UserRole.roles[0]));
+          }
+          final role = args['role'] is String ? args['role'] as String : 'student';
           final username = args != null && args['username'] is String ? args['username'] as String : '';
           final parentMobile = args != null && args['parentMobile'] is String ? args['parentMobile'] as String : null;
           return MaterialPageRoute(
@@ -59,10 +65,14 @@ class SchoolManagementApp extends StatelessWidget {
         }
         if (settings.name == '/staff-dashboard') {
           final args = settings.arguments as Map<String, dynamic>?;
-          final staffCred = args != null && args['staffCred'] is Map
+          if (args == null) {
+            // Re-route to home if arguments are missing (e.g. on reload)
+            return MaterialPageRoute(builder: (_) => LoginScreen(userRole: UserRole.roles[0]));
+          }
+          final staffCred = args['staffCred'] is Map
               ? Map<String, dynamic>.from(args['staffCred'] as Map)
               : <String, dynamic>{};
-          final staffDetails = args != null && args['staffDetails'] is Map
+          final staffDetails = args['staffDetails'] is Map
               ? Map<String, dynamic>.from(args['staffDetails'] as Map)
               : <String, dynamic>{};
           return MaterialPageRoute(
@@ -75,7 +85,7 @@ class SchoolManagementApp extends StatelessWidget {
         }
         if (settings.name == '/') {
           return MaterialPageRoute(
-            builder: (_) => const RoleSelectionScreen(),
+            builder: (_) => LoginScreen(userRole: UserRole.roles[0]),
             settings: settings,
           );
         }

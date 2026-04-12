@@ -137,8 +137,10 @@ class _HomeTabsScreenState extends State<HomeTabsScreen>
       const Center(child: ReportTab()),
     ];
 
-    final userRole =
-        UserRole.roles.firstWhere((role) => role.id == widget.role);
+    final userRole = UserRole.roles.firstWhere(
+      (role) => role.id == widget.role,
+      orElse: () => UserRole.roles.first, // Fallback to avoid crash
+    );
 
     // Always add Salary Slips and Pending Requests tabs for admin
     final tabs = [
@@ -524,6 +526,140 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
     );
   }
 
+  void _showRemoveClassDialog(Staff staff) async {
+    List<String> assignedClasses = await SupabaseService.getClassesForStaff(staff.name);
+    String? selectedClass;
+    bool isSubmitting = false;
+
+    if (!mounted) return;
+
+    if (assignedClasses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No classes assigned to ${staff.name}')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Remove Class from ${staff.name}'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedClass,
+                    hint: const Text('Select Class to Remove'),
+                    items: assignedClasses.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedClass = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  onPressed: isSubmitting || selectedClass == null
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isSubmitting = true;
+                          });
+
+                          final success = await SupabaseService.removeClassFromTeacher(staff.name, selectedClass!);
+
+                          setDialogState(() {
+                            isSubmitting = false;
+                          });
+
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Removed ${staff.name} from $selectedClass')),
+                            );
+                            Navigator.of(context).pop();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to remove class')),
+                            );
+                          }
+                        },
+                  child: isSubmitting ? const CircularProgressIndicator(strokeWidth: 2, color: Colors.white) : const Text('Remove'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showStaffAssignmentDialog() async {
+    final assignments = await SupabaseService.getAllStaffAssignments();
+    
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Staff Assignments'),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.download, size: 18),
+                label: const Text('Export CSV'),
+                onPressed: () {
+                  String csv = 'Staff Name,Assigned Class\n';
+                  for (var row in assignments) {
+                    csv += '${row['STAFF']},${row['CLASS']}\n';
+                  }
+                  final bytes = Uri.encodeComponent(csv);
+                  html.AnchorElement(href: 'data:text/csv;charset=utf-8,$bytes')
+                    ..setAttribute('download', 'staff_assignments.csv')
+                    ..click();
+                },
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 600,
+            height: 400,
+            child: assignments.isEmpty 
+              ? const Center(child: Text('No assignments found'))
+              : ListView.builder(
+                  itemCount: assignments.length,
+                  itemBuilder: (context, index) {
+                    final row = assignments[index];
+                    return ListTile(
+                      title: Text(row['STAFF'] ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('Class: ${row['CLASS'] ?? 'N/A'}'),
+                      leading: const Icon(Icons.assignment_ind),
+                    );
+                  },
+                ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Staff>>(
@@ -544,119 +680,153 @@ class _StaffDataWidgetState extends State<StaffDataWidget> {
 
         final staffList = snapshot.data ?? [];
 
-        if (staffList.isEmpty) {
-          return Center(
-            child: Padding(
+        return Column(
+          children: [
+            Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Row(
                 children: [
-                  Icon(Icons.people_outline, size: 48, color: const Color(0xFF800000)),
-                  const SizedBox(height: 12),
-                  Text('No Staff Records', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
-                  const SizedBox(height: 8),
-                  Text('No staff members are currently registered.', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.assignment_outlined),
+                    label: const Text('Staff Assignment'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF800000),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                    onPressed: _showStaffAssignmentDialog,
+                  ),
                 ],
               ),
             ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: staffList.length,
-          itemBuilder: (context, index) {
-            final staff = staffList[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.white,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        staff.name,
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Icon(Icons.school_outlined, size: 16, color: Color(0xFF64748B)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Qualification: ${staff.qualification}',
-                              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.phone_outlined, size: 16, color: Color(0xFF64748B)),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Mobile: ${staff.mobile}',
-                            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.groups_outlined, size: 18),
-                            label: const Text('Students'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF800000).withOpacity(0.1),
-                              foregroundColor: const Color(0xFF800000),
-                              elevation: 0,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => StaffStudentDetailsScreen(
-                                    staffName: staff.name,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF800000),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                            ),
-                            onPressed: () => _showAssignClassDialog(staff),
-                            child: const Text('Assign Class'),
-                          ),
-                        ],
-                      ),
-                    ],
+            if (staffList.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.people_outline, size: 48, color: const Color(0xFF800000)),
+                        const SizedBox(height: 12),
+                        Text('No Staff Records', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
+                        const SizedBox(height: 8),
+                        Text('No staff members are currently registered.', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+                      ],
+                    ),
                   ),
                 ),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: staffList.length,
+                  itemBuilder: (context, index) {
+                    final staff = staffList[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                staff.name,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  const Icon(Icons.school_outlined, size: 16, color: Color(0xFF64748B)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Qualification: ${staff.qualification}',
+                                      style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.phone_outlined, size: 16, color: Color(0xFF64748B)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Mobile: ${staff.mobile}',
+                                    style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.groups_outlined, size: 18),
+                                    label: const Text('Students'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF800000).withOpacity(0.1),
+                                      foregroundColor: const Color(0xFF800000),
+                                      elevation: 0,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => StaffStudentDetailsScreen(
+                                            staffName: staff.name,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red[50],
+                                      foregroundColor: Colors.red[700],
+                                      elevation: 0,
+                                    ),
+                                    onPressed: () => _showRemoveClassDialog(staff),
+                                    child: const Text('Remove Class'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF800000),
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                    ),
+                                    onPressed: () => _showAssignClassDialog(staff),
+                                    child: const Text('Assign Class'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            );
-          },
+          ],
         );
       },
     );
