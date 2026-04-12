@@ -2284,5 +2284,65 @@ class SupabaseService {
       return [];
     }
   }
+
+  // --- Holiday Methods ---
+
+  // Save a holiday: If record for DATE exists, update its REASON. Otherwise, insert.
+  static Future<bool> saveHoliday(String date, String reason) async {
+    try {
+      final existing = await client
+          .from('HOLIDAYS')
+          .select()
+          .eq('DATE', date)
+          .maybeSingle();
+
+      if (existing != null) {
+        // Update
+        await client
+            .from('HOLIDAYS')
+            .update({'REASON': reason})
+            .eq('DATE', date);
+      } else {
+        // Insert
+        await client.from('HOLIDAYS').insert({
+          'DATE': date,
+          'REASON': reason,
+        });
+      }
+      return true;
+    } catch (e) {
+      print('Error saving holiday: $e');
+      return false;
+    }
+  }
+
+  // Get holiday reason for a specific date
+  static Future<String?> getHoliday(String date) async {
+    try {
+      final response = await client
+          .from('HOLIDAYS')
+          .select('REASON')
+          .eq('DATE', date)
+          .maybeSingle();
+      return response?['REASON'] as String?;
+    } catch (e) {
+      print('Error fetching holiday: $e');
+      return null;
+    }
+  }
+
+  // Delete a holiday record for a specific date
+  static Future<bool> deleteHoliday(String date) async {
+    try {
+      await client
+          .from('HOLIDAYS')
+          .delete()
+          .eq('DATE', date);
+      return true;
+    } catch (e) {
+      print('Error deleting holiday: $e');
+      return false;
+    }
+  }
 }
 

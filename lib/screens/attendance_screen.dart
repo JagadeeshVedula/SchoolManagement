@@ -21,6 +21,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   DateTime _selectedDate = DateTime.now();
   List<Student> _students = [];
   Map<String, String> _attendanceMap = {}; // Student Name -> Status (Present/Absent)
+  bool _isHoliday = false;
+  final TextEditingController _holidayReasonController = TextEditingController();
 
   @override
   void initState() {
@@ -55,14 +57,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     try {
       final dateStr = DateFormat('dd-MM-yyyy').format(_selectedDate);
       
-      // Fetch students and existing attendance in parallel
+      // Fetch students, existing attendance, and holiday status in parallel
       final results = await Future.wait([
         SupabaseService.getStudentsByClass(_selectedClass!),
         SupabaseService.getAttendance(_selectedClass!, dateStr),
+        SupabaseService.getHoliday(dateStr),
       ]);
 
       final students = results[0] as List<Student>;
       final existingAttendance = results[1] as List<Map<String, dynamic>>;
+      final holidayReason = results[2] as String?;
 
       // Create a map from existing attendance
       final Map<String, String> existingMap = {};
@@ -73,6 +77,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       setState(() {
         _students = students;
         _attendanceMap = {};
+        _isHoliday = holidayReason != null;
+        if (_isHoliday) {
+          _holidayReasonController.text = holidayReason!;
+        } else {
+          _holidayReasonController.clear();
+        }
         for (var student in _students) {
           // Default to "Present" if no record exists
           _attendanceMap[student.name] = existingMap[student.name] ?? 'Present';
@@ -124,6 +134,49 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       }
     } catch (e) {
       print('Error saving attendance: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _saveHoliday() async {
+    if (_holidayReasonController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a reason for the holiday'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final dateStr = DateFormat('dd-MM-yyyy').format(_selectedDate);
+      final success = await SupabaseService.saveHoliday(
+        dateStr,
+        _holidayReasonController.text.trim(),
+      );
+
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Holiday marked successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to mark holiday'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error saving holiday: $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -222,6 +275,66 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _isHoliday,
+                            onChanged: (value) {
+                              setState(() {
+                                _isHoliday = value ?? false;
+                              });
+                            },
+                            activeColor: Colors.blue[800],
+                          ),
+                          Text(
+                            'Mark Holiday',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blue[900],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_isHoliday) ...[
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _holidayReasonController,
+                          decoration: InputDecoration(
+                            labelText: 'Holiday Reason',
+                            hintText: 'e.g., Summer Vacation, Public Holiday',
+                            prefixIcon: const Icon(Icons.info_outline, color: Colors.blue),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          style: GoogleFonts.poppins(fontSize: 15),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isSaving ? null : _saveHoliday,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange[800],
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : Text(
+                                    'Save Holiday',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -232,7 +345,37 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Expanded(
               child: _isLoading && _students.isEmpty
                   ? const Center(child: CircularProgressIndicator())
-                  : _classes.isEmpty
+                  : _isHoliday
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.beach_access, size: 80, color: Colors.blue[200]),
+                              const SizedBox(height: 16),
+                              Text(
+                                'This day is marked as a holiday.',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blue[900],
+                                ),
+                              ),
+                              if (_holidayReasonController.text.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                                  child: Text(
+                                    'Reason: ${_holidayReasonController.text}',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : _classes.isEmpty
                       ? Center(
                           child: Text(
                             'No classes assigned to you.',
@@ -302,7 +445,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ],
         ),
       ),
-      bottomSheet: _students.isEmpty
+      bottomSheet: _students.isEmpty || _isHoliday
           ? null
           : Container(
               padding: const EdgeInsets.all(16),
