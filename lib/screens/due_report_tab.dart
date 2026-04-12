@@ -305,6 +305,7 @@ class _DueReportTabState extends State<DueReportTab> {
 
     sheet.appendRow(headers);
 
+    double t1DueSum = 0, t2DueSum = 0, t3DueSum = 0;
     for (final data in _dueReportData) {
       final row = [
         data['Student Name'],
@@ -312,11 +313,30 @@ class _DueReportTabState extends State<DueReportTab> {
         data['Parent Mobile'],
         data['Staff Name'],
       ];
-      if (_term1Selected) row.add(data['Term1 Due']);
-      if (_term2Selected) row.add(data['Term2 Due']);
-      if (_term3Selected) row.add(data['Term3 Due']);
+      if (_term1Selected) {
+        final val = double.tryParse(data['Term1 Due']?.toString() ?? '0') ?? 0;
+        t1DueSum += val;
+        row.add(val);
+      }
+      if (_term2Selected) {
+        final val = double.tryParse(data['Term2 Due']?.toString() ?? '0') ?? 0;
+        t2DueSum += val;
+        row.add(val);
+      }
+      if (_term3Selected) {
+        final val = double.tryParse(data['Term3 Due']?.toString() ?? '0') ?? 0;
+        t3DueSum += val;
+        row.add(val);
+      }
       sheet.appendRow(row);
     }
+
+    // Add total row
+    final totalRow = ['OVERALL TOTAL', '', '', ''];
+    if (_term1Selected) totalRow.add(t1DueSum.toStringAsFixed(2));
+    if (_term2Selected) totalRow.add(t2DueSum.toStringAsFixed(2));
+    if (_term3Selected) totalRow.add(t3DueSum.toStringAsFixed(2));
+    sheet.appendRow(totalRow);
 
     final bytes = excel.encode();
     if (bytes == null) {

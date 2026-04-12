@@ -227,6 +227,16 @@ class _AccountsTabState extends State<AccountsTab> {
         rowIndex++;
       }
     }
+    
+    // Add overall total for the transaction list
+    sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = 'OVERALL TOTAL';
+    sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).value = _totalCredit;
+    sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex)).value = _totalDebit;
+    
+    // Style the total row
+    for (int i = 0; i < 3; i++) {
+      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex)).cellStyle = excel_pkg.CellStyle(bold: true);
+    }
 
     final bytes = excel.save();
     if (bytes == null) return;

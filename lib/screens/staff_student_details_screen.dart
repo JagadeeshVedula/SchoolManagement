@@ -594,10 +594,38 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
       }
 
       // Add student data
+      double t1TotalSum = 0, t1PaidSum = 0, t1DueSum = 0;
+      double t2TotalSum = 0, t2PaidSum = 0, t2DueSum = 0;
+      double t3TotalSum = 0, t3PaidSum = 0, t3DueSum = 0;
+      double busTotalSum = 0, busPaidSum = 0, busDueSum = 0;
+      double hostelTotalSum = 0, hostelPaidSum = 0, hostelDueSum = 0;
+      double totalDueSum = 0;
+
       for (int i = 0; i < _students.length; i++) {
         final student = _students[i];
         final termBreakdown = _calculateTermBreakdown(student);
         final busHostelInfo = _calculateBusAndHostelFees(student);
+        final studentTotalDue = _duesMap[student.name] ?? 0;
+
+        t1TotalSum += (termBreakdown[1]?['Total'] as num?)?.toDouble() ?? 0;
+        t1PaidSum += (termBreakdown[1]?['Paid'] as num?)?.toDouble() ?? 0;
+        t1DueSum += (termBreakdown[1]?['Due'] as num?)?.toDouble() ?? 0;
+        t2TotalSum += (termBreakdown[2]?['Total'] as num?)?.toDouble() ?? 0;
+        t2PaidSum += (termBreakdown[2]?['Paid'] as num?)?.toDouble() ?? 0;
+        t2DueSum += (termBreakdown[2]?['Due'] as num?)?.toDouble() ?? 0;
+        t3TotalSum += (termBreakdown[3]?['Total'] as num?)?.toDouble() ?? 0;
+        t3PaidSum += (termBreakdown[3]?['Paid'] as num?)?.toDouble() ?? 0;
+        t3DueSum += (termBreakdown[3]?['Due'] as num?)?.toDouble() ?? 0;
+
+        busTotalSum += (busHostelInfo['busFeeTotal'] as num?)?.toDouble() ?? 0;
+        busPaidSum += (busHostelInfo['busPaid'] as num?)?.toDouble() ?? 0;
+        busDueSum += (busHostelInfo['busDue'] as num?)?.toDouble() ?? 0;
+
+        hostelTotalSum += (busHostelInfo['hostelFeeTotal'] as num?)?.toDouble() ?? 0;
+        hostelPaidSum += (busHostelInfo['hostelPaid'] as num?)?.toDouble() ?? 0;
+        hostelDueSum += (busHostelInfo['hostelDue'] as num?)?.toDouble() ?? 0;
+
+        totalDueSum += studentTotalDue;
 
         List<dynamic> row = [
           student.name,
@@ -627,13 +655,40 @@ class _StaffStudentDetailsScreenState extends State<StaffStudentDetailsScreen> {
           busHostelInfo['hostelPaid'],
           busHostelInfo['hostelDue'],
           busHostelInfo['hostelLastPaid'] ?? 'N/A',
-          _duesMap[student.name] ?? 0,
+          studentTotalDue,
         ];
 
         for (int j = 0; j < row.length; j++) {
           var cell = sheetObject.cell(excel_package.CellIndex.indexByColumnRow(columnIndex: j, rowIndex: i + 1));
           cell.value = row[j];
         }
+      }
+
+      // Add total row
+      int totalRowIndex = _students.length + 1;
+      List<dynamic> totalRow = List.filled(headers.length, '');
+      totalRow[0] = 'OVERALL TOTAL';
+      totalRow[5] = t1TotalSum;
+      totalRow[6] = t1PaidSum;
+      totalRow[7] = t1DueSum;
+      totalRow[9] = t2TotalSum;
+      totalRow[10] = t2PaidSum;
+      totalRow[11] = t2DueSum;
+      totalRow[13] = t3TotalSum;
+      totalRow[14] = t3PaidSum;
+      totalRow[15] = t3DueSum;
+      totalRow[18] = busTotalSum;
+      totalRow[19] = busPaidSum;
+      totalRow[20] = busDueSum;
+      totalRow[23] = hostelTotalSum;
+      totalRow[24] = hostelPaidSum;
+      totalRow[25] = hostelDueSum;
+      totalRow[27] = totalDueSum;
+
+      for (int j = 0; j < totalRow.length; j++) {
+        var cell = sheetObject.cell(excel_package.CellIndex.indexByColumnRow(columnIndex: j, rowIndex: totalRowIndex));
+        cell.value = totalRow[j];
+        cell.cellStyle = excel_package.CellStyle(bold: true);
       }
 
       // Save file using PlatformFileSaver

@@ -336,6 +336,7 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
       }
 
       // Add data rows (one row per student)
+      List<double> columnSums = List.filled(headers.length, 0.0);
       for (int rowIndex = 0; rowIndex < _feeReportData.length; rowIndex++) {
         final data = _feeReportData[rowIndex];
         int colIndex = 0;
@@ -347,29 +348,75 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
         
         // Term 1-3 columns
         for (int term = 1; term <= 3; term++) {
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term$term Fee'] as double?);
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term$term Paid'] as double?);
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Term$term Due'] as double?);
+          final fee = data['Term$term Fee'] as double? ?? 0.0;
+          final paid = data['Term$term Paid'] as double? ?? 0.0;
+          final due = data['Term$term Due'] as double? ?? 0.0;
+          
+          columnSums[colIndex] += fee;
+          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(fee);
+          
+          columnSums[colIndex] += paid;
+          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(paid);
+          
+          columnSums[colIndex] += due;
+          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(due);
         }
         
         // Bus Fee
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Bus Fee'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Bus Fee Paid'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Bus Fee Due'] as double?);
+        final busFee = data['Bus Fee'] as double? ?? 0.0;
+        final busPaid = data['Bus Fee Paid'] as double? ?? 0.0;
+        final busDue = data['Bus Fee Due'] as double? ?? 0.0;
+        
+        columnSums[colIndex] += busFee;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(busFee);
+        
+        columnSums[colIndex] += busPaid;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(busPaid);
+        
+        columnSums[colIndex] += busDue;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(busDue);
         
         // Books Fee
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Books Fee'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Books Fee Paid'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Books Fee Due'] as double?);
+        final booksFee = data['Books Fee'] as double? ?? 0.0;
+        final booksPaid = data['Books Fee Paid'] as double? ?? 0.0;
+        final booksDue = data['Books Fee Due'] as double? ?? 0.0;
+        
+        columnSums[colIndex] += booksFee;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(booksFee);
+        
+        columnSums[colIndex] += booksPaid;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(booksPaid);
+        
+        columnSums[colIndex] += booksDue;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(booksDue);
         
         // Uniform Fee
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Uniform Fee'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Uniform Fee Paid'] as double?);
-        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(data['Uniform Fee Due'] as double?);
+        final uniformFee = data['Uniform Fee'] as double? ?? 0.0;
+        final uniformPaid = data['Uniform Fee Paid'] as double? ?? 0.0;
+        final uniformDue = data['Uniform Fee Due'] as double? ?? 0.0;
+        
+        columnSums[colIndex] += uniformFee;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(uniformFee);
+        
+        columnSums[colIndex] += uniformPaid;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(uniformPaid);
+        
+        columnSums[colIndex] += uniformDue;
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = _formatAmount(uniformDue);
         
         // Overall Status
         sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex++, rowIndex: rowIndex + 1)).value = data['Overall Status'];
       }
+
+      // Add total row
+      int totalRowIndex = _feeReportData.length + 1;
+      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: totalRowIndex)).value = 'OVERALL TOTAL';
+      for (int i = 3; i < headers.length - 1; i++) {
+        var cell = sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: totalRowIndex));
+        cell.value = columnSums[i];
+        cell.cellStyle = excel_pkg.CellStyle(bold: true);
+      }
+      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: totalRowIndex)).cellStyle = excel_pkg.CellStyle(bold: true);
 
       // Get bytes and download
       final bytes = excel.encode();
@@ -408,10 +455,45 @@ class _ReportTabState extends State<ReportTab> with SingleTickerProviderStateMix
       final headers = data.first.keys.toList();
       sheet.appendRow(headers);
 
+      // Track columns that are numeric and their sums
+      Map<int, double> numericSums = {};
+      Set<int> nonNumericCols = {};
+
       // Data rows
       for (final rowData in data) {
-        final row = headers.map((header) => rowData[header]).toList();
+        final row = <dynamic>[];
+        for (int i = 0; i < headers.length; i++) {
+          final val = rowData[headers[i]];
+          row.add(val);
+          
+          if (!nonNumericCols.contains(i)) {
+            if (val is num) {
+              numericSums[i] = (numericSums[i] ?? 0) + val.toDouble();
+            } else if (val != null && val.toString().isNotEmpty) {
+              // Check if it's a numeric string
+              final d = double.tryParse(val.toString());
+              if (d != null) {
+                numericSums[i] = (numericSums[i] ?? 0) + d;
+              } else {
+                nonNumericCols.add(i);
+                numericSums.remove(i);
+              }
+            }
+          }
+        }
         sheet.appendRow(row);
+      }
+
+      // Add total row if there are numeric columns
+      if (numericSums.isNotEmpty) {
+        final totalRow = List.filled(headers.length, '');
+        totalRow[0] = 'OVERALL TOTAL';
+        numericSums.forEach((colIndex, sum) {
+          if (colIndex > 0) { // Don't overwrite the "OVERALL TOTAL" label if it happens to be a numeric col (unlikely for index 0)
+             totalRow[colIndex] = sum.toStringAsFixed(2);
+          }
+        });
+        sheet.appendRow(totalRow);
       }
 
       final bytes = excel.encode();
