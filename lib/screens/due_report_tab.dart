@@ -562,15 +562,26 @@ class _DueReportTabState extends State<DueReportTab> {
     // Calculate totals for numeric columns
     final List<dynamic> totalRow = [];
     bool hasNumeric = false;
+    final columnsToExclude = ['Parent Mobile', 'Class', 'Student Name', 'Staff Name', 'Class Assigned'];
+
     for (int i = 0; i < headers.length; i++) {
        final header = headers[i];
        if (i == 0) {
          totalRow.add('OVERALL TOTAL');
+       } else if (columnsToExclude.contains(header)) {
+         totalRow.add('');
        } else {
          double colTotal = 0;
          bool isNumeric = false;
+         
+         // Normalize header to map to data keys if necessary (e.g., 'Term 1 Due' -> 'Term1 Due')
+         String dataKey = header;
+         if (header.contains('Term ') && header.contains(' Due')) {
+           dataKey = header.replaceAll(' ', '');
+         }
+
          for (final data in _dueReportData) {
-            final val = data[header];
+            final val = data[dataKey];
             if (val != null) {
               final parsed = double.tryParse(val.toString());
               if (parsed != null) {
