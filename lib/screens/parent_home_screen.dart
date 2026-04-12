@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:school_management/services/supabase_service.dart';
 import 'package:school_management/models/student.dart';
 import 'package:school_management/screens/student_detail_screen.dart';
+import 'package:school_management/screens/student_attendance_report_screen.dart';
 
 class ParentHomeScreen extends StatefulWidget {
   final String parentMobile;
@@ -310,6 +311,24 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                       student: student,
                       initialView: 'homework',
                       isParentView: true,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildOptionButton(
+              context,
+              icon: Icons.calendar_today_outlined,
+              label: 'Attendance',
+              color: const Color(0xFFF59E0B),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentAttendanceReportScreen(
+                      student: student,
                     ),
                   ),
                 );

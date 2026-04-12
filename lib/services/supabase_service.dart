@@ -2198,4 +2198,92 @@ class SupabaseService {
       return null;
     }
   }
+
+  // Fetch all attendance for a class
+  static Future<List<Map<String, dynamic>>> getAttendanceByClass(String className) async {
+    try {
+      final response = await client
+          .from('ATTENDANCE')
+          .select()
+          .eq('CLASS', className)
+          .order('DATE', ascending: false);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching class attendance: $e');
+      return [];
+    }
+  }
+
+  // Fetch attendance report for a specific student
+  static Future<List<Map<String, dynamic>>> getAttendanceForStudent(String studentName) async {
+    try {
+      final trimmedName = studentName.trim();
+      final response = await client
+          .from('ATTENDANCE')
+          .select()
+          .ilike('STUDENT_NAME', '%$trimmedName%')
+          .order('DATE', ascending: false);
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching student attendance: $e');
+      return [];
+    }
+  }
+
+  // Mark attendance for a student
+  static Future<bool> markAttendance({
+    required String studentName,
+    required String className,
+    required String date,
+    required String status, // 'P' or 'A'
+  }) async {
+    try {
+      // Check if record already exists for this student and date
+      final existing = await client
+          .from('ATTENDANCE')
+          .select()
+          .eq('STUDENT_NAME', studentName)
+          .eq('DATE', date)
+          .limit(1);
+
+      if ((existing as List).isNotEmpty) {
+        // Update existing record
+        await client
+            .from('ATTENDANCE')
+            .update({'STATUS': status, 'CLASS': className})
+            .eq('STUDENT_NAME', studentName)
+            .eq('DATE', date);
+      } else {
+        // Insert new record
+        await client.from('ATTENDANCE').insert({
+          'STUDENT_NAME': studentName,
+          'CLASS': className,
+          'DATE': date,
+          'STATUS': status,
+        });
+      }
+      return true;
+    } catch (e) {
+      print('Error marking attendance: $e');
+      return false;
+    }
+  }
+
+  // Batch mark attendance for a class
+  static Future<bool> batchMarkAttendance(List<Map<String, dynamic>> attendanceData) async {
+    try {
+      for (var record in attendanceData) {
+        await markAttendance(
+          studentName: record['STUDENT_NAME'],
+          className: record['CLASS'],
+          date: record['DATE'],
+          status: record['STATUS'],
+        );
+      }
+      return true;
+    } catch (e) {
+      print('Error batch marking attendance: $e');
+      return false;
+    }
+  }
 }

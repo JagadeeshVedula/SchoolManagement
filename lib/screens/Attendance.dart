@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:school_management/models/student.dart';
 import 'package:school_management/services/supabase_service.dart';
 
@@ -20,8 +21,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   List<Student> _students = [];
   bool _isLoadingStudents = false;
 
-  // Set of student IDs (or names) who are selected to receive the absent message
-  Set<int> _selectedStudentIds = {};
+  // Set of student IDs who are marked ABSENT
+  Set<int> _absentStudentIds = {};
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -54,7 +56,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Future<void> _onClassOrSectionChanged() async {
     _classTeacher = null;
     _students = [];
-    _selectedStudentIds.clear();
+    _absentStudentIds.clear();
     
     if (_selectedClass != null && _selectedSection != null) {
       final className = '$_selectedClass-$_selectedSection';
@@ -78,7 +80,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     setState(() {
       _isLoadingStudents = true;
       _students = [];
-      _selectedStudentIds.clear();
+      _absentStudentIds.clear();
     });
 
     try {
@@ -102,40 +104,88 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  Future<void> _sendAbsentMessages() async {
-    if (_selectedStudentIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No students selected.')),
-      );
-      return;
-    }
+  Future<void> _submitAttendance() async {
+    if (_students.isEmpty) return;
 
-    final selectedStudents = _students.where((s) => _selectedStudentIds.contains(s.id)).toList();
-    
-    // Show a confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Confirm'),
-          content: Text('Are you sure you want to send absent messages to the parents of ${selectedStudents.length} student(s)?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Send'),
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Attendance'),
+        content: Text('Submit attendance for ${_students.length} students? Individuals checked will be marked ABSENT, others PRESENT.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Submit')),
+        ],
+      ),
     );
 
     if (confirm != true) return;
 
-    // Show loading
+    setState(() => _isSubmitting = true);
+
+    try {
+      final today = DateFormat('dd-MM-yyyy').format(DateTime.now());
+      final className = '$_selectedClass-$_selectedSection';
+      
+      final List<Map<String, dynamic>> attendanceData = _students.map((s) {
+        return {
+          'STUDENT_NAME': s.name,
+          'CLASS': className,
+          'DATE': today,
+          'STATUS': _absentStudentIds.contains(s.id) ? 'A' : 'P',
+        };
+      }).toList();
+
+      final success = await SupabaseService.batchMarkAttendance(attendanceData);
+
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Attendance submitted successfully!'), backgroundColor: Colors.green),
+          );
+        }
+        
+        // Optionally send SMS to absentees
+        if (_absentStudentIds.isNotEmpty) {
+           _promptSms();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to submit attendance.'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error submitting attendance: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _promptSms() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send SMS?'),
+        content: Text('Attendance marked. Would you like to send absence notifications to masks parents of ${_absentStudentIds.length} students?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yes, Send SMS')),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      _sendAbsentMessages();
+    }
+  }
+
+  Future<void> _sendAbsentMessages() async {
+    final absentees = _students.where((s) => _absentStudentIds.contains(s.id)).toList();
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -144,33 +194,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     int successCount = 0;
     int failureCount = 0;
+    final todayStr = DateFormat('dd-MM-yyyy').format(DateTime.now());
 
-    for (var student in selectedStudents) {
-      final message = 'Dear parent, your child ${student.name} is marked absent today. - NALANDA';
+    for (var student in absentees) {
+      final message = 'Dear parent, your child ${student.name} is marked ABSENT today ($todayStr). - NALANDA';
       final success = await SupabaseService.sendSms(student.parentMobile, message);
-      if (success) {
-        successCount++;
-      } else {
-        failureCount++;
-      }
+      if (success) successCount++; else failureCount++;
     }
 
     if (mounted) {
-      // Hide loading
-      Navigator.pop(context);
-
-      // Show result
+      Navigator.pop(context); // Hide loading
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Messages sent: $successCount, Failed: $failureCount'),
+          content: Text('SMS Sent: $successCount, Failed: $failureCount'),
           backgroundColor: failureCount > 0 ? Colors.orange : Colors.green,
         ),
       );
-      
-      // Optionally deselect
-      setState(() {
-        _selectedStudentIds.clear();
-      });
     }
   }
 
@@ -178,8 +217,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Attendance', style: GoogleFonts.poppins()),
+        title: Text('Attendance', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: Colors.indigo,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoadingDropdowns
           ? const Center(child: CircularProgressIndicator())
@@ -195,6 +235,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Class',
                             border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
                           value: _selectedClass,
                           items: _classesAndSections.keys.map((c) {
@@ -203,18 +244,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           onChanged: (val) {
                             setState(() {
                               _selectedClass = val;
-                              _selectedSection = null; // Reset section
+                              _selectedSection = null; 
                             });
                             _onClassOrSectionChanged();
                           },
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           decoration: const InputDecoration(
                             labelText: 'Section',
                             border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
                           value: _selectedSection,
                           items: (_selectedClass != null && _classesAndSections.containsKey(_selectedClass))
@@ -236,31 +278,34 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   const SizedBox(height: 16),
                   if (_classTeacher != null)
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.person, color: Colors.indigo),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Class Teacher: $_classTeacher',
-                              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.indigo.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.indigo.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person, color: Colors.indigo),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Class Teacher: $_classTeacher',
+                            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
                     ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: _showStudents,
-                    icon: const Icon(Icons.list),
-                    label: const Text('Show Students'),
+                    icon: const Icon(Icons.people_outline),
+                    label: const Text('Fetch Student List'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.indigo,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -276,42 +321,80 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   style: GoogleFonts.poppins(color: Colors.grey),
                                 ),
                               )
-                            : ListView.builder(
-                                itemCount: _students.length,
-                                itemBuilder: (context, index) {
-                                  final student = _students[index];
-                                  final isSelected = _selectedStudentIds.contains(student.id);
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    child: CheckboxListTile(
-                                      title: Text(student.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                                      subtitle: Text('Parent Mobile: ${student.parentMobile}'),
-                                      value: isSelected,
-                                      onChanged: (bool? value) {
-                                        setState(() {
-                                          if (value == true && student.id != null) {
-                                            _selectedStudentIds.add(student.id!);
-                                          } else {
-                                            _selectedStudentIds.remove(student.id);
-                                          }
-                                        });
+                            : Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Mark absentees (checking means absent):',
+                                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              if (_absentStudentIds.length == _students.length) {
+                                                _absentStudentIds.clear();
+                                              } else {
+                                                _absentStudentIds = _students.map((s) => s.id!).toSet();
+                                              }
+                                            });
+                                          },
+                                          child: Text(_absentStudentIds.length == _students.length ? 'Unselect All' : 'Select All'),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: ListView.builder(
+                                      itemCount: _students.length,
+                                      itemBuilder: (context, index) {
+                                        final student = _students[index];
+                                        final isAbsent = _absentStudentIds.contains(student.id);
+                                        return Card(
+                                          elevation: 0,
+                                          margin: const EdgeInsets.only(bottom: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            side: BorderSide(color: isAbsent ? Colors.red.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
+                                          ),
+                                          color: isAbsent ? Colors.red.withOpacity(0.02) : Colors.white,
+                                          child: CheckboxListTile(
+                                            title: Text(student.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: isAbsent ? Colors.red : Colors.black87)),
+                                            value: isAbsent,
+                                            activeColor: Colors.red,
+                                            onChanged: (bool? value) {
+                                              setState(() {
+                                                if (value == true && student.id != null) {
+                                                  _absentStudentIds.add(student.id!);
+                                                } else {
+                                                  _absentStudentIds.remove(student.id);
+                                                }
+                                              });
+                                            },
+                                          ),
+                                        );
                                       },
                                     ),
-                                  );
-                                },
+                                  ),
+                                ],
                               ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _students.isEmpty ? null : _sendAbsentMessages,
-                    icon: const Icon(Icons.message),
-                    label: const Text('Send Absent Message Option'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                  if (_students.isNotEmpty)
+                    ElevatedButton.icon(
+                      onPressed: _isSubmitting ? null : _submitAttendance,
+                      icon: _isSubmitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check_circle_outline),
+                      label: Text(_isSubmitting ? 'Submitting...' : 'Submit Attendance'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
