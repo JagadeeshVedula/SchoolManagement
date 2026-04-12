@@ -2153,4 +2153,54 @@ class SupabaseService {
       return null;
     }
   }
+
+  // --- Homework Methods ---
+
+  // Upsert homework: If record for (CLASS, DATE) exists, update it. Otherwise, insert.
+  static Future<bool> saveHomework(Map<String, dynamic> homeworkData) async {
+    try {
+      final className = homeworkData['CLASS'] as String;
+      final date = homeworkData['DATE'] as String;
+
+      // Check for existing entry
+      final existing = await client
+          .from('HOMEWORK')
+          .select()
+          .eq('CLASS', className)
+          .eq('DATE', date)
+          .maybeSingle();
+
+      if (existing != null) {
+        // Update
+        await client
+            .from('HOMEWORK')
+            .update(homeworkData)
+            .eq('CLASS', className)
+            .eq('DATE', date);
+      } else {
+        // Insert
+        await client.from('HOMEWORK').insert(homeworkData);
+      }
+      return true;
+    } catch (e) {
+      print('Error saving homework: $e');
+      return false;
+    }
+  }
+
+  // Get homework for a specific class and date
+  static Future<Map<String, dynamic>?> getHomework(String className, String date) async {
+    try {
+      final response = await client
+          .from('HOMEWORK')
+          .select()
+          .eq('CLASS', className)
+          .eq('DATE', date)
+          .maybeSingle();
+      return response;
+    } catch (e) {
+      print('Error fetching homework: $e');
+      return null;
+    }
+  }
 }
