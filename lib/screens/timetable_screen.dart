@@ -53,7 +53,8 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
 
   Future<void> _loadSavedAssessments() async {
     try {
-      final assessments = await SupabaseService.getUniqueAssessments();
+      String? classPart = _selectedClass?.split('-')[0];
+      final assessments = await SupabaseService.getUniqueAssessments(className: classPart);
       setState(() {
         _savedAssessments = assessments;
       });
@@ -67,8 +68,25 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     
     setState(() => _isLoading = true);
     try {
-      final data = await SupabaseService.getTimeTableByAssessment(assessmentName);
-      if (data.isNotEmpty) {
+      String? classPart = _selectedClass?.split('-')[0];
+      final data = await SupabaseService.getTimeTableByAssessment(assessmentName, className: classPart);
+      
+      // If no data found for the selected class, we should still show the assessment name
+      // but clear the rows effectively.
+      if (data.isEmpty) {
+        setState(() {
+          _selectedAssessment = assessmentName;
+          _assessmentController.text = assessmentName;
+          _rows.clear();
+          for (int i = 0; i < 6; i++) {
+            _rows.add(TimeTableRow());
+            if (classPart != null) _rows.last.classController.text = classPart;
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No timetable found for "$assessmentName" in class "$classPart"')),
+        );
+      } else {
         setState(() {
           _selectedAssessment = assessmentName;
           _assessmentController.text = assessmentName;
@@ -103,7 +121,13 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
       for (var row in _rows) {
         row.classController.text = classPart;
       }
+      
+      // Reset assessment selection as it might not be valid for the new class
+      _selectedAssessment = null;
+      _assessmentController.clear();
     });
+    // Refresh assessments list for the newly selected class
+    _loadSavedAssessments();
   }
 
   void _addRow() {
@@ -135,7 +159,8 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     if (confirmed != true) return;
 
     setState(() => _isLoading = true);
-    final success = await SupabaseService.deleteTimeTable(assessmentName);
+    String? classPart = _selectedClass?.split('-')[0];
+    final success = await SupabaseService.deleteTimeTable(assessmentName, className: classPart);
     setState(() => _isLoading = false);
 
     if (success) {

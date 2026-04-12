@@ -2364,11 +2364,19 @@ class SupabaseService {
       
       final assessmentName = timetableData.first['assessment_name'];
       
-      // Delete existing entries for this assessment to avoid duplicates if re-saving
-      await client
-          .from('TIMETABLES')
-          .delete()
-          .eq('assessment_name', assessmentName);
+      // Group classes to delete them correctly
+      final classesToUpdate = timetableData
+          .map((e) => e['class_name'] as String)
+          .where((c) => c.isNotEmpty)
+          .toSet();
+
+      for (var className in classesToUpdate) {
+        await client
+            .from('TIMETABLES')
+            .delete()
+            .eq('assessment_name', assessmentName)
+            .eq('class_name', className);
+      }
           
       // Insert new entries
       await client.from('TIMETABLES').insert(timetableData);
@@ -2379,14 +2387,19 @@ class SupabaseService {
     }
   }
 
-  // Fetch timetable by assessment name
-  static Future<List<Map<String, dynamic>>> getTimeTableByAssessment(String assessmentName) async {
+  // Fetch timetable by assessment name, optionally filtered by class
+  static Future<List<Map<String, dynamic>>> getTimeTableByAssessment(String assessmentName, {String? className}) async {
     try {
-      final response = await client
+      var query = client
           .from('TIMETABLES')
           .select()
-          .eq('assessment_name', assessmentName)
-          .order('exam_date', ascending: true);
+          .eq('assessment_name', assessmentName);
+      
+      if (className != null && className.isNotEmpty) {
+        query = query.eq('class_name', className);
+      }
+          
+      final response = await query.order('exam_date', ascending: true);
       return (response as List).cast<Map<String, dynamic>>();
     } catch (e) {
       print('Error fetching timetable: $e');
@@ -2394,13 +2407,19 @@ class SupabaseService {
     }
   }
 
-  // Delete timetable by assessment name
-  static Future<bool> deleteTimeTable(String assessmentName) async {
+  // Delete timetable by assessment name, optionally filtered by class
+  static Future<bool> deleteTimeTable(String assessmentName, {String? className}) async {
     try {
-      await client
+      var query = client
           .from('TIMETABLES')
           .delete()
           .eq('assessment_name', assessmentName);
+          
+      if (className != null && className.isNotEmpty) {
+        query = query.eq('class_name', className);
+      }
+      
+      await query;
       return true;
     } catch (e) {
       print('Error deleting timetable: $e');
@@ -2408,10 +2427,16 @@ class SupabaseService {
     }
   }
 
-  // Get all unique assessment names
-  static Future<List<String>> getUniqueAssessments() async {
+  // Get all unique assessment names, optionally filtered by class
+  static Future<List<String>> getUniqueAssessments({String? className}) async {
     try {
-      final response = await client.from('TIMETABLES').select('assessment_name');
+      var query = client.from('TIMETABLES').select('assessment_name');
+      
+      if (className != null && className.isNotEmpty) {
+        query = query.eq('class_name', className);
+      }
+      
+      final response = await query;
       final assessments = <String>{};
       for (var item in response as List) {
         final name = item['assessment_name'] as String?;
