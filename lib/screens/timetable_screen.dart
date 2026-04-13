@@ -31,10 +31,9 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
 
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
-    await Future.wait([
-      _loadClasses(),
-      _loadSavedAssessments(),
-    ]);
+    // Load classes first so they are available for filtering assessments
+    await _loadClasses();
+    await _loadSavedAssessments();
     setState(() => _isLoading = false);
   }
 
@@ -54,7 +53,23 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
   Future<void> _loadSavedAssessments() async {
     try {
       String? classPart = _selectedClass?.split('-')[0];
-      final assessments = await SupabaseService.getUniqueAssessments(className: classPart);
+      List<String>? staffClassParts;
+      
+      if (widget.staffName != null && classPart == null) {
+        // For staff, if no class is selected, filter by all their assigned classes
+        staffClassParts = _availableClasses.map((c) => c.split('-')[0]).toSet().toList();
+        if (staffClassParts.isEmpty) {
+          setState(() {
+            _savedAssessments = [];
+          });
+          return;
+        }
+      }
+
+      final assessments = await SupabaseService.getUniqueAssessments(
+        className: classPart,
+        classNames: staffClassParts,
+      );
       setState(() {
         _savedAssessments = assessments;
       });
@@ -69,7 +84,21 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     setState(() => _isLoading = true);
     try {
       String? classPart = _selectedClass?.split('-')[0];
-      final data = await SupabaseService.getTimeTableByAssessment(assessmentName, className: classPart);
+      List<String>? staffClassParts;
+      
+      if (widget.staffName != null && classPart == null) {
+        staffClassParts = _availableClasses.map((c) => c.split('-')[0]).toSet().toList();
+        if (staffClassParts.isEmpty) {
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+      
+      final data = await SupabaseService.getTimeTableByAssessment(
+        assessmentName, 
+        className: classPart,
+        classNames: staffClassParts,
+      );
       
       // If no data found for the selected class, we should still show the assessment name
       // but clear the rows effectively.
@@ -160,7 +189,21 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
 
     setState(() => _isLoading = true);
     String? classPart = _selectedClass?.split('-')[0];
-    final success = await SupabaseService.deleteTimeTable(assessmentName, className: classPart);
+    List<String>? staffClassParts;
+    
+    if (widget.staffName != null && classPart == null) {
+      staffClassParts = _availableClasses.map((c) => c.split('-')[0]).toSet().toList();
+      if (staffClassParts.isEmpty) {
+        setState(() => _isLoading = false);
+        return;
+      }
+    }
+    
+    final success = await SupabaseService.deleteTimeTable(
+      assessmentName, 
+      className: classPart,
+      classNames: staffClassParts,
+    );
     setState(() => _isLoading = false);
 
     if (success) {

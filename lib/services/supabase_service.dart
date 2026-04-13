@@ -2387,8 +2387,8 @@ class SupabaseService {
     }
   }
 
-  // Fetch timetable by assessment name, optionally filtered by class
-  static Future<List<Map<String, dynamic>>> getTimeTableByAssessment(String assessmentName, {String? className}) async {
+  // Fetch timetable by assessment name, optionally filtered by class or multiple classes
+  static Future<List<Map<String, dynamic>>> getTimeTableByAssessment(String assessmentName, {String? className, List<String>? classNames}) async {
     try {
       var query = client
           .from('TIMETABLES')
@@ -2397,6 +2397,8 @@ class SupabaseService {
       
       if (className != null && className.isNotEmpty) {
         query = query.eq('class_name', className);
+      } else if (classNames != null && classNames.isNotEmpty) {
+        query = query.in_('class_name', classNames);
       }
           
       final response = await query.order('exam_date', ascending: true);
@@ -2407,8 +2409,8 @@ class SupabaseService {
     }
   }
 
-  // Delete timetable by assessment name, optionally filtered by class
-  static Future<bool> deleteTimeTable(String assessmentName, {String? className}) async {
+  // Delete timetable by assessment name, optionally filtered by class or multiple classes
+  static Future<bool> deleteTimeTable(String assessmentName, {String? className, List<String>? classNames}) async {
     try {
       var query = client
           .from('TIMETABLES')
@@ -2417,6 +2419,8 @@ class SupabaseService {
           
       if (className != null && className.isNotEmpty) {
         query = query.eq('class_name', className);
+      } else if (classNames != null && classNames.isNotEmpty) {
+        query = query.in_('class_name', classNames);
       }
       
       await query;
@@ -2427,13 +2431,15 @@ class SupabaseService {
     }
   }
 
-  // Get all unique assessment names, optionally filtered by class
-  static Future<List<String>> getUniqueAssessments({String? className}) async {
+  // Get all unique assessment names, optionally filtered by class or multiple classes
+  static Future<List<String>> getUniqueAssessments({String? className, List<String>? classNames}) async {
     try {
       var query = client.from('TIMETABLES').select('assessment_name');
       
       if (className != null && className.isNotEmpty) {
         query = query.eq('class_name', className);
+      } else if (classNames != null && classNames.isNotEmpty) {
+        query = query.in_('class_name', classNames);
       }
       
       final response = await query;
